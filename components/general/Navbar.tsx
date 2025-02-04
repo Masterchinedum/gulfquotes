@@ -23,9 +23,9 @@ export async function Navbar() {
   return (
     <nav className="flex justify-between items-center py-5">
       <Link href="/" className="flex items-center gap-2">
-        <Image src={Logo} alt="Job Marshal Logo" width={40} height={40} />
+        <Image src={Logo} alt="Quoticon" width={40} height={40} />
         <h1 className="text-2xl font-bold">
-          Job<span className="text-primary">Marshal</span>
+          Quote<span className="text-primary">Icon</span>
         </h1>
       </Link>
 
@@ -33,7 +33,7 @@ export async function Navbar() {
       <div className="hidden md:flex items-center gap-5">
         <ThemeToggle />
         <Link href="/post-job" className={buttonVariants({ size: "lg" })}>
-          Post Job
+          Post Qotes
         </Link>
         {session?.user ? (
           <UserDropdown
@@ -70,7 +70,7 @@ export async function Navbar() {
             <SheetContent>
               <SheetHeader className="text-left">
                 <SheetTitle>
-                  Job<span className="text-primary">Marshal</span>
+                  Quote<span className="text-primary">Icon</span>
                 </SheetTitle>
                 <SheetDescription>
                   Find or post your next job opportunity
