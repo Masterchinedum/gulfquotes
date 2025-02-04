@@ -1,4 +1,5 @@
-import { signOut } from "@/lib/auth";
+"use client";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,86 +11,96 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-import { ChevronDown, Heart, Layers2, LogOut } from "lucide-react";
+import { handleSignOut } from "@/app/actions/auth";
+import { ChevronDown, Heart, Layers2, LogOut, User } from "lucide-react";
 import Link from "next/link";
+import { useTransition } from "react";
 
-interface iAppProps {
+interface UserDropdownProps {
   email: string;
   name: string;
   image: string;
 }
 
-export function UserDropdown({ email, name, image }: iAppProps) {
+export function UserDropdown({ email, name, image }: UserDropdownProps) {
+  const [isPending, startTransition] = useTransition();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-auto p-0 hover:bg-transparent">
-          <Avatar>
-            <AvatarImage src={image} alt="Profile image" />
-            <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+        <Button 
+          variant="ghost" 
+          className="relative h-8 w-8 rounded-full"
+          aria-label="User menu"
+        >
+          <Avatar className="h-8 w-8">
+            <AvatarImage 
+              src={image} 
+              alt={`${name}'s profile picture`}
+              className="object-cover"
+            />
+            <AvatarFallback>
+              <User className="h-4 w-4" />
+            </AvatarFallback>
           </Avatar>
           <ChevronDown
-            size={16}
-            strokeWidth={2}
-            className="ms-2 opacity-60"
+            className="ml-2 h-4 w-4 text-muted-foreground"
             aria-hidden="true"
           />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-48" align="end">
-        <DropdownMenuLabel className="flex min-w-0 flex-col">
-          <span className="truncate text-sm font-medium text-foreground">
-            {name}
-          </span>
-          <span className="truncate text-xs font-normal text-muted-foreground">
-            {email}
-          </span>
+      
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">{name}</p>
+            <p className="text-xs leading-none text-muted-foreground">{email}</p>
+          </div>
         </DropdownMenuLabel>
+        
         <DropdownMenuSeparator />
+        
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link href="/favorites">
-              <Heart
-                size={16}
-                strokeWidth={2}
-                className="opacity-60"
-                aria-hidden="true"
-              />
-              <span>Saved Jobs</span>
+            <Link 
+              href="/dashboard"
+              className="flex w-full items-center"
+            >
+              <User className="mr-2 h-4 w-4" />
+              Dashboard
             </Link>
           </DropdownMenuItem>
+          
           <DropdownMenuItem asChild>
-            <Link href="/my-jobs">
-              <Layers2
-                size={16}
-                strokeWidth={2}
-                className="opacity-60"
-                aria-hidden="true"
-              />
-              <span>My Job Listings</span>
+            <Link 
+              href="/favorites" 
+              className="flex w-full items-center"
+            >
+              <Heart className="mr-2 h-4 w-4" />
+              Saved Quotes
+            </Link>
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem asChild>
+            <Link 
+              href="/my-quotes" 
+              className="flex w-full items-center"
+            >
+              <Layers2 className="mr-2 h-4 w-4" />
+              My Quotes
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
-
+        
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/" });
-            }}
-          >
-            <button type="submit" className="w-full flex items-center gap-2">
-              <LogOut
-                size={16}
-                strokeWidth={2}
-                className="opacity-60"
-                aria-hidden="true"
-              />
-              <span>Logout</span>
-            </button>
-          </form>
+        
+        <DropdownMenuItem
+          className="flex w-full cursor-pointer items-center text-destructive focus:text-destructive"
+          disabled={isPending}
+          onClick={() => startTransition(() => handleSignOut())}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          {isPending ? "Signing out..." : "Sign out"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

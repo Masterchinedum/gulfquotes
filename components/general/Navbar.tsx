@@ -108,6 +108,13 @@ export function Navbar() {
                     Login
                   </Link>
                 )}
+                {session?.user && (
+                  <UserDropdown
+                    email={session.user.email as string}
+                    name={session.user.name as string}
+                    image={session.user.image as string}
+                  />
+                )}
               </div>
             </SheetContent>
           </Sheet>
