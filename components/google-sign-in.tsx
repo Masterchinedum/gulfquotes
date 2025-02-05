@@ -5,7 +5,6 @@ import db from "@/lib/db/db";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";  // Add Google import
 import Facebook from "next-auth/providers/facebook"; // Add Facebook import
 import Twitter from "next-auth/providers/twitter"; // Add Twitter import
@@ -29,7 +28,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       clientSecret: process.env.AUTH_TWITTER_SECRET,
       version: "2.0", // Use OAuth 2.0
     }),
-    GitHub,
     Credentials({
       credentials: {
         email: {},
