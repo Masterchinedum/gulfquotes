@@ -26,10 +26,6 @@ const protectedRoutes: RouteConfig[] = [
     path: /^\/dashboard\/posts\/edit.*/,
     permissions: ["EDIT_POST"],
     roles: ["ADMINISTRATOR", "AUTHOR"]
-  },
-  {
-    path: /^\/dashboard.*/,
-    permissions: ["VIEW_DASHBOARD"]
   }
 ];
 
@@ -43,11 +39,11 @@ export async function middleware(request: NextRequest) {
   }
 
   // Check if user is authenticated and has role
-  if (!session?.user?.role) {
+  if (!session?.user) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Type assertion since we've verified the session structure
+  // Type assertion since we've verified session exists
   const userSession = session.user as UserSession;
 
   // Check route permissions

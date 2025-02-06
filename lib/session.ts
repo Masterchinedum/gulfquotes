@@ -1,4 +1,5 @@
 import { Role, Permission } from "@/lib/constants/roles";
+import { RolePermissions } from "@/lib/constants/roles";
 
 export interface UserSession {
   id: string;
@@ -6,7 +7,6 @@ export interface UserSession {
   name?: string | null;
   image?: string | null;
   role: Role;
-  permissions: Permission[];
 }
 
 export interface Session {
@@ -16,7 +16,7 @@ export interface Session {
 
 export function checkUserHasPermission(session: Session | null, permission: Permission): boolean {
   if (!session?.user?.role) return false;
-  return hasPermission(session.user.role, permission);
+  return RolePermissions[session.user.role].includes(permission);
 }
 
 export function isAdmin(session: Session | null): boolean {
