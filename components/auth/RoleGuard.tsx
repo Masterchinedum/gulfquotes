@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { Role, Permission } from "@/lib/constants/roles";
-import { checkUserHasPermission, type Session } from "@/lib/session";
+import { checkUserHasPermission, type Session, type UserSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 
 interface RoleGuardProps {
@@ -27,7 +27,7 @@ export function RoleGuard({
       email: authSession.user?.email,
       name: authSession.user?.name,
       image: authSession.user?.image,
-      role: authSession.user?.role ?? 'USER'
+      role: (authSession.user as UserSession)?.role ?? 'USER'
     },
     expires: authSession.expires
   } : null;
