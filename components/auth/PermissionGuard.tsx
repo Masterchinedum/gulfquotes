@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { Permission } from "@/lib/constants/roles";
-import { checkUserHasPermission, type Session } from "@/lib/session";
+import { checkUserHasPermission, type Session, type UserSession } from "@/lib/session";
 
 interface PermissionGuardProps {
   children: React.ReactNode;
@@ -24,7 +24,7 @@ export function PermissionGuard({
       email: authSession.user?.email,
       name: authSession.user?.name,
       image: authSession.user?.image,
-      role: authSession.user?.role ?? 'USER'
+      role: (authSession.user as UserSession)?.role ?? 'USER'
     },
     expires: authSession.expires
   } : null;
