@@ -7,6 +7,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  ADMINISTRATOR
+  AUTHOR
+  USER
+}
+
+enum Permission {
+  CREATE_POST
+  EDIT_POST
+  DELETE_POST
+  MANAGE_USERS
+  MANAGE_ROLES
+  VIEW_DASHBOARD
+  CREATE_COMMENT   // Add this
+  EDIT_COMMENT    // Add this
+  DELETE_COMMENT  // Add this
+}
+
 model User {
   id            String          @id @default(cuid())
   name          String?
@@ -14,10 +32,13 @@ model User {
   password      String?
   emailVerified DateTime?
   image         String?
+  role          Role            @default(USER)
+  permissions   UserPermission[]
   accounts      Account[]
   sessions      Session[]
   // Optional for WebAuthn support
   Authenticator Authenticator[]
+  comments      Comment[]       // Add this
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -78,4 +99,24 @@ model Authenticator {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, credentialID])
+}
+
+model UserPermission {
+  id           String     @id @default(cuid())
+  userId       String
+  permission   Permission
+  assignedAt   DateTime   @default(now())
+  assignedBy   String?
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permission])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
