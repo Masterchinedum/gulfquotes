@@ -12,7 +12,7 @@ importers:
         specifier: ^2.7.4
         version: 2.7.4(@prisma/client@6.3.1(prisma@6.3.1(typescript@5.7.3))(typescript@5.7.3))
       '@prisma/client':
-        specifier: ^6.3.1
+        specifier: ^6.3.0
         version: 6.3.1(prisma@6.3.1(typescript@5.7.3))(typescript@5.7.3)
       '@radix-ui/react-avatar':
         specifier: ^1.1.2
@@ -97,7 +97,7 @@ importers:
         specifier: ^8
         version: 8.5.1
       prisma:
-        specifier: ^6.3.1
+        specifier: ^6.3.0
         version: 6.3.1(typescript@5.7.3)
       tailwindcss:
         specifier: ^3.4.1
