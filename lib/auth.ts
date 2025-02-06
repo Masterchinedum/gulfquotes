@@ -1,5 +1,7 @@
 import { v4 as uuid } from "uuid";
 import { encode as defaultEncode } from "next-auth/jwt";
+import { Role } from "@/lib/constants/roles";
+import type { Session, UserSession } from "@/lib/session";
 
 import db from "@/lib/db/db";
 import { PrismaAdapter } from "@auth/prisma-adapter";
@@ -52,12 +54,68 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, account }) {
+    async jwt({ token, user, account, trigger }) {
       if (account?.provider === "credentials") {
         token.credentials = true;
       }
+      
+      // Include role in the token when user signs in
+      if (user) {
+        token.role = user.role;
+      }
+
+      // Handle role updates
+      if (trigger === "update" && token.sub) {
+        const userFromDb = await db.user.findUnique({
+          where: { id: token.sub }
+        });
+        if (userFromDb) {
+          token.role = userFromDb.role;
+        }
+      }
+
       return token;
     },
+
+    async session({ session, token, user }): Promise<Session> {
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.sub ?? user.id,
+          role: token.role ?? user.role ?? "USER",
+        } as UserSession,
+      };
+    },
+
+    // Simplified signIn callback - only using user parameter
+    async signIn({ user }) {
+      if (!user.role) {
+        try {
+          await db.user.update({
+            where: { id: user.id },
+            data: { role: "USER" },
+          });
+        } catch (error) {
+          console.error("Error assigning default role:", error);
+          return false;
+        }
+      }
+      return true;
+    },
+  },
+  events: {
+    async createUser({ user }) {
+      // Set default role for new users
+      await db.user.update({
+        where: { id: user.id },
+        data: { role: "USER" },
+      });
+    },
+  },
+  pages: {
+    signIn: '/login',
+    error: '/error',
   },
   jwt: {
     encode: async function (params) {
@@ -84,3 +142,30 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
 });
+
+// Add role verification helper
+export async function verifyRole(userId: string, role: Role): Promise<boolean> {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+
+  return user?.role === role;
+}
+
+// Add getCurrentUser helper with role
+export async function getCurrentUser() {
+  const session = await auth();
+  if (!session?.user?.id) return null;
+
+  return db.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      image: true,
+    },
+  });
+}
