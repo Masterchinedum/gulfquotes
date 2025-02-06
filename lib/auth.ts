@@ -70,26 +70,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.credentials = true;
       }
       
-      // Include role in the token when user signs in
       if (user) {
-        token.role = (user as CustomUser).role;
+        // Set role when user is first created/signed in
+        token.role = (user as CustomUser).role ?? "USER";
       }
 
       // Handle role updates
       if (trigger === "update" && token.sub) {
-        const userFromDb = await db.user.findUnique({
+        const dbUser = await db.user.findUnique({
           where: { id: token.sub }
         });
-        if (userFromDb) {
-          token.role = userFromDb.role;
-        }
+        token.role = dbUser?.role ?? "USER";
       }
 
       return token as CustomJWT;
     },
 
     async session({ session, token, user }): Promise<Session> {
-      const role = (token as CustomJWT).role ?? (user as CustomUser).role ?? "USER";
+      // Get role from token or user, fallback to USER if not set
+      const role = (token as CustomJWT).role ?? 
+                   (user as CustomUser)?.role ?? 
+                   "USER";
       
       return {
         ...session,
