@@ -15,7 +15,7 @@ import { schema } from "@/lib/schema";
 
 // Define custom types
 type CustomUser = AdapterUser & {
-  role: Role;
+  role: Role
 };
 
 interface CustomJWT extends JWT {
