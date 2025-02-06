@@ -39,6 +39,8 @@ model User {
   // Optional for WebAuthn support
   Authenticator Authenticator[]
   comments      Comment[]       // Add this
+  roleAudits    RoleAudit[]
+  roleModified  RoleAudit[]     @relation("RoleModifier")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -119,4 +121,17 @@ model Comment {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model RoleAudit {
+  id         String   @id @default(cuid())
+  userId     String
+  oldRole    Role
+  newRole    Role
+  modifiedBy String
+  reason     String?
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+  modifier   User     @relation("RoleModifier", fields: [modifiedBy], references: [id])
 }
