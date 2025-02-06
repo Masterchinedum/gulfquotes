@@ -1,9 +1,8 @@
 import { v4 as uuid } from "uuid";
 import { encode as defaultEncode } from "next-auth/jwt";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { Role } from "@/lib/constants/roles";
+import { Role, RolePermissions } from "@/lib/constants/roles";
 import type { Session, UserSession } from "@/lib/session";
-// import type { User as PrismaUser } from "@prisma/client";
 import type { JWT } from "next-auth/jwt";
 import type { AdapterUser } from "@auth/core/adapters";
 import NextAuth from "next-auth";
@@ -90,12 +89,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
 
     async session({ session, token, user }): Promise<Session> {
+      const role = (token as CustomJWT).role ?? (user as CustomUser).role ?? "USER";
+      
       return {
         ...session,
         user: {
           ...session.user,
           id: token.sub ?? user.id,
-          role: (token as CustomJWT).role ?? (user as CustomUser).role ?? "USER",
+          role,
+          permissions: RolePermissions[role]
         } as UserSession,
       };
     },
