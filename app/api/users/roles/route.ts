@@ -94,7 +94,8 @@ export async function POST(request: Request) {
     expires: authSession.expires
   } : null;
 
-  if (!checkUserHasPermission(session, "MANAGE_ROLES")) {
+  // Verify session and permissions
+  if (!session?.user?.id || !checkUserHasPermission(session, "MANAGE_ROLES")) {
     return NextResponse.json(
       { error: "Insufficient permissions" },
       { status: 403 }
@@ -106,7 +107,7 @@ export async function POST(request: Request) {
     const { userId, role, reason } = roleAssignmentSchema.parse(body);
 
     // Prevent self-role modification
-    if (session?.user?.id === userId) {
+    if (session.user.id === userId) {
       return NextResponse.json(
         { error: "Cannot modify own role" },
         { status: 403 }
@@ -138,14 +139,11 @@ export async function POST(request: Request) {
           userId,
           oldRole: (await db.user.findUnique({ where: { id: userId } }))?.role ?? 'USER',
           newRole: role,
-          modifiedBy: session.user.id,
+          modifiedBy: session.user.id, // Now safe since we verified session exists
           reason: reason || 'Role update'
         }
       })
     ]);
-
-    // Here you would typically trigger notifications
-    // await notifyUserRoleChange(userId, role);
 
     return NextResponse.json({
       success: true,
