@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { Role, validateRole } from "@/lib/constants/roles";
-import { checkUserHasPermission } from "@/lib/session";
+import { checkUserHasPermission, type Session, type UserSession } from "@/lib/session";
 import db from "@/lib/db/db";
 import { z } from "zod";
 
@@ -13,8 +13,20 @@ const updateRoleSchema = z.object({
 
 // Get all users with their roles
 export async function GET(request: Request) {
-  const session = await auth();
+  const authSession = await auth();
   
+  // Convert NextAuth session to our custom Session type
+  const session: Session | null = authSession ? {
+    user: {
+      id: authSession.user?.id ?? '',
+      email: authSession.user?.email,
+      name: authSession.user?.name,
+      image: authSession.user?.image,
+      role: (authSession.user as UserSession)?.role ?? 'USER'
+    },
+    expires: authSession.expires
+  } : null;
+
   // Check if user has permission to manage roles
   if (!checkUserHasPermission(session, "MANAGE_ROLES")) {
     return NextResponse.json(
@@ -72,7 +84,19 @@ export async function GET(request: Request) {
 
 // Update user role
 export async function PUT(request: Request) {
-  const session = await auth();
+  const authSession = await auth();
+  
+  // Convert NextAuth session to our custom Session type
+  const session: Session | null = authSession ? {
+    user: {
+      id: authSession.user?.id ?? '',
+      email: authSession.user?.email,
+      name: authSession.user?.name,
+      image: authSession.user?.image,
+      role: (authSession.user as UserSession)?.role ?? 'USER'
+    },
+    expires: authSession.expires
+  } : null;
 
   // Check if user has permission to manage roles
   if (!checkUserHasPermission(session, "MANAGE_ROLES")) {
