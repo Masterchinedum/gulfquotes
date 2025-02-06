@@ -31,7 +31,7 @@ export default function AuditPage() {
   useEffect(() => {
     const fetchAudits = async () => {
       try {
-        const response = await fetch("/api/users/roles/audit");
+        const response = await fetch("/api/roles/audit");
         const data = await response.json();
         setAudits(data.audits);
       } catch (error) {

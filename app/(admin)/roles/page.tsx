@@ -30,7 +30,7 @@ export default function RolesPage() {
       if (!response.ok) throw new Error(data.error);
       setUsers(data.users);
     } catch (error) {
-      toast.error("Failed to fetch users");
+      toast.error(error instanceof Error ? error.message : "Failed to fetch users");
     } finally {
       setLoading(false);
     }
@@ -48,9 +48,9 @@ export default function RolesPage() {
       if (!response.ok) throw new Error(data.error);
 
       toast.success("Role updated successfully");
-      fetchUsers(); // Refresh user list
+      fetchUsers();
     } catch (error) {
-      toast.error("Failed to update role");
+      toast.error(error instanceof Error ? error.message : "Failed to update role");
     }
   };
 
@@ -61,41 +61,45 @@ export default function RolesPage() {
         <Button onClick={() => router.refresh()}>Refresh</Button>
       </div>
 
-      <div className="bg-white rounded-lg shadow">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Current Role</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>{user.name || "N/A"}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>
-                  <RoleIndicator role={user.role} />
-                </TableCell>
-                <TableCell>
-                  <Select
-                    value={user.role}
-                    onValueChange={(newRole: Role) => 
-                      updateUserRole(user.id, newRole)
-                    }
-                  >
-                    <option value="ADMINISTRATOR">Administrator</option>
-                    <option value="AUTHOR">Author</option>
-                    <option value="USER">User</option>
-                  </Select>
-                </TableCell>
+      {loading ? (
+        <div className="text-center py-4">Loading...</div>
+      ) : (
+        <div className="bg-white rounded-lg shadow">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Current Role</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>{user.name || "N/A"}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <RoleIndicator role={user.role} />
+                  </TableCell>
+                  <TableCell>
+                    <Select
+                      value={user.role}
+                      onValueChange={(newRole: Role) => 
+                        updateUserRole(user.id, newRole)
+                      }
+                    >
+                      <option value="ADMINISTRATOR">Administrator</option>
+                      <option value="AUTHOR">Author</option>
+                      <option value="USER">User</option>
+                    </Select>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }
