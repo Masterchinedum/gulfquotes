@@ -29,23 +29,24 @@ const adapter = PrismaAdapter(db);
 // Define auth config with proper typing
 const authConfig = {
   adapter,
+  session: {
+    strategy: "database", // Change from "jwt" to "database" since you're using Prisma adapter
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
   callbacks: {
-    async jwt({ token, user, account, trigger }): Promise<CustomJWT> {
-      if (account?.provider === "credentials") {
-        token.credentials = true;
-      }
-      
+    async jwt({ token, user, trigger }): Promise<CustomJWT> {
       if (user) {
-        // Set role when user is first created/signed in
-        token.role = (user as CustomUser).role ?? "USER";
-        token.id = user.id;
+        const customUser = user as CustomUser; // Cast to CustomUser type
+        token.role = customUser.role ?? "USER";
+        token.id = customUser.id;
       }
 
       // Handle role updates
       if (trigger === "update" && token.sub) {
         const dbUser = await db.user.findUnique({
-          where: { id: token.sub }
-        });
+          where: { id: token.sub },
+          select: { role: true },
+        }) as CustomUser | null;
         token.role = dbUser?.role ?? "USER";
       }
 
@@ -53,63 +54,71 @@ const authConfig = {
     },
 
     async session({ session, token, user }): Promise<Session> {
-      // Get role from token or user, fallback to USER if not set
-      const role = (token as CustomJWT).role ?? 
-                   (user as CustomUser)?.role ?? 
-                   "USER";
-      
+      // Use token role as source of truth
+      const role = token.role ?? user?.role ?? "USER";
+
       return {
         ...session,
         user: {
           ...session.user,
           id: token.sub ?? user.id,
           role,
-          permissions: RolePermissions[role]
+          permissions: RolePermissions[role],
         } as UserSession,
       };
     },
 
-    // Simplified signIn callback - only using user parameter
-    async signIn({ user, account}) {
+    async signIn({ user, account }) {
       try {
-        // For OAuth providers (GitHub, Google, etc.)
-        if (account && account.provider) {
+        if (!user?.email) {
+          console.error("No email provided");
+          return false;
+        }
+
+        if (account?.provider) {
           const existingUser = await db.user.findFirst({
-            where: {
-              email: user.email
-            }
+            where: { email: user.email },
+            select: { id: true, role: true },
           });
 
           if (existingUser) {
-            return true; // Allow sign in
+            // Update role if not set
+            if (!existingUser.role) {
+              await db.user.update({
+                where: { id: existingUser.id },
+                data: { role: "USER" },
+              });
+            }
+            return true;
           }
 
           // Create new user with provider data and default role
-          const newUser = await db.user.create({
-            data: {
-              email: user.email,
-              name: user.name,
-              image: user.image,
-              role: "USER", // Add default role here
-              accounts: {
-                create: {
-                  provider: account.provider,
-                  providerAccountId: account.providerAccountId,
-                  type: account.type
-                }
-              }
-            }
-          });
+          try {
+            const newUser = await db.user.create({
+              data: {
+                email: user.email,
+                name: user.name ?? "",
+                image: user.image ?? "",
+                role: "USER",
+                accounts: {
+                  create: {
+                    provider: account.provider,
+                    providerAccountId: account.providerAccountId,
+                    type: account.type,
+                  },
+                },
+              },
+            });
 
-          return !!newUser;
+            return !!newUser;
+          } catch (createError) {
+            console.error("Error creating new user:", createError);
+            return false;
+          }
         }
 
         // For credentials provider
-        if (user) {
-          return true;
-        }
-
-        return false; // Reject sign in if no valid provider or user
+        return true;
       } catch (error) {
         console.error("Sign in error:", error);
         return false;
@@ -120,15 +129,15 @@ const authConfig = {
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
-      allowDangerousEmailAccountLinking: true
+      allowDangerousEmailAccountLinking: true,
     }),
     Facebook({
       clientId: process.env.AUTH_FACEBOOK_ID,
       clientSecret: process.env.AUTH_FACEBOOK_SECRET,
-      allowDangerousEmailAccountLinking: true
+      allowDangerousEmailAccountLinking: true,
     }),
     GitHub({
-      allowDangerousEmailAccountLinking: true
+      allowDangerousEmailAccountLinking: true,
     }),
     Credentials({
       credentials: {
@@ -163,8 +172,8 @@ const authConfig = {
     },
   },
   pages: {
-    signIn: '/login',
-    error: '/error',
+    signIn: "/login",
+    error: "/error",
   },
   jwt: {
     encode: async function (params) {
