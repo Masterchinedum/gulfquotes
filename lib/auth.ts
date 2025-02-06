@@ -15,8 +15,18 @@ import { schema } from "@/lib/schema";
 import { NextAuthConfig } from "next-auth";
 
 // Define custom types
+interface OAuthAccount {
+  provider: string;
+  type: string;
+  providerAccountId: string;
+  access_token?: string;
+  token_type?: string;
+  scope?: string;
+}
+
 type CustomUser = AdapterUser & {
   role: Role;
+  accounts?: OAuthAccount[];
 };
 
 // Near the top of auth.ts, improve the CustomJWT interface
@@ -44,6 +54,16 @@ const authConfig = {
         if (user) {
           if (!user.id) {
             throw new Error("User ID is required");
+          }
+
+          // For OAuth providers
+          if (account && (account.type === "oauth" || account.type === "oidc")) {
+            return {
+              ...token,
+              sub: user.id,
+              role: (user as CustomUser).role ?? "USER",
+              provider: account.provider
+            };
           }
           
           return {
@@ -102,9 +122,13 @@ const authConfig = {
     },
 
     // Simplified signIn callback - only using user parameter
-    async signIn({ user, account}) {
+    async signIn({ user, account }) {
       try {
-        // For OAuth providers (GitHub, Google, etc.)
+        if (!user.email) {
+          console.error("OAuth provider did not return an email");
+          return false;
+        }
+
         if (account && account.provider) {
           const existingUser = await db.user.findFirst({
             where: {
@@ -143,7 +167,7 @@ const authConfig = {
 
         return false; // Reject sign in if no valid provider or user
       } catch (error) {
-        console.error("Sign in error:", error);
+        console.error("OAuth sign in error:", error);
         return false;
       }
     },
@@ -166,7 +190,16 @@ const authConfig = {
     Facebook({
       clientId: process.env.AUTH_FACEBOOK_ID,
       clientSecret: process.env.AUTH_FACEBOOK_SECRET,
-      allowDangerousEmailAccountLinking: true
+      allowDangerousEmailAccountLinking: true,
+      profile(profile) {
+        return {
+          id: profile.id,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture.data.url,
+          role: "USER" // Ensure default role
+        }
+      }
     }),
     GitHub({
       allowDangerousEmailAccountLinking: true,
