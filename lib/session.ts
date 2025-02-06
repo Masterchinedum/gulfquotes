@@ -1,4 +1,4 @@
-import { Role, Permission, hasPermission } from "@/lib/constants/roles";
+import { Role, Permission } from "@/lib/constants/roles";
 
 export interface UserSession {
   id: string;

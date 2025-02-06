@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { checkUserHasPermission, type Session } from "@/lib/session";
+import { checkUserHasPermission, type Session, type UserSession } from "@/lib/session";
 import { Permission, Role } from "@/lib/constants/roles";
 
 // Define protected route configurations
@@ -42,16 +42,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check if user is authenticated
-  if (!session?.user) {
+  // Check if user is authenticated and has role
+  if (!session?.user?.role) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
+
+  // Type assertion since we've verified the session structure
+  const userSession = session.user as UserSession;
 
   // Check route permissions
   for (const route of protectedRoutes) {
     if (route.path.test(request.nextUrl.pathname)) {
       // Check role-based access
-      if (route.roles && !route.roles.includes(session.user.role)) {
+      if (route.roles && !route.roles.includes(userSession.role)) {
         return NextResponse.redirect(new URL("/unauthorized", request.url));
       }
 
