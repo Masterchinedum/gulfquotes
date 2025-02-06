@@ -19,8 +19,10 @@ type CustomUser = AdapterUser & {
   role: Role;
 };
 
+// Near the top of auth.ts, improve the CustomJWT interface
 interface CustomJWT extends JWT {
-  role?: Role;
+  role: Role;          // Make role required instead of optional
+  sub?: string;        // Explicitly define sub
   credentials?: boolean;
 }
 
@@ -29,96 +31,118 @@ const adapter = PrismaAdapter(db);
 // Define auth config with proper typing
 const authConfig = {
   adapter,
-  session: {
-    strategy: "database", // Change from "jwt" to "database" since you're using Prisma adapter
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
   callbacks: {
-    async jwt({ token, user, trigger }): Promise<CustomJWT> {
-      if (user) {
-        const customUser = user as CustomUser; // Cast to CustomUser type
-        token.role = customUser.role ?? "USER";
-        token.id = customUser.id;
-      }
+    // Update the jwt callback with better error handling and validation
+    async jwt({ token, user, account, trigger }): Promise<CustomJWT> {
+      try {
+        // Handle credential provider sign in
+        if (account?.provider === "credentials") {
+          token.credentials = true;
+        }
 
-      // Handle role updates
-      if (trigger === "update" && token.sub) {
-        const dbUser = await db.user.findUnique({
-          where: { id: token.sub },
-          select: { role: true },
-        }) as CustomUser | null;
-        token.role = dbUser?.role ?? "USER";
-      }
+        // Handle initial sign in
+        if (user) {
+          if (!user.id) {
+            throw new Error("User ID is required");
+          }
+          
+          return {
+            ...token,
+            sub: user.id,
+            role: (user as CustomUser).role ?? "USER",
+          };
+        }
 
-      return token as CustomJWT;
+        // Handle role updates
+        if (trigger === "update" && token.sub) {
+          const dbUser = await db.user.findUnique({
+            where: { id: token.sub },
+            select: { role: true }
+          });
+
+          if (!dbUser) {
+            throw new Error(`User not found: ${token.sub}`);
+          }
+
+          return {
+            ...token,
+            role: dbUser.role
+          };
+        }
+
+        // Ensure role is always set
+        if (!token.role) {
+          token.role = "USER";
+        }
+
+        return token as CustomJWT;
+      } catch (error) {
+        console.error("JWT callback error:", error);
+        // Always ensure we return a valid token with at least a default role
+        return {
+          ...token,
+          role: "USER"
+        } as CustomJWT;
+      }
     },
 
-    async session({ session, token, user }): Promise<Session> {
-      // Use token role as source of truth
-      const role = token.role ?? user?.role ?? "USER";
+    async session({ session, token }): Promise<Session> {
+      if (!token.sub) {
+        throw new Error("No user ID found in token");
+      }
 
       return {
         ...session,
         user: {
           ...session.user,
-          id: token.sub ?? user.id,
-          role,
-          permissions: RolePermissions[role],
+          id: token.sub,
+          role: token.role as Role,
+          permissions: RolePermissions[token.role as Role] 
         } as UserSession,
       };
     },
 
-    async signIn({ user, account }) {
+    // Simplified signIn callback - only using user parameter
+    async signIn({ user, account}) {
       try {
-        if (!user?.email) {
-          console.error("No email provided");
-          return false;
-        }
-
-        if (account?.provider) {
+        // For OAuth providers (GitHub, Google, etc.)
+        if (account && account.provider) {
           const existingUser = await db.user.findFirst({
-            where: { email: user.email },
-            select: { id: true, role: true },
+            where: {
+              email: user.email
+            }
           });
 
           if (existingUser) {
-            // Update role if not set
-            if (!existingUser.role) {
-              await db.user.update({
-                where: { id: existingUser.id },
-                data: { role: "USER" },
-              });
-            }
-            return true;
+            return true; // Allow sign in
           }
 
           // Create new user with provider data and default role
-          try {
-            const newUser = await db.user.create({
-              data: {
-                email: user.email,
-                name: user.name ?? "",
-                image: user.image ?? "",
-                role: "USER",
-                accounts: {
-                  create: {
-                    provider: account.provider,
-                    providerAccountId: account.providerAccountId,
-                    type: account.type,
-                  },
-                },
-              },
-            });
+          const newUser = await db.user.create({
+            data: {
+              email: user.email,
+              name: user.name,
+              image: user.image,
+              role: "USER", // Add default role here
+              accounts: {
+                create: {
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                  type: account.type
+                }
+              }
+            }
+          });
 
-            return !!newUser;
-          } catch (createError) {
-            console.error("Error creating new user:", createError);
-            return false;
-          }
+          return !!newUser;
         }
 
         // For credentials provider
-        return true;
+        if (user) {
+          return true;
+        }
+
+        return false; // Reject sign in if no valid provider or user
       } catch (error) {
         console.error("Sign in error:", error);
         return false;
@@ -129,15 +153,15 @@ const authConfig = {
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
-      allowDangerousEmailAccountLinking: true,
+      allowDangerousEmailAccountLinking: true
     }),
     Facebook({
       clientId: process.env.AUTH_FACEBOOK_ID,
       clientSecret: process.env.AUTH_FACEBOOK_SECRET,
-      allowDangerousEmailAccountLinking: true,
+      allowDangerousEmailAccountLinking: true
     }),
     GitHub({
-      allowDangerousEmailAccountLinking: true,
+      allowDangerousEmailAccountLinking: true
     }),
     Credentials({
       credentials: {
@@ -172,8 +196,8 @@ const authConfig = {
     },
   },
   pages: {
-    signIn: "/login",
-    error: "/error",
+    signIn: '/login',
+    error: '/error',
   },
   jwt: {
     encode: async function (params) {
