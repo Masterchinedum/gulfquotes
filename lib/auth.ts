@@ -12,6 +12,7 @@ import GitHub from "next-auth/providers/github";
 import Credentials from "next-auth/providers/credentials";
 import db from "@/lib/db/db";
 import { schema } from "@/lib/schema";
+import { NextAuthConfig } from "next-auth";
 
 // Define custom types
 type CustomUser = AdapterUser & {
@@ -25,45 +26,9 @@ interface CustomJWT extends JWT {
 
 const adapter = PrismaAdapter(db);
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+// Define auth config with proper typing
+const authConfig = {
   adapter,
-  providers: [
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET,
-      allowDangerousEmailAccountLinking: true
-    }),
-    Facebook({
-      clientId: process.env.AUTH_FACEBOOK_ID,
-      clientSecret: process.env.AUTH_FACEBOOK_SECRET,
-      allowDangerousEmailAccountLinking: true
-    }),
-    GitHub({
-      allowDangerousEmailAccountLinking: true
-    }),
-    Credentials({
-      credentials: {
-        email: {},
-        password: {},
-      },
-      authorize: async (credentials) => {
-        const validatedCredentials = schema.parse(credentials);
-
-        const user = await db.user.findFirst({
-          where: {
-            email: validatedCredentials.email,
-            password: validatedCredentials.password,
-          },
-        });
-
-        if (!user) {
-          throw new Error("Invalid credentials.");
-        }
-
-        return user;
-      },
-    }),
-  ],
   callbacks: {
     async jwt({ token, user, account, trigger }): Promise<CustomJWT> {
       if (account?.provider === "credentials") {
@@ -119,6 +84,43 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return true;
     },
   },
+  providers: [
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      allowDangerousEmailAccountLinking: true
+    }),
+    Facebook({
+      clientId: process.env.AUTH_FACEBOOK_ID,
+      clientSecret: process.env.AUTH_FACEBOOK_SECRET,
+      allowDangerousEmailAccountLinking: true
+    }),
+    GitHub({
+      allowDangerousEmailAccountLinking: true
+    }),
+    Credentials({
+      credentials: {
+        email: {},
+        password: {},
+      },
+      authorize: async (credentials) => {
+        const validatedCredentials = schema.parse(credentials);
+
+        const user = await db.user.findFirst({
+          where: {
+            email: validatedCredentials.email,
+            password: validatedCredentials.password,
+          },
+        });
+
+        if (!user) {
+          throw new Error("Invalid credentials.");
+        }
+
+        return user;
+      },
+    }),
+  ],
   events: {
     async createUser({ user }) {
       // Set default role for new users
@@ -156,7 +158,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return defaultEncode(params);
     },
   },
-});
+} satisfies NextAuthConfig;
+
+// Export auth handlers with config
+export const { handlers, signIn, signOut, auth } = NextAuth(authConfig);
 
 // Update helper functions with proper types
 export async function verifyRole(userId: string, role: Role): Promise<boolean> {

@@ -1,17 +1,35 @@
-// (prisma/migrations/add_roles_to_existing_users.ts)
+import db from "@/lib/db/db";
+import { Role } from "@prisma/client";
+
 export async function updateExistingUsers() {
-    try {
-      await db.user.updateMany({
-        where: {
-          role: null
-        },
-        data: {
-          role: "USER" // Set default role for all existing users
+  try {
+    // Update users where role is not set
+    await db.user.updateMany({
+      where: {
+        role: undefined
+      },
+      data: {
+        role: "USER" as Role
+      }
+    });
+
+    // Optional: Update any potential non-standard roles to USER
+    await db.user.updateMany({
+      where: {
+        NOT: {
+          role: {
+            in: ["ADMINISTRATOR", "AUTHOR", "USER"]
+          }
         }
-      });
-      console.log("Successfully updated existing users with default role");
-    } catch (error) {
-      console.error("Error updating existing users:", error);
-      throw error;
-    }
+      },
+      data: {
+        role: "USER" as Role
+      }
+    });
+
+    console.log("Successfully updated existing users with default role");
+  } catch (error) {
+    console.error("Error updating existing users:", error);
+    throw error;
   }
+}

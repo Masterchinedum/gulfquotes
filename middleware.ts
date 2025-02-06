@@ -32,13 +32,17 @@ const protectedRoutes: RouteConfig[] = [
 export async function middleware(request: NextRequest) {
   const session = await auth();
 
-  // Public routes - allow access
-  const publicRoutes = ["/login", "/sign-up", "/error"];
-  if (publicRoutes.includes(request.nextUrl.pathname)) {
+  // Check if path matches any protected route
+  const isProtectedRoute = protectedRoutes.some(route => 
+    route.path.test(request.nextUrl.pathname)
+  );
+
+  // If not a protected route, allow access
+  if (!isProtectedRoute) {
     return NextResponse.next();
   }
 
-  // Check if user is authenticated and has role
+  // Check if user is authenticated
   if (!session?.user) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
