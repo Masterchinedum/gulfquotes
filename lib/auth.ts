@@ -2,15 +2,19 @@ import { v4 as uuid } from "uuid";
 import { encode as defaultEncode } from "next-auth/jwt";
 import { Role } from "@/lib/constants/roles";
 import type { Session, UserSession } from "@/lib/session";
+// import type { User as PrismaUser } from "@prisma/client";
+import type { JWT } from "next-auth/jwt";
+import type { AdapterUser } from "@auth/core/adapters";
 
-import db from "@/lib/db/db";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import NextAuth from "next-auth";
-import Credentials from "next-auth/providers/credentials";
-import GitHub from "next-auth/providers/github";
-import Google from "next-auth/providers/google"; 
-import Facebook from "next-auth/providers/facebook"; 
-import { schema } from "@/lib/schema";
+// Define custom types
+type CustomUser = AdapterUser & {
+  role: Role;
+};
+
+interface CustomJWT extends JWT {
+  role?: Role;
+  credentials?: boolean;
+}
 
 const adapter = PrismaAdapter(db);
 
@@ -54,14 +58,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account, trigger }) {
+    async jwt({ token, user, account, trigger }): Promise<CustomJWT> {
       if (account?.provider === "credentials") {
         token.credentials = true;
       }
       
       // Include role in the token when user signs in
       if (user) {
-        token.role = user.role;
+        token.role = (user as CustomUser).role;
       }
 
       // Handle role updates
@@ -74,7 +78,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
       }
 
-      return token;
+      return token as CustomJWT;
     },
 
     async session({ session, token, user }): Promise<Session> {
@@ -83,14 +87,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         user: {
           ...session.user,
           id: token.sub ?? user.id,
-          role: token.role ?? user.role ?? "USER",
+          role: (token as CustomJWT).role ?? (user as CustomUser).role ?? "USER",
         } as UserSession,
       };
     },
 
     // Simplified signIn callback - only using user parameter
     async signIn({ user }) {
-      if (!user.role) {
+      if (!(user as CustomUser).role) {
         try {
           await db.user.update({
             where: { id: user.id },
@@ -143,7 +147,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
 });
 
-// Add role verification helper
+// Update helper functions with proper types
 export async function verifyRole(userId: string, role: Role): Promise<boolean> {
   const user = await db.user.findUnique({
     where: { id: userId },
@@ -153,7 +157,6 @@ export async function verifyRole(userId: string, role: Role): Promise<boolean> {
   return user?.role === role;
 }
 
-// Add getCurrentUser helper with role
 export async function getCurrentUser() {
   const session = await auth();
   if (!session?.user?.id) return null;
