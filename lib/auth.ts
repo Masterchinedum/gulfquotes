@@ -38,6 +38,7 @@ const authConfig = {
       if (user) {
         // Set role when user is first created/signed in
         token.role = (user as CustomUser).role ?? "USER";
+        token.id = user.id;
       }
 
       // Handle role updates
@@ -69,19 +70,50 @@ const authConfig = {
     },
 
     // Simplified signIn callback - only using user parameter
-    async signIn({ user }) {
-      if (!(user as CustomUser).role) {
-        try {
-          await db.user.update({
-            where: { id: user.id },
-            data: { role: "USER" },
+    async signIn({ user, account}) {
+      try {
+        // For OAuth providers (GitHub, Google, etc.)
+        if (account && account.provider) {
+          const existingUser = await db.user.findFirst({
+            where: {
+              email: user.email
+            }
           });
-        } catch (error) {
-          console.error("Error assigning default role:", error);
-          return false;
+
+          if (existingUser) {
+            return true; // Allow sign in
+          }
+
+          // Create new user with provider data and default role
+          const newUser = await db.user.create({
+            data: {
+              email: user.email,
+              name: user.name,
+              image: user.image,
+              role: "USER", // Add default role here
+              accounts: {
+                create: {
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                  type: account.type
+                }
+              }
+            }
+          });
+
+          return !!newUser;
         }
+
+        // For credentials provider
+        if (user) {
+          return true;
+        }
+
+        return false; // Reject sign in if no valid provider or user
+      } catch (error) {
+        console.error("Sign in error:", error);
+        return false;
       }
-      return true;
     },
   },
   providers: [
