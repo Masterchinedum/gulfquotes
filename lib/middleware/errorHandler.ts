@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ValidationResult } from "../types/auth";
+import { ValidationResult } from "@/types/auth";
 
 export class AuthorizationError extends Error {
   constructor(message: string) {
