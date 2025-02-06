@@ -1,10 +1,18 @@
 import { v4 as uuid } from "uuid";
 import { encode as defaultEncode } from "next-auth/jwt";
+import { PrismaAdapter } from "@auth/prisma-adapter";
 import { Role } from "@/lib/constants/roles";
 import type { Session, UserSession } from "@/lib/session";
 // import type { User as PrismaUser } from "@prisma/client";
 import type { JWT } from "next-auth/jwt";
 import type { AdapterUser } from "@auth/core/adapters";
+import NextAuth from "next-auth";
+import Google from "next-auth/providers/google";
+import Facebook from "next-auth/providers/facebook";
+import GitHub from "next-auth/providers/github";
+import Credentials from "next-auth/providers/credentials";
+import db from "@/lib/db/db";
+import { schema } from "@/lib/schema";
 
 // Define custom types
 type CustomUser = AdapterUser & {
