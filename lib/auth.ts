@@ -77,12 +77,11 @@ const authConfig = {
 
         return token as CustomJWT;
       } catch (error) {
-        console.error("JWT callback error:", error);
-        // Always ensure we return a valid token with at least a default role
+        console.error("Database operation failed:", error);
         return {
           ...token,
-          role: "USER"
-        } as CustomJWT;
+          role: "USER" // Fallback to USER role
+        };
       }
     },
 
@@ -153,7 +152,16 @@ const authConfig = {
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
-      allowDangerousEmailAccountLinking: true
+      allowDangerousEmailAccountLinking: true,
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+          role: "USER" // Ensure default role
+        }
+      }
     }),
     Facebook({
       clientId: process.env.AUTH_FACEBOOK_ID,
@@ -161,7 +169,16 @@ const authConfig = {
       allowDangerousEmailAccountLinking: true
     }),
     GitHub({
-      allowDangerousEmailAccountLinking: true
+      allowDangerousEmailAccountLinking: true,
+      profile(profile) {
+        return {
+          id: profile.id.toString(),
+          name: profile.name ?? profile.login,
+          email: profile.email,
+          image: profile.avatar_url,
+          role: "USER" // Ensure default role
+        }
+      }
     }),
     Credentials({
       credentials: {
