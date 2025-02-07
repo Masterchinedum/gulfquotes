@@ -8,6 +8,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Icons } from "@/components/ui/icons";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { QueryFunctionContext } from "@tanstack/react-query";
 
 interface QuoteListProps {
   initialQuotes: (Quote & {
@@ -16,7 +17,20 @@ interface QuoteListProps {
   })[];
 }
 
-async function fetchQuotes({ pageParam = 1 }) {
+interface QuoteResponse {
+  data: (Quote & {
+    author: User;
+    category: Category;
+  })[];
+  total: number;
+  hasMore: boolean;
+}
+
+type QuoteQueryKey = ["quotes"];
+
+async function fetchQuotes({
+  pageParam,
+}: QueryFunctionContext<QuoteQueryKey, number>): Promise<QuoteResponse> {
   const response = await fetch(`/api/quotes?page=${pageParam}`);
   const data = await response.json();
   return data;
@@ -32,10 +46,11 @@ export function QuoteList({ initialQuotes }: QuoteListProps) {
     isFetchingNextPage,
     status
   } = useInfiniteQuery({
-    queryKey: ["quotes"],
+    queryKey: ["quotes"] as QuoteQueryKey,
     queryFn: fetchQuotes,
+    initialPageParam: 1,
     initialData: {
-      pages: [{ data: initialQuotes }],
+      pages: [{ data: initialQuotes, total: initialQuotes.length, hasMore: false }],
       pageParams: [1],
     },
     getNextPageParam: (lastPage, pages) => {
