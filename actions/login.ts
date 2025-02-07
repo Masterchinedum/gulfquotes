@@ -14,7 +14,7 @@ import {
   generateTwoFactorToken,
 } from "@/data/tokens"
 import { getTwoFactorTokenByEmail } from "@/data/two-factor-token"
-import { db } from "@/lib/prisma"
+import db from "@/lib/prisma"
 import { getTwoFactorConfirmationByUserId } from "@/data/two-factor-confirmation"
 
 export async function login(
