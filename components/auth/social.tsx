@@ -2,7 +2,8 @@
 
 import { signIn } from "next-auth/react";
 import { FcGoogle } from "react-icons/fc";
-import { FaGithub } from "react-icons/fa"
+import { FaGithub, FaFacebook } from "react-icons/fa"
+// import { FaFacebook } from "react-icons/fa"; // Add Facebook icon
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button"
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
@@ -12,7 +13,7 @@ export function Social() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl')
 
-  function onClick(provider: 'google' | 'github') {
+  function onClick(provider: 'google' | 'github' | 'facebook') { // Add facebook type
     signIn(provider, {
       callbackUrl: callbackUrl || DEFAULT_LOGIN_REDIRECT
     })
@@ -35,6 +36,14 @@ export function Social() {
         className="w-full"
       >
         <FaGithub className="size-5" />
+      </Button>
+      <Button 
+        size="lg"
+        variant="outline"
+        onClick={() => onClick('facebook')}
+        className="w-full"
+      >
+        <FaFacebook className="size-5 text-blue-600" />
       </Button>
     </div>
   )

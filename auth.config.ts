@@ -5,7 +5,8 @@ import { getUserByEmail } from "./data/user"
 import { compare } from "bcryptjs"
 import Github from "next-auth/providers/github"
 import Google from "next-auth/providers/google"
- 
+import Facebook from "next-auth/providers/facebook" // Add this import
+
 export default {
   providers: [
     Github({
@@ -15,6 +16,10 @@ export default {
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+    Facebook({
+      clientId: process.env.AUTH_FACEBOOK_ID,
+      clientSecret: process.env.AUTH_FACEBOOK_SECRET,
     }),
     Credentials({
       async authorize(credentials) {

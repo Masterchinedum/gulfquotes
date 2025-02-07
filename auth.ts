@@ -22,8 +22,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async signIn({ user, account }) {
-      // Allow OAuth without email verification, can be account?.type too
-      if (account?.provider !== 'credentials') return true
+      // This already handles all OAuth providers including Facebook
+      if (account?.provider !== "credentials") return true;
 
       if (!user.id) {
         return false
@@ -52,8 +52,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       return true
     },
     async session({ token, session }) {
+      // This already handles all providers
       if (token.sub && session.user) {
-        session.user.id = token.sub
+        session.user.id = token.sub;
       }
 
       if (token.role && session.user) {
