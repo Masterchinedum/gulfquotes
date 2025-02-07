@@ -54,6 +54,27 @@ class QuoteServiceImpl implements QuoteService {
       .replace(/[^\w\s.,!?'"()-]/g, ''); // Remove special characters except basic punctuation
   }
 
+  private async validateAccess(quoteId: string, userId: string): Promise<void> {
+    const session = await auth();
+    if (!session?.user?.id) {
+      throw new AppError("Unauthorized", "UNAUTHORIZED", 401);
+    }
+
+    // Admin can do anything
+    if (session.user.role === "ADMIN") return;
+
+    // For authors, validate ownership
+    if (session.user.role === "AUTHOR") {
+      const hasAccess = await validateQuoteOwnership(quoteId, userId);
+      if (!hasAccess) {
+        throw new QuoteAccessError();
+      }
+      return;
+    }
+
+    throw new AppError("Permission denied", "FORBIDDEN", 403);
+  }
+
   async create(data: CreateQuoteInput & { authorId: string }): Promise<Quote> {
     try {
       // Validate and sanitize content
@@ -146,6 +167,7 @@ class QuoteServiceImpl implements QuoteService {
   }
 
   async update(id: string, data: UpdateQuoteInput): Promise<Quote> {
+    await this.validateAccess(id, data.authorId);
     try {
       // Validate existing quote
       const existingQuote = await this.getById(id);
@@ -206,6 +228,12 @@ class QuoteServiceImpl implements QuoteService {
   }
 
   async delete(id: string): Promise<Quote> {
+    const session = await auth();
+    if (!session?.user?.id) {
+      throw new AppError("Unauthorized", "UNAUTHORIZED", 401);
+    }
+
+    await this.validateAccess(id, session.user.id);
     return db.quote.delete({
       where: { id },
     });
