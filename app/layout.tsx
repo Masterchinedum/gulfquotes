@@ -1,35 +1,43 @@
-import type { Metadata } from 'next';
-import { Inter as FontSans } from 'next/font/google';
-import './globals.css';
-import { cn } from '@/lib/utils';
+import "./globals.css";
+import { auth } from "@/auth";
+import { SessionProvider } from "next-auth/react";
+import { Toaster } from "sonner";
 
-const fontSans = FontSans({
-  subsets: ['latin'],
-  variable: '--font-sans',
-})
-
-export const metadata: Metadata = {
-  title: {
-    template: '%s | Auth Next',
-    default: 'Auth Next',
+export const metadata = {
+  title: "Quoticon - Inspiring Quotes for Every Moment",
+  description:
+    "Discover insightful, inspirational quotes on Quoticon. Your daily dose of inspiration on quotes, motivation, and more.",
+  keywords: ["quotes", "inspiration", "motivation", "quoticon"],
+  openGraph: {
+    title: "Quoticon",
+    description: "Discover insightful, inspirational quotes on Quoticon.",
+    url: "https://quoticon.vercel.app", // update with your URL
+    siteName: "Quoticon"
   },
-  description: 'A simple authentication service with Auth Next v5!',
+  twitter: {
+    card: "summary_large_image",
+    title: "Quoticon",
+    description: "Discover insightful, inspirational quotes on Quoticon."
+  }
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
+export default async function RootLayout({
+  children
+}: {
   children: React.ReactNode;
-}>) {
+}) {
+  const session = await auth();
+
   return (
-    <html lang='en' suppressHydrationWarning>
-    <head />
-    <body
-      className={cn(
-        'min-h-screen bg-background font-sans antialiased overflow-hidden',
-        fontSans.variable
-      )}
-    >{children}</body>
+    <html lang="en" className="bg-background text-foreground">
+      <body className="h-full">
+        <SessionProvider session={session}>
+          <div className="min-h-screen bg-background">
+            {children}
+            <Toaster richColors closeButton />
+          </div>
+        </SessionProvider>
+      </body>
     </html>
   );
 }

@@ -24,6 +24,7 @@ model User {
   role                  UserRole               @default(USER)
   accounts              Account[]
   TwoFactorConfirmation TwoFactorConfirmation?
+  quotes                Quote[]                @relation("QuoteAuthor")
 
   @@map("users")
 }
@@ -86,4 +87,28 @@ model TwoFactorConfirmation {
 
   @@unique([userId])
   @@map("two_factor_confimation")
+}
+
+model Quote {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  author    User     @relation("QuoteAuthor", fields: [authorId], references: [id])
+  authorId  String
+  category  Category @relation(fields: [categoryId], references: [id])
+  categoryId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("quotes")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?  @db.Text
+  quotes      Quote[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("categories")
 }
