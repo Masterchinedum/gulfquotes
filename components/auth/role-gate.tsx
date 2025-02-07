@@ -5,7 +5,7 @@ import { FormError } from "../form-error"
 
 interface RoleGateProps {
   children: React.ReactNode
-  allowedRole: 'ADMIN' | 'USER'
+  allowedRole: 'ADMIN' | 'USER' | 'AUTHOR'  // Add AUTHOR here
 }
 
 export function RoleGate({children, allowedRole}: RoleGateProps) {
@@ -15,9 +15,5 @@ export function RoleGate({children, allowedRole}: RoleGateProps) {
     return <FormError message="You do not have permission to view this content!" />
   }
 
-  return (
-    <>
-      {children}
-    </>
-  )
+  return <>{children}</>
 }
