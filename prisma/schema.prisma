@@ -90,14 +90,15 @@ model TwoFactorConfirmation {
 }
 
 model Quote {
-  id        String   @id @default(cuid())
-  content   String   @db.Text
-  author    User     @relation("QuoteAuthor", fields: [authorId], references: [id])
-  authorId  String
-  category  Category @relation(fields: [categoryId], references: [id])
-  categoryId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  content     String   @db.Text
+  slug        String   @unique
+  author      User     @relation("QuoteAuthor", fields: [authorId], references: [id])
+  authorId    String
+  category    Category @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("quotes")
 }
@@ -105,6 +106,7 @@ model Quote {
 model Category {
   id          String   @id @default(cuid())
   name        String   @unique
+  slug        String   @unique
   description String?  @db.Text
   quotes      Quote[]
   createdAt   DateTime @default(now())
