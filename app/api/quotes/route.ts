@@ -1,11 +1,10 @@
 // app/api/quotes/route.ts
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import db from "@/lib/prisma";
 import { createQuoteSchema } from "@/schemas/quote";
-import { slugify } from "@/lib/utils";
 import { CreateQuoteResponse } from "@/types/api/quotes";
 import { formatZodError } from "@/lib/api-error";
+import { quoteService } from "@/lib/services/quote.service";
 
 export async function POST(req: Request): Promise<NextResponse<CreateQuoteResponse>> {
   try {
@@ -35,16 +34,9 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
       );
     }
 
-    const { content, categoryId } = validatedData.data;
-    const slug = slugify(content.substring(0, 50));
-
-    const quote = await db.quote.create({
-      data: {
-        content,
-        slug,
-        categoryId,
-        authorId: session.user.id // Now we're sure this is a string
-      }
+    const quote = await quoteService.create({
+      ...validatedData.data,
+      authorId: session.user.id
     });
 
     return NextResponse.json({ data: quote });
