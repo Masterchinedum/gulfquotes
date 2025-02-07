@@ -1,6 +1,6 @@
 import { randomInt, randomUUID } from 'node:crypto'
 import { getVerificationTokenByEmail } from "./verification-token"
-import { db } from "@/lib/prisma"
+import db from "@/lib/prisma"
 import { getPasswordResetTokenByEmail } from "./password-reset-token"
 import { getTwoFactorTokenByEmail } from "./two-factor-token"
 
