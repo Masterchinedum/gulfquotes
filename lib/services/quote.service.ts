@@ -1,8 +1,10 @@
 import { Quote, Prisma } from "@prisma/client";
+import { auth } from "@/auth";
 import db from "@/lib/prisma";
 import { CreateQuoteInput, UpdateQuoteInput } from "@/schemas/quote";
 import { slugify } from "@/lib/utils";
 import { AppError } from "@/lib/api-error";
+import { validateQuoteOwnership, QuoteAccessError } from "@/lib/auth/ownership";
 
 export interface QuoteService {
   create(data: CreateQuoteInput & { authorId: string }): Promise<Quote>;
