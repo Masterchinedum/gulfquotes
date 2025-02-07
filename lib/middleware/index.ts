@@ -1,5 +1,5 @@
 import { UserRole } from "@prisma/client";
-import { createAuthMiddleware } from "./auth";
+import { createAuthMiddleware, createQuoteOwnershipMiddleware } from "./auth";
 import { createValidationMiddleware } from "./validation";
 import { composeMiddleware } from "./compose";
 import { createQuoteSchema } from "@/schemas/quote";
