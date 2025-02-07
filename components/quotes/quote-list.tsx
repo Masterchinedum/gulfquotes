@@ -44,7 +44,8 @@ export function QuoteList({ initialQuotes }: QuoteListProps) {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    status
+    status,
+    isLoading
   } = useInfiniteQuery({
     queryKey: ["quotes"] as QuoteQueryKey,
     queryFn: fetchQuotes,
@@ -53,8 +54,8 @@ export function QuoteList({ initialQuotes }: QuoteListProps) {
       pages: [{ data: initialQuotes, total: initialQuotes.length, hasMore: false }],
       pageParams: [1],
     },
-    getNextPageParam: (lastPage, pages) => {
-      return lastPage.data.length === 0 ? undefined : pages.length + 1;
+    getNextPageParam: (lastPage) => {
+      return lastPage.hasMore ? lastPage.data.length + 1 : undefined;
     },
   });
 
@@ -64,7 +65,7 @@ export function QuoteList({ initialQuotes }: QuoteListProps) {
     }
   }, [inView, fetchNextPage, hasNextPage]);
 
-  if (status === "loading") {
+  if (isLoading) {
     return (
       <div className="space-y-4 min-h-[200px] flex items-center justify-center">
         <Icons.spinner className="h-8 w-8 animate-spin" />
