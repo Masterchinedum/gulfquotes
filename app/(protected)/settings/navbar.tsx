@@ -26,6 +26,11 @@ export function Navbar() {
             Admin
           </Link>
         </Button>
+        <Button variant={pathname === '/author' ? 'default': 'outline'} asChild>
+          <Link href='/author'>
+            Author
+          </Link>
+        </Button>
         <Button variant={pathname === '/settings' ? 'default': 'outline'} asChild>
           <Link href='/settings'>
             Settings

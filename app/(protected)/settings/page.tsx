@@ -180,6 +180,9 @@ export default function SettingsPage() {
                         <SelectItem value="USER">
                           User
                         </SelectItem>
+                        <SelectItem value="AUTHOR">
+                          Author
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
