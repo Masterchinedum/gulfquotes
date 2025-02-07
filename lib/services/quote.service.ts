@@ -169,7 +169,13 @@ class QuoteServiceImpl implements QuoteService {
   }
 
   async update(id: string, data: UpdateQuoteInput): Promise<Quote> {
-    await this.validateAccess(id, data.authorId);
+    const session = await auth();
+    if (!session?.user?.id) {
+      throw new AppError("Unauthorized", "UNAUTHORIZED", 401);
+    }
+
+    await this.validateAccess(id, session.user.id);
+    
     try {
       // Validate existing quote
       const existingQuote = await this.getById(id);
