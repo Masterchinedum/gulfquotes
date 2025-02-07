@@ -1,8 +1,6 @@
-// app/api/quotes/route.ts
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { createQuoteSchema } from "@/schemas/quote";
-// import { CreateQuoteResponse, QuoteResponse, QuotesResponse } from "@/types/api/quotes";
 import { CreateQuoteResponse, QuotesResponse } from "@/types/api/quotes";
 import { formatZodError } from "@/lib/api-error";
 import { quoteService } from "@/lib/services/quote.service";
