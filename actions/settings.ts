@@ -4,7 +4,7 @@ import { generateVerificationToken } from "@/data/tokens";
 import { getUserByEmail, getUserById } from "@/data/user";
 import { currentUser } from "@/lib/auth";
 import { sendVerificationEmail } from "@/lib/mail";
-import { db } from "@/lib/prisma";
+import db from "@/lib/prisma";
 import { SettingsSchema } from "@/schemas";
 import { compare, hash } from "bcryptjs";
 

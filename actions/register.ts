@@ -1,7 +1,7 @@
 'use server'
 
 import { hash } from 'bcryptjs'
-import { db } from "@/lib/prisma"
+import db from "@/lib/prisma"
 import { getUserByEmail } from "@/data/user"
 import { sendVerificationEmail } from "@/lib/mail"
 import { generateVerificationToken } from "@/data/tokens"
