@@ -40,6 +40,7 @@ export function AuthorQuoteList({ authorId, initialQuotes }: AuthorQuoteListProp
       const data = await response.json();
       return data as QuoteResponse;
     },
+    initialPageParam: 1, // Add this line
     initialData: {
       pages: [{ data: initialQuotes, hasMore: true, total: initialQuotes.length }],
       pageParams: [1],
