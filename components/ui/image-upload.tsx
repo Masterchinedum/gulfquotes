@@ -1,6 +1,7 @@
 "use client";
 
 import { CldUploadWidget } from "next-cloudinary";
+import type { CloudinaryUploadWidgetResults } from "next-cloudinary";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ImagePlus, Trash } from "lucide-react";
@@ -12,13 +13,6 @@ interface ImageUploadProps {
   onRemove: (url: string) => void;
   value: string[];
   multiple?: boolean;
-}
-
-// Add type for Cloudinary upload result
-interface CloudinaryResult {
-  info: {
-    secure_url: string;
-  };
 }
 
 export function ImageUpload({
@@ -34,11 +28,14 @@ export function ImageUpload({
     setIsMounted(true);
   }, []);
 
-  const onUpload = (result: CloudinaryResult) => {
-    if (multiple) {
-      onChange([...value, result.info.secure_url]);
-    } else {
-      onChange([result.info.secure_url]);
+  const onUpload = (results: CloudinaryUploadWidgetResults) => {
+    if (results.info && typeof results.info !== 'string' && 'secure_url' in results.info) {
+      const url = results.info.secure_url;
+      if (multiple) {
+        onChange([...value, url]);
+      } else {
+        onChange([url]);
+      }
     }
   };
 
