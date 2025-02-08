@@ -30,7 +30,6 @@ export async function createAuthorProfile(data: FormData) {
       throw new AppError("Unauthorized", "UNAUTHORIZED", 401);
     }
 
-    // Pass just the user with role
     await validateAuthorProfileAccess({ role: session.user.role });
     
     const images = await handleImageUploads(data);
@@ -52,7 +51,11 @@ export async function createAuthorProfile(data: FormData) {
   } catch (error) {
     return { 
       success: false, 
-      error: error instanceof AppError ? error : new AppError("Something went wrong") 
+      error: error instanceof AppError ? error : new AppError(
+        "Something went wrong",
+        "INTERNAL_ERROR",
+        500
+      )
     };
   }
 }
@@ -64,7 +67,6 @@ export async function updateAuthorProfile(id: string, data: FormData) {
       throw new AppError("Unauthorized", "UNAUTHORIZED", 401);
     }
 
-    // Pass just the user with role
     await validateAuthorProfileAccess({ role: session.user.role });
     
     const images = await handleImageUploads(data);
@@ -88,7 +90,11 @@ export async function updateAuthorProfile(id: string, data: FormData) {
   } catch (error) {
     return { 
       success: false, 
-      error: error instanceof AppError ? error : new AppError("Something went wrong") 
+      error: error instanceof AppError ? error : new AppError(
+        "Something went wrong",
+        "INTERNAL_ERROR",
+        500
+      )
     };
   }
 }
