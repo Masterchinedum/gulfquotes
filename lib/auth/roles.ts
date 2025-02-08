@@ -4,6 +4,7 @@ export const REQUIRED_ROLES = {
   CREATE_QUOTE: ["ADMIN", "AUTHOR"] as UserRole[],
   DELETE_QUOTE: ["ADMIN", "AUTHOR"] as UserRole[],
   UPDATE_QUOTE: ["ADMIN", "AUTHOR"] as UserRole[],
+  MANAGE_AUTHOR_PROFILE: ["ADMIN", "AUTHOR"] as UserRole[],
   MANAGE_CATEGORIES: ["ADMIN"] as UserRole[],
 } as const;
 

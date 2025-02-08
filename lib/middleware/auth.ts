@@ -33,3 +33,17 @@ export function createQuoteOwnershipMiddleware(quoteId: string) {
     }
   };
 }
+
+export function createAuthorProfileMiddleware() {
+  return async function authorProfileMiddleware() {
+    const session = await auth();
+    
+    if (!session?.user) {
+      throw new AppError("Unauthorized", "UNAUTHORIZED", 401);
+    }
+
+    if (!hasRequiredRole(session.user.role as UserRole, ["ADMIN", "AUTHOR"])) {
+      throw new AppError("Permission denied", "FORBIDDEN", 403);
+    }
+  };
+}
