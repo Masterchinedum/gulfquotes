@@ -90,15 +90,20 @@ model TwoFactorConfirmation {
 }
 
 model Quote {
-  id          String   @id @default(cuid())
-  content     String   @db.Text
-  slug        String   @unique
-  author      User     @relation("QuoteAuthor", fields: [authorId], references: [id])
-  authorId    String
-  category    Category @relation(fields: [categoryId], references: [id])
-  categoryId  String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String         @id @default(cuid())
+  content          String         @db.Text
+  slug             String         @unique
+  author           User           @relation("QuoteAuthor", fields: [authorId], references: [id])
+  authorId         String
+  category         Category       @relation(fields: [categoryId], references: [id])
+  categoryId       String
+  
+  // New relation to the real-world AuthorProfile
+  authorProfile    AuthorProfile? @relation(fields: [authorProfileId], references: [id])
+  authorProfileId  String?
+
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
   @@map("quotes")
 }
@@ -113,4 +118,21 @@ model Category {
   updatedAt   DateTime @updatedAt
 
   @@map("categories")
+}
+
+model AuthorProfile {
+  id         String   @id @default(cuid())
+  name       String
+  born       String?   // e.g., "Born in Dublin, Ireland - October 16, 1854"
+  died       String?   // e.g., "November 30, 1900"
+  influences String?   // Comma-separated list or JSON array of names
+  bio        String    @db.Text
+  slug       String    @unique   // for SEO-friendly URLs
+  images     Json?     // to store one or multiple image URLs
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  quotes     Quote[]   // relation, if needed from the AuthorProfile side
+
+  @@map("author_profiles")
 }
