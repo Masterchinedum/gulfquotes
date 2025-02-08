@@ -10,11 +10,15 @@ import { Icons } from "@/components/ui/icons";
 import { useQuery } from "@tanstack/react-query";
 import { RoleGate } from "@/components/auth/role-gate";
 
+interface AuthorProfileResponse {
+  data: (AuthorProfile & { id: string })[];
+}
+
 export default function AuthorProfilesPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: authorProfiles, isLoading } = useQuery<{ data: AuthorProfile[] }>({
+  const { data: authorProfiles, isLoading } = useQuery<AuthorProfileResponse>({
     queryKey: ["author-profiles", searchQuery],
     queryFn: async () => {
       const url = new URL("/api/author-profiles", window.location.origin);
@@ -67,7 +71,7 @@ export default function AuthorProfilesPage() {
                   key={profile.id}
                   author={profile}
                   className="cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={() => router.push(`/manage/author-profiles/${profile.id}`)}
+                  onClick={() => router.push(`/manage/author-profiles/${profile.slug}`)}
                 />
               ))}
             </div>

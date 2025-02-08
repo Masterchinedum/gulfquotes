@@ -24,6 +24,7 @@ export async function validateAuthorProfileAccess(user: {
 }
 
 const authorProfileSchema = z.object({
+  id: z.string(),
   name: z.string()
     .min(1, "Name is required")
     .max(100, "Name must not exceed 100 characters"),

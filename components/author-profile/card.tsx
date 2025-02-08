@@ -7,11 +7,20 @@ import Image from "next/image";
 interface AuthorProfileCardProps {
   author: AuthorProfile;
   className?: string;
+  onClick?: () => void; // Add onClick handler
 }
 
-export function AuthorProfileCard({ author, className }: AuthorProfileCardProps) {
+export function AuthorProfileCard({ 
+  author, 
+  className,
+  onClick 
+}: AuthorProfileCardProps) {
   return (
-    <Card className={cn("overflow-hidden", className)}>
+    <Card 
+      className={cn("overflow-hidden", className)}
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+    >
       <CardHeader className="flex flex-row items-center gap-4">
         <Avatar className="h-16 w-16">
           <AvatarImage src={author.images?.profile} alt={author.name} />
