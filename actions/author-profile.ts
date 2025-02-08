@@ -25,7 +25,9 @@ async function handleImageUploads(data: FormData) {
 
 export async function createAuthorProfile(data: FormData) {
   try {
+    console.log('Server action called with FormData:', data);
     const session = await auth();
+    console.log('Session:', session);
     if (!session?.user) {
       throw new AppError("Unauthorized", "UNAUTHORIZED", 401);
     }
@@ -46,9 +48,11 @@ export async function createAuthorProfile(data: FormData) {
     const authorProfile = await db.authorProfile.create({
       data: validatedData.data
     });
+    console.log('Created author profile:', authorProfile);
 
     return { success: true, data: authorProfile };
   } catch (error) {
+    console.error('Server action error:', error);
     return { 
       success: false, 
       error: error instanceof AppError ? error : new AppError(

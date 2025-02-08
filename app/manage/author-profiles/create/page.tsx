@@ -12,12 +12,17 @@ export default function CreateAuthorProfilePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (formData: FormData) => {
     try {
+      console.log('CreatePage onSubmit called');
+      console.log('FormData entries:', Array.from(formData.entries()));
       setIsLoading(true);
-      const result = await createAuthorProfile(data);
+      
+      const result = await createAuthorProfile(formData);
+      console.log('Server action result:', result);
 
-      if (result.error) {
+      if (!result.success) {
+        console.error('Server action error:', result.error);
         toast.error(result.error.message);
         return;
       }
@@ -25,7 +30,7 @@ export default function CreateAuthorProfilePage() {
       toast.success("Author profile created successfully");
       router.push("/manage/author-profiles");
       router.refresh();
-    } catch (error: unknown) {
+    } catch (error) {
       console.error("Error creating author profile:", error);
       toast.error("Something went wrong");
     } finally {

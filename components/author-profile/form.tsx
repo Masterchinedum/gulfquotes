@@ -19,7 +19,7 @@ import { createAuthorProfileSchema, type CreateAuthorProfileInput } from "@/lib/
 
 interface AuthorProfileFormProps {
   initialData?: CreateAuthorProfileInput;
-  onSubmit: (data: CreateAuthorProfileInput) => void;
+  onSubmit: (data: FormData) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -40,16 +40,67 @@ export function AuthorProfileForm({
       bio: "",
       slug: "",
       images: { profile: "", gallery: [] }
-    }
+    },
+    mode: "onSubmit" // Add this to ensure validation on submit
   });
 
-  const handleSubmit = (data: CreateAuthorProfileInput) => {
-    onSubmit({ ...data, images });
+  const handleSubmit = async (data: CreateAuthorProfileInput) => {
+    try {
+      console.log('Form handleSubmit called with data:', data);
+      
+      const formData = new FormData();
+      
+      // Add form fields
+      Object.entries(data).forEach(([key, value]) => {
+        if (key !== 'images') {
+          formData.append(key, String(value));
+        }
+      });
+
+      // Add images only if they exist
+      if (images.profile) {
+        formData.append('profile', images.profile);
+      }
+      if (images.gallery?.length) {
+        images.gallery.forEach(url => {
+          formData.append('gallery', url);
+        });
+      }
+
+      console.log('Submitting FormData:', Array.from(formData.entries()));
+      await onSubmit(formData);
+    } catch (error) {
+      console.error('Error in handleSubmit:', error);
+      throw error;
+    }
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form 
+        onSubmit={(e) => {
+          e.preventDefault();
+          console.log("Form submission event triggered");
+          
+          form.handleSubmit(async (data) => {
+            console.log("Form validation passed with data:", data);
+            try {
+              await handleSubmit(data);
+            } catch (error) {
+              console.error("Form submission failed:", error);
+            }
+          })(e);
+        }} 
+        className="space-y-6"
+        encType="multipart/form-data"
+      >
+        <Button 
+          type="button" 
+          onClick={() => console.log('Test button clicked')}
+          className="mb-4"
+        >
+          Test Console Log
+        </Button>
         <FormField
           control={form.control}
           name="name"
@@ -158,7 +209,10 @@ export function AuthorProfileForm({
           />
         </div>
 
-        <Button type="submit" disabled={isLoading}>
+        <Button 
+          type="submit" 
+          disabled={isLoading || form.formState.isSubmitting}
+        >
           {isLoading ? "Saving..." : "Save Changes"}
         </Button>
       </form>

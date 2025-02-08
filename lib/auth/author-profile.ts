@@ -50,7 +50,18 @@ const authorProfileSchema = z.object({
 });
 
 // Schema for creating a new author profile
-export const createAuthorProfileSchema = authorProfileSchema;
+export const createAuthorProfileSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  born: z.string().optional(),
+  died: z.string().optional(),
+  influences: z.string().optional(),
+  bio: z.string().min(50, "Bio must be at least 50 characters"),
+  slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  images: z.object({
+    profile: z.string().optional(), // Make profile image optional
+    gallery: z.array(z.string()).optional()
+  }).optional()
+}).omit({ id: true }); // Remove id requirement for creation
 
 // Schema for updating an existing author profile
 // Makes all fields optional except id, which is required
