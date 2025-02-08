@@ -2,6 +2,9 @@ import "./globals.css";
 import { auth } from "@/auth";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
+import { Providers } from "@/components/providers";
+import { CldUploadWidget } from "next-cloudinary";
+import { cloudinaryConfig } from "@/lib/cloudinary-config";
 
 export const metadata = {
   title: "Quoticon - Inspiring Quotes for Every Moment",
@@ -31,12 +34,14 @@ export default async function RootLayout({
   return (
     <html lang="en" className="bg-background text-foreground">
       <body className="h-full">
-        <SessionProvider session={session}>
-          <div className="min-h-screen bg-background">
-            {children}
-            <Toaster richColors closeButton />
-          </div>
-        </SessionProvider>
+        <Providers>
+          <SessionProvider session={session}>
+            <div className="min-h-screen bg-background">
+              {children}
+              <Toaster richColors closeButton />
+            </div>
+          </SessionProvider>
+        </Providers>
       </body>
     </html>
   );

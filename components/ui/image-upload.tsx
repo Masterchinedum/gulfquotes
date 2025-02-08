@@ -1,11 +1,11 @@
 "use client";
 
 import { CldUploadWidget } from "next-cloudinary";
-import type { CloudinaryUploadWidgetResults } from "next-cloudinary";
-import { useEffect, useState } from "react";
+import { cloudinaryConfig } from "@/lib/cloudinary-config";
 import { Button } from "@/components/ui/button";
-import { ImagePlus, Trash } from "lucide-react";
 import Image from "next/image";
+import { useState, useEffect } from "react";
+import { CloudinaryUploadResult } from "@/types/cloudinary";
 
 interface ImageUploadProps {
   disabled?: boolean;
@@ -28,9 +28,9 @@ export function ImageUpload({
     setIsMounted(true);
   }, []);
 
-  const onUpload = (results: CloudinaryUploadWidgetResults) => {
-    if (results.info && typeof results.info !== 'string' && 'secure_url' in results.info) {
-      const url = results.info.secure_url;
+  const onUpload = (result: CloudinaryUploadResult) => {
+    if (result.event === 'success' && result.info.secure_url) {
+      const url = result.info.secure_url;
       if (multiple) {
         onChange([...value, url]);
       } else {
@@ -47,21 +47,20 @@ export function ImageUpload({
     <div>
       <div className="mb-4 flex items-center gap-4">
         {value.map((url) => (
-          <div key={url} className="relative w-[200px] h-[200px] rounded-md overflow-hidden">
-            <div className="z-10 absolute top-2 right-2">
+          <div key={url} className="relative w-[200px] h-[200px]">
+            <div className="absolute top-2 right-2 z-10">
               <Button
                 type="button"
                 onClick={() => onRemove(url)}
                 variant="destructive"
-                size="icon"
-                disabled={disabled}
+                size="sm"
               >
-                <Trash className="h-4 w-4" />
+                Remove
               </Button>
             </div>
             <Image
               fill
-              className="object-cover"
+              className="object-cover rounded-lg"
               alt="Upload"
               src={url}
             />
@@ -69,10 +68,11 @@ export function ImageUpload({
         ))}
       </div>
       <CldUploadWidget
+        uploadPreset={cloudinaryConfig.uploadPreset}
         onUpload={onUpload}
-        uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_PRESET}
         options={{
           maxFiles: multiple ? 10 : 1,
+          resourceType: "image",
         }}
       >
         {({ open }) => {
@@ -87,8 +87,7 @@ export function ImageUpload({
               variant="secondary"
               onClick={onClick}
             >
-              <ImagePlus className="h-4 w-4 mr-2" />
-              Upload {multiple ? "Images" : "Image"}
+              Upload Image
             </Button>
           );
         }}
