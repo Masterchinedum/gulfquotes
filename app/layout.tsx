@@ -3,8 +3,6 @@ import { auth } from "@/auth";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
 import { Providers } from "@/components/providers";
-import { CldUploadWidget } from "next-cloudinary";
-import { cloudinaryConfig } from "@/lib/cloudinary-config";
 
 export const metadata = {
   title: "Quoticon - Inspiring Quotes for Every Moment",
@@ -14,7 +12,7 @@ export const metadata = {
   openGraph: {
     title: "Quoticon",
     description: "Discover insightful, inspirational quotes on Quoticon.",
-    url: "https://quoticon.vercel.app", // update with your URL
+    url: "https://quoticon.vercel.app",
     siteName: "Quoticon"
   },
   twitter: {
