@@ -1,4 +1,4 @@
-import { User } from "@prisma/client";
+import { UserRole } from "@prisma/client";
 import { AppError } from "@/lib/api-error";
 import { hasRequiredRole } from "@/lib/auth/roles";
 import { z } from "zod";
@@ -9,12 +9,16 @@ export class AuthorProfileAccessError extends AppError {
   }
 }
 
-export function canManageAuthorProfile(user: User): boolean {
-  return hasRequiredRole(user.role, ["ADMIN", "AUTHOR"]);
+// Update to accept just the role instead of full user
+export function canManageAuthorProfile(role?: UserRole): boolean {
+  return hasRequiredRole(role, ["ADMIN", "AUTHOR"]);
 }
 
-export async function validateAuthorProfileAccess(user: User): Promise<void> {
-  if (!canManageAuthorProfile(user)) {
+// Update to accept session user type
+export async function validateAuthorProfileAccess(user: {
+  role: UserRole;
+}): Promise<void> {
+  if (!canManageAuthorProfile(user.role)) {
     throw new AuthorProfileAccessError();
   }
 }

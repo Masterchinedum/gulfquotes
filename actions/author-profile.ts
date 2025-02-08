@@ -30,7 +30,8 @@ export async function createAuthorProfile(data: FormData) {
       throw new AppError("Unauthorized", "UNAUTHORIZED", 401);
     }
 
-    await validateAuthorProfileAccess(session.user);
+    // Pass just the user with role
+    await validateAuthorProfileAccess({ role: session.user.role });
     
     const images = await handleImageUploads(data);
     
@@ -63,7 +64,8 @@ export async function updateAuthorProfile(id: string, data: FormData) {
       throw new AppError("Unauthorized", "UNAUTHORIZED", 401);
     }
 
-    await validateAuthorProfileAccess(session.user);
+    // Pass just the user with role
+    await validateAuthorProfileAccess({ role: session.user.role });
     
     const images = await handleImageUploads(data);
     
