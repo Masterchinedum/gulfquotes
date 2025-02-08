@@ -39,7 +39,7 @@ const authorProfileSchema = z.object({
     .optional(),
   bio: z.string()
     .min(50, "Bio must be at least 50 characters")
-    .max(2000, "Bio must not exceed 2000 characters"),
+    .max(10000, "Bio must not exceed 10000 characters"),
   slug: z.string()
     .min(1, "Slug is required")
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be URL-friendly"),
