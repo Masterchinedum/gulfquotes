@@ -1,9 +1,17 @@
-import { Loader2 } from "lucide-react";
-import { Quote as QuoteIcon } from "lucide-react";
+import { 
+  Loader2,
+  Quote as QuoteIcon,
+  Plus,
+  Search,
+  FileQuestion
+} from "lucide-react";
 
 export const Icons = {
   spinner: Loader2,
-  quote: QuoteIcon
+  quote: QuoteIcon,
+  plus: Plus,
+  search: Search,
+  empty: FileQuestion
 } as const;
 
 export type Icon = keyof typeof Icons;
