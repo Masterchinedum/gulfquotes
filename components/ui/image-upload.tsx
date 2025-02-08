@@ -1,7 +1,7 @@
 "use client";
 
 import { CldUploadWidget } from "next-cloudinary";
-import type { CloudinaryUploadWidgetResults } from "next-cloudinary";
+import type { CloudinaryUploadWidgetResults, CloudinaryUploadWidgetInfo } from "next-cloudinary";
 import { cloudinaryConfig } from "@/lib/cloudinary-config";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -29,8 +29,9 @@ export function ImageUpload({
   }, []);
 
   const onUpload = (result: CloudinaryUploadWidgetResults) => {
-    if (result.event === "success" && result.info) {
-      const url = result.info.secure_url;
+    if (result.event === "success") {
+      const info = result.info as CloudinaryUploadWidgetInfo;
+      const url = info.secure_url;
       if (multiple) {
         onChange([...value, url]);
       } else {
