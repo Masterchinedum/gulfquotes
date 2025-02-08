@@ -46,32 +46,25 @@ export function AuthorProfileForm({
 
   const handleSubmit = async (data: CreateAuthorProfileInput) => {
     try {
-      console.log('Form handleSubmit called with data:', data);
-      
       const formData = new FormData();
       
-      // Add form fields
+      // Add all text fields
       Object.entries(data).forEach(([key, value]) => {
         if (key !== 'images') {
-          formData.append(key, String(value));
+          formData.append(key, String(value || ''));
         }
       });
 
-      // Add images only if they exist
-      if (images.profile) {
-        formData.append('profile', images.profile);
-      }
-      if (images.gallery?.length) {
-        images.gallery.forEach(url => {
-          formData.append('gallery', url);
-        });
-      }
+      // Add images as JSON string
+      formData.append('images', JSON.stringify({
+        profile: images.profile || '',
+        gallery: images.gallery || []
+      }));
 
-      console.log('Submitting FormData:', Array.from(formData.entries()));
+      console.log('FormData created:', Array.from(formData.entries()));
       await onSubmit(formData);
     } catch (error) {
       console.error('Error in handleSubmit:', error);
-      throw error;
     }
   };
 

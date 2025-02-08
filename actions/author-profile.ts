@@ -25,30 +25,36 @@ async function handleImageUploads(data: FormData) {
 
 export async function createAuthorProfile(data: FormData) {
   try {
-    console.log('Server action called with FormData:', data);
+    const formEntries = Object.fromEntries(data.entries());
+    console.log('Server action received data:', formEntries);
+
     const session = await auth();
-    console.log('Session:', session);
     if (!session?.user) {
       throw new AppError("Unauthorized", "UNAUTHORIZED", 401);
     }
 
     await validateAuthorProfileAccess({ role: session.user.role });
     
-    const images = await handleImageUploads(data);
+    // Ensure we have the required fields
+    if (!formEntries.name || !formEntries.bio || !formEntries.slug) {
+      throw new AppError("Missing required fields", "VALIDATION_ERROR", 400);
+    }
+
+    const images = formEntries.images ? JSON.parse(formEntries.images as string) : undefined;
     
     const validatedData = createAuthorProfileSchema.safeParse({
-      ...Object.fromEntries(data),
+      ...formEntries,
       images
     });
 
     if (!validatedData.success) {
+      console.error('Validation errors:', validatedData.error);
       throw new AppError("Invalid data", "VALIDATION_ERROR", 400);
     }
 
     const authorProfile = await db.authorProfile.create({
       data: validatedData.data
     });
-    console.log('Created author profile:', authorProfile);
 
     return { success: true, data: authorProfile };
   } catch (error) {
