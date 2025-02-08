@@ -4,18 +4,19 @@ import { z } from "zod";
 export const quoteSchema = z.object({
   id: z.string(),
   content: z.string().min(1, "Quote content is required"),
-  slug: z.string(),
+  slug: z.string(),  // The slug generated or provided
   authorId: z.string(),
   categoryId: z.string(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
 
-// Schema for Creating a Quote
+// Schema for Creating a Quote, now including the optional slug field
 export const createQuoteSchema = z.object({
   content: z.string()
     .min(1, "Quote content is required")
     .max(500, "Quote must not exceed 500 characters"),
+  slug: z.string().optional(),
   categoryId: z.string().min(1, "Category is required"),
 });
 

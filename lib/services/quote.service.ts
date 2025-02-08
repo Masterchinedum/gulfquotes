@@ -79,20 +79,23 @@ class QuoteServiceImpl implements QuoteService {
 
   async create(data: CreateQuoteInput & { authorId: string }): Promise<Quote> {
     try {
-      // Validate and sanitize content
       if (data.content.length > 500) {
         throw new AppError("Quote content exceeds 500 characters", "CONTENT_TOO_LONG", 400);
       }
       const sanitizedContent = this.sanitizeContent(data.content);
       
-      // Generate and validate slug
-      const slug = slugify(sanitizedContent.substring(0, 50));
+      // Use provided slug if available, otherwise auto-generate.
+      const slug = data.slug && data.slug.trim().length > 0
+        ? data.slug.trim()
+        : slugify(sanitizedContent.substring(0, 50));
+        
+      // Validate that slug is unique.
       await this.validateSlug(slug);
       
-      // Validate category
+      // Validate category.
       await this.validateCategory(data.categoryId);
 
-      // Create quote using transaction
+      // Create quote using transaction.
       return await db.$transaction(async (tx) => {
         return tx.quote.create({
           data: {
@@ -105,7 +108,6 @@ class QuoteServiceImpl implements QuoteService {
     } catch (error) {
       if (error instanceof AppError) throw error;
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        // Handle specific Prisma errors
         switch (error.code) {
           case 'P2002':
             throw new AppError("Quote with similar content already exists", "DUPLICATE_SLUG", 400);
@@ -177,29 +179,32 @@ class QuoteServiceImpl implements QuoteService {
     await this.validateAccess(id, session.user.id);
     
     try {
-      // Validate existing quote
       const existingQuote = await this.getById(id);
       if (!existingQuote) {
         throw new AppError("Quote not found", "NOT_FOUND", 404);
       }
 
-      // Prepare update data
       const updateData: Prisma.QuoteUpdateInput = { ...data };
-      
-      // Handle content update
-      if (data.content) {
-        if (data.content.length > 500) {
-          throw new AppError("Quote content exceeds 500 characters", "CONTENT_TOO_LONG", 400);
-        }
-        const sanitizedContent = this.sanitizeContent(data.content);
-        const newSlug = slugify(sanitizedContent.substring(0, 50));
+
+      // Handle content and/or slug update
+      if (data.content || typeof data.slug !== "undefined") {
+        // Use new content if provided, else fallback to existing.
+        const sanitizedContent = data.content ? this.sanitizeContent(data.content) : existingQuote.content;
+        // Use provided slug (if not empty) otherwise auto generate using the sanitized content.
+        const newSlug =
+          data.slug && data.slug.trim().length > 0
+            ? data.slug.trim()
+            : slugify(sanitizedContent.substring(0, 50));
+        
+        // Validate the new slug (excluding the current quote's id).
         await this.validateSlug(newSlug, id);
         
-        updateData.content = sanitizedContent;
+        if (data.content) {
+          updateData.content = sanitizedContent;
+        }
         updateData.slug = newSlug;
       }
 
-      // Validate category if updating
       if (data.categoryId) {
         await this.validateCategory(data.categoryId);
       }
@@ -218,7 +223,7 @@ class QuoteServiceImpl implements QuoteService {
         return tx.quote.update({
           where: { 
             id,
-            updatedAt: quote.updatedAt, // Optimistic locking
+            updatedAt: quote.updatedAt,
           },
           data: updateData,
         });

@@ -7,11 +7,13 @@ import { createQuoteSchema, CreateQuoteInput } from "@/schemas/quote";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { Category } from "@prisma/client";
 import { useToast } from "@/hooks/use-toast";
 import { Icons } from "@/components/ui/icons";
+import { slugify } from "@/lib/utils"; // Import slugify utility
 
 interface QuoteFormProps {
   categories: Category[];
@@ -27,6 +29,7 @@ export function QuoteForm({ categories, initialData }: QuoteFormProps) {
     resolver: zodResolver(createQuoteSchema),
     defaultValues: initialData || {
       content: "",
+      slug: "",
       categoryId: "",
     },
   });
@@ -74,6 +77,15 @@ export function QuoteForm({ categories, initialData }: QuoteFormProps) {
     }
   }
 
+  // Auto-generate slug based on content
+  const handleAutoGenerateSlug = () => {
+    const currentContent = form.getValues("content");
+    if (currentContent) {
+      const generatedSlug = slugify(currentContent.substring(0, 50));
+      form.setValue("slug", generatedSlug);
+    }
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -102,6 +114,30 @@ export function QuoteForm({ categories, initialData }: QuoteFormProps) {
                   </div>
                 </div>
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* New Slug Field */}
+        <FormField
+          control={form.control}
+          name="slug"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Quote Slug</FormLabel>
+              <div className="flex gap-2">
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="Auto-generated or type a slug"
+                    className="border border-gray-300 rounded p-2 flex-1"
+                  />
+                </FormControl>
+                <Button type="button" onClick={handleAutoGenerateSlug}>
+                  Auto-generate slug
+                </Button>
+              </div>
               <FormMessage />
             </FormItem>
           )}
