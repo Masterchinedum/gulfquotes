@@ -98,9 +98,9 @@ model Quote {
   category         Category       @relation(fields: [categoryId], references: [id])
   categoryId       String
   
-  // New relation to the real-world AuthorProfile
-  authorProfile    AuthorProfile? @relation(fields: [authorProfileId], references: [id])
-  authorProfileId  String?
+  // Updated: Make authorProfile required
+  authorProfile    AuthorProfile  @relation(fields: [authorProfileId], references: [id])
+  authorProfileId  String
 
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt

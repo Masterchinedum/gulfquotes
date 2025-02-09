@@ -20,13 +20,34 @@ export default async function NewQuotePage() {
     redirect("/unauthorized");
   }
 
-  // Fetch necessary data for the quote form (e.g., categories)
-  const categories = await db.category.findMany();
+  // Fetch both categories and author profiles
+  const [categories, authorProfiles] = await Promise.all([
+    db.category.findMany(),
+    db.authorProfile.findMany({
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        born: true,
+        died: true,
+        influences: true,
+        bio: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: {
+        name: 'asc'
+      }
+    })
+  ]);
 
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-4">Create a New Quote</h1>
-      <QuoteForm categories={categories} />
+      <QuoteForm 
+        categories={categories} 
+        authorProfiles={authorProfiles}
+      />
       
       {/* Conditionally render the admin-only category creation section */}
       {session.user.role === "ADMIN" && (

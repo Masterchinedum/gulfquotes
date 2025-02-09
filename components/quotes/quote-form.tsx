@@ -10,17 +10,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
-import { Category } from "@prisma/client";
+import { Category, AuthorProfile } from "@prisma/client"; // Update existing import
 import { useToast } from "@/hooks/use-toast";
 import { Icons } from "@/components/ui/icons";
 import { slugify } from "@/lib/utils"; // Import slugify utility
 
 interface QuoteFormProps {
   categories: Category[];
+  authorProfiles: AuthorProfile[];  // Add this
   initialData?: CreateQuoteInput;
 }
 
-export function QuoteForm({ categories, initialData }: QuoteFormProps) {
+export function QuoteForm({ categories, authorProfiles, initialData }: QuoteFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [charCount, setCharCount] = useState(initialData?.content?.length || 0);
@@ -31,6 +32,7 @@ export function QuoteForm({ categories, initialData }: QuoteFormProps) {
       content: "",
       slug: "",
       categoryId: "",
+      authorProfileId: "", // Add this default value
     },
   });
 
@@ -138,6 +140,42 @@ export function QuoteForm({ categories, initialData }: QuoteFormProps) {
                   Auto-generate slug
                 </Button>
               </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* New Author Profile Field */}
+        <FormField
+          control={form.control}
+          name="authorProfileId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Author</FormLabel>
+              <Select
+                disabled={isSubmitting}
+                onValueChange={field.onChange}
+                value={field.value}
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an author" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {authorProfiles.map((author) => (
+                    <SelectItem key={author.id} value={author.id}>
+                      <div className="flex flex-col">
+                        <span>{author.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {author.born && `Born: ${author.born}`}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

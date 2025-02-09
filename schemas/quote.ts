@@ -7,6 +7,7 @@ export const quoteSchema = z.object({
   slug: z.string(),  // The slug generated or provided
   authorId: z.string(),
   categoryId: z.string(),
+  authorProfileId: z.string(), // Add this field
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -18,6 +19,7 @@ export const createQuoteSchema = z.object({
     .max(500, "Quote must not exceed 500 characters"),
   slug: z.string().optional(),
   categoryId: z.string().min(1, "Category is required"),
+  authorProfileId: z.string().min(1, "Author profile is required"), // Add this field
 });
 
 // Schema for Updating a Quote
