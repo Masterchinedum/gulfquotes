@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import { createAuthorProfileSchema, updateAuthorProfileSchema } from "@/lib/auth/author-profile";
 import { AppError } from "@/lib/api-error";
 import { uploadImage } from "@/lib/uploadImage";
+import { AuthorProfileCreateInput } from "@prisma/client";
 
 async function handleImageUploads(data: FormData) {
   const profileImage = data.get('profile') as File;
@@ -53,7 +54,7 @@ export async function createAuthorProfile(data: FormData) {
     }
 
     const authorProfile = await db.authorProfile.create({
-      data: validatedData.data
+      data: validatedData.data as AuthorProfileCreateInput
     });
 
     return { success: true, data: authorProfile };
