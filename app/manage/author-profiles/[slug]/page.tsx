@@ -15,14 +15,16 @@ export const metadata = {
   description: "Edit an existing author profile",
 };
 
+// Update the interface to match Next.js requirements
 interface EditAuthorProfilePageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
+  searchParams?: Promise<Record<string, string | string[]>>;
 }
 
 export default async function EditAuthorProfilePage({
-  params
+  params: paramsPromise,
 }: EditAuthorProfilePageProps) {
   // Check authentication and authorization
   const session = await auth();
@@ -36,6 +38,9 @@ export default async function EditAuthorProfilePage({
   }
 
   try {
+    // Resolve params promise
+    const params = await paramsPromise;
+    
     // Fetch author profile data
     const author = await authorProfileService.getBySlug(params.slug);
 
