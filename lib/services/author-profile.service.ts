@@ -10,7 +10,6 @@ import db from "@/lib/prisma";
 import { 
   AuthorProfileNotFoundError,
   DuplicateAuthorProfileError,
-  InvalidAuthorProfileDataError
 } from "./errors/author-profile.errors";
 
 class AuthorProfileServiceImpl implements AuthorProfileService {
@@ -116,21 +115,26 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
     const { page = 1, limit = 10, search } = params;
     const skip = (page - 1) * limit;
 
-    const where = search ? {
-      OR: [
-        { name: { contains: search, mode: 'insensitive' } },
-        { bio: { contains: search, mode: 'insensitive' } },
-      ],
-    } : {};
+    // Simpler where clause using string matching
+    const whereCondition: Prisma.AuthorProfileWhereInput = search 
+      ? {
+          OR: [
+            { name: { contains: search } },
+            { bio: { contains: search } }
+          ]
+        }
+      : {};
 
     const [items, total] = await Promise.all([
       db.authorProfile.findMany({
-        where,
+        where: whereCondition,
         skip,
         take: limit,
-        orderBy: { name: 'asc' },
+        orderBy: { createdAt: 'desc' },
       }),
-      db.authorProfile.count({ where }),
+      db.authorProfile.count({
+        where: whereCondition
+      })
     ]);
 
     return {
@@ -138,7 +142,7 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
       total,
       page,
       limit,
-      hasMore: total > skip + items.length,
+      hasMore: (page * limit) < total
     };
   }
 }
