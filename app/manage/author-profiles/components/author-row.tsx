@@ -27,8 +27,8 @@ export function AuthorRow({ author, onDelete }: AuthorRowProps) {
             </Button>
           </Link>
           <DeleteDialog
-            authorId={author.id}
             authorName={author.name}
+            authorSlug={author.slug} // Add this
             onSuccess={onDelete}
           />
         </div>
