@@ -1,8 +1,16 @@
-import React from 'react'
+import Link from "next/link"
 
 const QuotesList = () => {
   return (
-    <div>This is the Quote listing page</div>
+    <div>
+      <div>
+      This is the Quote listing page
+      </div>
+      <Link href="/manage/quotes">
+        <button>Create Author Profile</button>
+      </Link>
+      
+    </div>
   )
 }
 
