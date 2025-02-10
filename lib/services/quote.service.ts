@@ -15,10 +15,13 @@ export interface QuoteService {
     limit?: number;
     authorId?: string;
     categoryId?: string;
+    authorProfileId?: string;
   }): Promise<{
     items: Quote[];
     total: number;
     hasMore: boolean;
+    page: number;  // Add this
+    limit: number; // Add this
   }>;
   update(id: string, data: UpdateQuoteInput): Promise<Quote>;
   delete(id: string): Promise<Quote>;
@@ -157,6 +160,7 @@ class QuoteServiceImpl implements QuoteService {
     limit?: number;
     authorId?: string;
     categoryId?: string;
+    authorProfileId?: string;
   }) {
     const page = params.page || 1;
     const limit = params.limit || 10;
@@ -167,25 +171,29 @@ class QuoteServiceImpl implements QuoteService {
         where: {
           authorId: params.authorId,
           categoryId: params.categoryId,
+          authorProfileId: params.authorProfileId
         },
         skip,
         take: limit,
         orderBy: {
-          createdAt: 'desc',
-        },
+          createdAt: "desc"
+        }
       }),
       db.quote.count({
         where: {
           authorId: params.authorId,
           categoryId: params.categoryId,
-        },
-      }),
+          authorProfileId: params.authorProfileId
+        }
+      })
     ]);
 
     return {
       items,
       total,
       hasMore: total > skip + items.length,
+      page,     // Add this
+      limit     // Add this
     };
   }
 

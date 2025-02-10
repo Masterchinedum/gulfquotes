@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { createQuoteSchema } from "@/schemas/quote";
 import { CreateQuoteResponse, QuotesResponse } from "@/types/api/quotes";
-import { formatZodError } from "@/lib/api-error";
+import { formatZodError, AppError } from "@/lib/api-error"; // Add AppError import here
 import { quoteService } from "@/lib/services/quote.service";
 
 export async function POST(req: Request): Promise<NextResponse<CreateQuoteResponse>> {

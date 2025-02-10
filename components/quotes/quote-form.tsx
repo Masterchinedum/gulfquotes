@@ -145,13 +145,19 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
           )}
         />
 
-        {/* New Author Profile Field */}
+        {/* Enhanced Author Profile Field */}
         <FormField
           control={form.control}
           name="authorProfileId"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Author</FormLabel>
+            <FormItem className="space-y-4">
+              <div className="space-y-1">
+                <FormLabel>Quote Author</FormLabel>
+                <p className="text-sm text-muted-foreground">
+                  Select the original author of this quote
+                </p>
+              </div>
+              
               <Select
                 disabled={isSubmitting}
                 onValueChange={field.onChange}
@@ -159,23 +165,53 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
                 defaultValue={field.value}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select an author" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   {authorProfiles.map((author) => (
-                    <SelectItem key={author.id} value={author.id}>
-                      <div className="flex flex-col">
-                        <span>{author.name}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {author.born && `Born: ${author.born}`}
+                    <SelectItem 
+                      key={author.id} 
+                      value={author.id}
+                      className="cursor-pointer"
+                    >
+                      <div className="flex flex-col gap-1 py-1">
+                        <span className="font-medium">{author.name}</span>
+                        <span className="text-xs text-muted-foreground line-clamp-1">
+                          {author.born && `${author.born}`}
+                          {author.died && ` - ${author.died}`}
                         </span>
                       </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+
+              {/* Author Preview */}
+              {field.value && (
+                <div className="rounded-lg border bg-card p-4">
+                  {authorProfiles.map((author) => 
+                    author.id === field.value ? (
+                      <div key={author.id} className="space-y-2">
+                        <h4 className="font-semibold">{author.name}</h4>
+                        {(author.born || author.died) && (
+                          <p className="text-sm text-muted-foreground">
+                            {author.born && `Born: ${author.born}`}
+                            {author.died && ` • Died: ${author.died}`}
+                          </p>
+                        )}
+                        {author.bio && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {author.bio}
+                          </p>
+                        )}
+                      </div>
+                    ) : null
+                  )}
+                </div>
+              )}
+
               <FormMessage />
             </FormItem>
           )}
