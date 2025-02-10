@@ -110,9 +110,9 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
                     className="h-32 resize-none"
                   />
                   <div className={`text-sm text-right ${
-                    charCount > 500 ? "text-destructive" : "text-muted-foreground"
+                    charCount > 1500 ? "text-destructive" : "text-muted-foreground"
                   }`}>
-                    {charCount}/500 characters
+                    {charCount}/1500 characters
                   </div>
                 </div>
               </FormControl>

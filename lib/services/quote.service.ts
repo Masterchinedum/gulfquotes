@@ -97,7 +97,7 @@ class QuoteServiceImpl implements QuoteService {
 
   async create(data: CreateQuoteInput & { authorId: string }): Promise<Quote> {
     try {
-      if (data.content.length > 500) {
+      if (data.content.length > 1500) {
         throw new AppError("Quote content exceeds 500 characters", "CONTENT_TOO_LONG", 400);
       }
 

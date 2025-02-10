@@ -16,7 +16,7 @@ export const quoteSchema = z.object({
 export const createQuoteSchema = z.object({
   content: z.string()
     .min(1, "Quote content is required")
-    .max(500, "Quote must not exceed 500 characters"),
+    .max(1500, "Quote must not exceed 1500 characters"),
   slug: z.string().optional(),
   categoryId: z.string().min(1, "Category is required"),
   authorProfileId: z.string().min(1, "Author profile is required"), // Add this field
