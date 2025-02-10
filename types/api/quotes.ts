@@ -22,8 +22,23 @@ export interface PaginatedData<T> {
 
 // Quote Specific Types
 export type QuoteResponse = ApiResponse<Quote>;
-export type QuotesResponse = ApiResponse<PaginatedData<Quote>>;
 export type CreateQuoteResponse = ApiResponse<Quote>;
+
+export interface QuotesResponseData {
+  items: Quote[];
+  total: number;
+  hasMore: boolean;
+  page: number;
+  limit: number;
+  filters: {
+    search: string | null;
+    authorId: string | null;
+    categoryId: string | null;
+    authorProfileId: string | null;
+  };
+}
+
+export type QuotesResponse = ApiResponse<QuotesResponseData>;
 
 // Category Related Types
 export type CategoryResponse = ApiResponse<Category>;

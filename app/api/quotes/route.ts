@@ -66,31 +66,62 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
 export async function GET(req: Request): Promise<NextResponse<QuotesResponse>> {
   try {
     const { searchParams } = new URL(req.url);
-    const page = Number(searchParams.get("page")) || 1;
-    const limit = Number(searchParams.get("limit")) || 10;
+    
+    // Pagination params with validation
+    const page = Math.max(1, Number(searchParams.get("page")) || 1);
+    const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit")) || 10));
+    
+    // Filter params
+    const search = searchParams.get("search")?.trim();
     const authorId = searchParams.get("authorId") || undefined;
     const categoryId = searchParams.get("categoryId") || undefined;
-    const authorProfileId = searchParams.get("authorProfileId") || undefined; // Add this line
+    const authorProfileId = searchParams.get("authorProfileId") || undefined;
 
+    // User session for permission checks
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
+        { status: 401 }
+      );
+    }
+
+    // Get quotes with filters
     const result = await quoteService.list({
       page,
       limit,
-      authorId,
+      search,
+      authorId: authorId === "me" ? session.user.id : authorId,
       categoryId,
-      authorProfileId, // Add this field
+      authorProfileId,
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       data: {
         items: result.items,
         total: result.total,
         hasMore: result.hasMore,
         page: result.page,
-        limit: result.limit
+        limit: result.limit,
+        filters: {
+          search: search || null,
+          authorId: authorId || null,
+          categoryId: categoryId || null,
+          authorProfileId: authorProfileId || null
+        }
       }
     });
+
   } catch (error) {
     console.error("[QUOTES_GET]", error);
+    
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        { error: { code: error.code, message: error.message } },
+        { status: error.statusCode }
+      );
+    }
+
     return NextResponse.json(
       { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
       { status: 500 }

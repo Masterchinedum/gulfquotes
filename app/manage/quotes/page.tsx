@@ -1,17 +1,19 @@
-import Link from "next/link"
+import Link from 'next/link'
 
-const QuotesList = () => {
+const page = () => {
   return (
     <div>
       <div>
-      This is the Quote listing page
+      This is the quote list page
       </div>
-      <Link href="/manage/quotes">
-        <button>Create Author Profile</button>
+      <Link href="/manage/author-profiles">
+        <button>View Author Profile</button>
       </Link>
-      
+      <Link href="/manage/quotes">
+        <button>View Quotes</button>
+      </Link>
     </div>
   )
 }
 
-export default QuotesList
+export default page

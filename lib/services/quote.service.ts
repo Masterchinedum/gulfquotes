@@ -5,24 +5,49 @@ import { CreateQuoteInput, UpdateQuoteInput } from "@/schemas/quote";
 import { slugify } from "@/lib/utils";
 import { AppError } from "@/lib/api-error";
 import { validateQuoteOwnership, QuoteAccessError } from "@/lib/auth/ownership";
+interface ListQuotesParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  authorId?: string;
+  categoryId?: string;
+  authorProfileId?: string;
+}
+
+interface ListQuotesResult {
+  items: Quote[];
+  total: number;
+  hasMore: boolean;
+  page: number;
+  limit: number;
+}
+
+export interface QuoteService {
+  // ... other methods
+  list(params: ListQuotesParams): Promise<ListQuotesResult>;
+}
+interface ListQuotesParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  authorId?: string;
+  categoryId?: string;
+  authorProfileId?: string;
+}
+
+interface ListQuotesResult {
+  items: Quote[];
+  total: number;
+  hasMore: boolean;
+  page: number;
+  limit: number;
+}
 
 export interface QuoteService {
   create(data: CreateQuoteInput & { authorId: string }): Promise<Quote>;
   getById(id: string): Promise<Quote | null>;
   getBySlug(slug: string): Promise<Quote | null>;
-  list(params: {
-    page?: number;
-    limit?: number;
-    authorId?: string;
-    categoryId?: string;
-    authorProfileId?: string;
-  }): Promise<{
-    items: Quote[];
-    total: number;
-    hasMore: boolean;
-    page: number;  // Add this
-    limit: number; // Add this
-  }>;
+  list(params: ListQuotesParams): Promise<ListQuotesResult>;
   update(id: string, data: UpdateQuoteInput): Promise<Quote>;
   delete(id: string): Promise<Quote>;
   search(query: string): Promise<Quote[]>;
@@ -155,13 +180,7 @@ class QuoteServiceImpl implements QuoteService {
     });
   }
 
-  async list(params: {
-    page?: number;
-    limit?: number;
-    authorId?: string;
-    categoryId?: string;
-    authorProfileId?: string;
-  }) {
+  async list(params: ListQuotesParams): Promise<ListQuotesResult> {
     const page = params.page || 1;
     const limit = params.limit || 10;
     const skip = (page - 1) * limit;
