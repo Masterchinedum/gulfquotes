@@ -23,6 +23,7 @@ export interface PaginatedData<T> {
 // Quote Specific Types
 export type QuoteResponse = ApiResponse<Quote>;
 export type CreateQuoteResponse = ApiResponse<Quote>;
+export type UpdateQuoteResponse = ApiResponse<Quote>;
 
 export interface QuotesResponseData {
   items: Quote[];
@@ -74,11 +75,30 @@ export type QuoteErrorCode =
   | "VALIDATION_ERROR"
   | "INTERNAL_ERROR"
   | "DUPLICATE_SLUG"
-  | "CONTENT_TOO_LONG";
+  | "CONTENT_TOO_LONG"
+  | "CONCURRENT_MODIFICATION"  // Add this for edit conflicts
+  | "CONCURRENT_DELETE";       // Add this for deleted quotes
 
 // Enhanced ApiError with specific error codes
 export interface QuoteApiError extends ApiError {
   code: QuoteErrorCode;
+}
+
+// Add edit-specific response data interface
+export interface UpdateQuoteData {
+  quote: Quote;
+  previousVersion?: Quote;  // Optional, for tracking changes
+}
+
+// Add edit-specific input params
+export interface UpdateQuoteParams {
+  slug: string;           // For identifying the quote
+  data: UpdateQuoteInput; // The data to update
+  include?: {
+    author?: boolean;
+    category?: boolean;
+    authorProfile?: boolean;
+  };
 }
 
 // Category Related Types
