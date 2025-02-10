@@ -8,10 +8,7 @@ import type { QuoteResponse, UpdateQuoteResponse } from "@/types/api/quotes";
 import { formatZodError } from "@/lib/api-error";
 
 // GET endpoint to fetch quote details
-export async function GET(
-  req: Request,
-  { params }: { params: { slug: string } }
-): Promise<NextResponse<QuoteResponse>> {
+export async function GET(req: Request): Promise<NextResponse<QuoteResponse>> {
   try {
     // Check authentication
     const session = await auth();
@@ -22,7 +19,16 @@ export async function GET(
       );
     }
 
-    const quote = await quoteService.getBySlug(params.slug);
+    // Extract slug from URL like author profiles
+    const slug = req.url.split('/quotes/')[1]?.split('/')[0];
+    if (!slug) {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "Invalid quote slug" } },
+        { status: 400 }
+      );
+    }
+
+    const quote = await quoteService.getBySlug(slug);
     
     if (!quote) {
       return NextResponse.json(
@@ -42,10 +48,7 @@ export async function GET(
 }
 
 // PATCH endpoint for updating quotes
-export async function PATCH(
-  req: Request,
-  { params }: { params: { slug: string } }
-): Promise<NextResponse<UpdateQuoteResponse>> {
+export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteResponse>> {
   try {
     // Check authentication
     const session = await auth();
@@ -64,8 +67,17 @@ export async function PATCH(
       );
     }
 
+    // Extract slug from URL like author profiles
+    const slug = req.url.split('/quotes/')[1]?.split('/')[0];
+    if (!slug) {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "Invalid quote slug" } },
+        { status: 400 }
+      );
+    }
+
     // Get the existing quote first
-    const existingQuote = await quoteService.getBySlug(params.slug);
+    const existingQuote = await quoteService.getBySlug(slug);
     if (!existingQuote) {
       return NextResponse.json(
         { error: { code: "NOT_FOUND", message: "Quote not found" } },
@@ -92,7 +104,7 @@ export async function PATCH(
 
     try {
       // Update the quote
-      const updatedQuote = await quoteService.update(quote.id, validatedData.data);
+      const updatedQuote = await quoteService.update(existingQuote.id, validatedData.data);
       return NextResponse.json({ data: updatedQuote });
     } catch (error) {
       if (error instanceof AppError) {
