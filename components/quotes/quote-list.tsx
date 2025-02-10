@@ -64,11 +64,14 @@ export function QuoteList({ initialQuotes }: QuoteListProps) {
     getNextPageParam: (lastPage) => {
       return lastPage.hasMore ? lastPage.data.length + 1 : undefined;
     },
+    refetchOnMount: false
   });
 
-  // Refetch when search term changes
+  // Only refetch when searchTerm changes, not on mount
   useEffect(() => {
-    refetch();
+    if (searchTerm) { // Only refetch if there's a search term
+        refetch();
+    }
   }, [searchTerm, refetch]);
 
   useEffect(() => {
