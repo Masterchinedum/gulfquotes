@@ -95,7 +95,7 @@ export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteRespo
           error: {
             code: "VALIDATION_ERROR",
             message: "Invalid input data",
-            details: formatZodError(validatedData.error).error.details
+            details: formatZodError(validatedData.error).details // Remove .error
           }
         },
         { status: 400 }

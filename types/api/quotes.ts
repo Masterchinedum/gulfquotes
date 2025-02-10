@@ -1,4 +1,5 @@
-import { Quote, Category } from "@prisma/client";
+import type { Quote, Category, AuthorProfile } from "@prisma/client";
+import type { UpdateQuoteInput } from "@/schemas/quote";
 
 // Response Types
 export interface ApiResponse<T> {
@@ -7,7 +8,7 @@ export interface ApiResponse<T> {
 }
 
 export interface ApiError {
-  code: string;
+  code: QuoteErrorCode;
   message: string;
   details?: Record<string, string[]>;
 }
@@ -26,17 +27,14 @@ export type CreateQuoteResponse = ApiResponse<Quote>;
 export type UpdateQuoteResponse = ApiResponse<Quote>;
 
 export interface QuotesResponseData {
-  items: Quote[];
+  data: Array<Quote & {
+    category: Category;
+    authorProfile: AuthorProfile;
+  }>;
   total: number;
   hasMore: boolean;
   page: number;
   limit: number;
-  filters: {
-    search: string | null;
-    authorId: string | null;
-    categoryId: string | null;
-    authorProfileId: string | null;
-  };
 }
 
 export type QuotesResponse = ApiResponse<QuotesResponseData>;
@@ -44,7 +42,6 @@ export type QuotesResponse = ApiResponse<QuotesResponseData>;
 // Request Parameter Types
 export interface QuoteFilterParams {
   search?: string;
-  authorId?: string;
   categoryId?: string;
   authorProfileId?: string;
 }
@@ -55,19 +52,8 @@ export interface QuotePaginationParams {
 }
 
 // Combine both for complete params type
-export interface ListQuotesParams extends QuoteFilterParams, QuotePaginationParams {
-  search?: string;
-  authorId?: string;
-  categoryId?: string;
-  authorProfileId?: string;
-  include?: {
-    author?: boolean;
-    category?: boolean;
-    authorProfile?: boolean;
-  };
-}
+export interface ListQuotesParams extends QuoteFilterParams, QuotePaginationParams {}
 
-// Add specific error codes type for better type safety
 export type QuoteErrorCode = 
   | "UNAUTHORIZED"
   | "FORBIDDEN"
@@ -76,21 +62,14 @@ export type QuoteErrorCode =
   | "INTERNAL_ERROR"
   | "DUPLICATE_SLUG"
   | "CONTENT_TOO_LONG"
-  | "CONCURRENT_MODIFICATION"  // Add this for edit conflicts
-  | "CONCURRENT_DELETE";       // Add this for deleted quotes
+  | "CONCURRENT_MODIFICATION"
+  | "CONCURRENT_DELETE"
+  | "BAD_REQUEST";  // Add this
 
-// Enhanced ApiError with specific error codes
 export interface QuoteApiError extends ApiError {
   code: QuoteErrorCode;
 }
 
-// Add edit-specific response data interface
-export interface UpdateQuoteData {
-  quote: Quote;
-  previousVersion?: Quote;  // Optional, for tracking changes
-}
-
-// Add edit-specific input params
 export interface UpdateQuoteParams {
   slug: string;           // For identifying the quote
   data: UpdateQuoteInput; // The data to update

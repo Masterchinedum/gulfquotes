@@ -8,24 +8,25 @@ import db from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
+import { Metadata } from "next";
 
 // Add metadata
-export const metadata = {
+export const metadata: Metadata = {
   title: "Edit Quote",
   description: "Edit an existing quote"
 };
 
-// Update the interface to match Next.js PageProps
-interface PageProps {
-  params: {
+// Update the interface to match Next.js requirements
+interface EditQuotePageProps {
+  params: Promise<{
     slug: string;
-  };
-  searchParams?: { [key: string]: string | string[] | undefined };
+  }>;
+  searchParams?: Promise<Record<string, string | string[]>>;
 }
 
-export default async function EditQuotePage({ 
-  params 
-}: PageProps) {
+export default async function EditQuotePage({
+  params: paramsPromise,
+}: EditQuotePageProps) {
   // Check for an authenticated session
   const session = await auth();
   if (!session?.user) {
@@ -38,6 +39,9 @@ export default async function EditQuotePage({
   }
 
   try {
+    // Resolve params promise first
+    const params = await paramsPromise;
+    
     // Fetch the quote, categories and author profiles in parallel
     const [quote, categories, authorProfiles] = await Promise.all([
       // Fetch quote by slug
