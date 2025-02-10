@@ -15,13 +15,17 @@ export const metadata = {
   description: "Edit an existing quote"
 };
 
-interface EditQuotePageProps {
+// Update the interface to match Next.js PageProps
+interface PageProps {
   params: {
     slug: string;
   };
+  searchParams?: { [key: string]: string | string[] | undefined };
 }
 
-export default async function EditQuotePage({ params }: EditQuotePageProps) {
+export default async function EditQuotePage({ 
+  params 
+}: PageProps) {
   // Check for an authenticated session
   const session = await auth();
   if (!session?.user) {

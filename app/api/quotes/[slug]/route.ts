@@ -19,7 +19,7 @@ export async function GET(req: Request): Promise<NextResponse<QuoteResponse>> {
       );
     }
 
-    // Extract slug from URL like author profiles
+    // Extract slug from URL
     const slug = req.url.split('/quotes/')[1]?.split('/')[0];
     if (!slug) {
       return NextResponse.json(
