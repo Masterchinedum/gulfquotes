@@ -1,42 +1,39 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Quote, User, Category } from "@prisma/client";
 import { QuoteCard } from "@/components/quotes/quote-card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useInView } from "react-intersection-observer";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, QueryFunctionContext } from "@tanstack/react-query";
 import { Icons } from "@/components/ui/icons";
-import { useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { QueryFunctionContext } from "@tanstack/react-query";
 
 interface QuoteListProps {
-  initialQuotes: (Quote & {
+  initialQuotes: Array<Quote & {
     author: User;
     category: Category;
-  })[];
+  }>;
 }
 
 interface QuoteResponse {
-  data: (Quote & {
-    author: User;
-    category: Category;
-  })[];
+  data: (Quote & { author: User; category: Category })[];
   total: number;
   hasMore: boolean;
 }
 
-type QuoteQueryKey = ["quotes"];
+type QuoteQueryKey = ["quotes", string];
 
-async function fetchQuotes({
-  pageParam,
-}: QueryFunctionContext<QuoteQueryKey, number>): Promise<QuoteResponse> {
-  const response = await fetch(`/api/quotes?page=${pageParam}`);
+async function fetchQuotes({ pageParam, queryKey }: QueryFunctionContext<QuoteQueryKey, number>): Promise<QuoteResponse> {
+  const [, search] = queryKey;
+  const response = await fetch(`/api/quotes?page=${pageParam}&search=${encodeURIComponent(search)}`);
   const data = await response.json();
   return data;
 }
 
 export function QuoteList({ initialQuotes }: QuoteListProps) {
+  const [searchTerm, setSearchTerm] = useState("");
   const { ref, inView } = useInView();
 
   const {
@@ -44,10 +41,11 @@ export function QuoteList({ initialQuotes }: QuoteListProps) {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    status,
-    isLoading
+    isLoading,
+    error,
+    refetch,
   } = useInfiniteQuery({
-    queryKey: ["quotes"] as QuoteQueryKey,
+    queryKey: ["quotes", searchTerm] as QuoteQueryKey,
     queryFn: fetchQuotes,
     initialPageParam: 1,
     initialData: {
@@ -58,6 +56,11 @@ export function QuoteList({ initialQuotes }: QuoteListProps) {
       return lastPage.hasMore ? lastPage.data.length + 1 : undefined;
     },
   });
+
+  // Refetch when search term changes
+  useEffect(() => {
+    refetch();
+  }, [searchTerm, refetch]);
 
   useEffect(() => {
     if (inView && hasNextPage) {
@@ -73,7 +76,7 @@ export function QuoteList({ initialQuotes }: QuoteListProps) {
     );
   }
 
-  if (status === "error") {
+  if (error) {
     return (
       <div className="text-destructive min-h-[200px] flex items-center justify-center">
         Error loading quotes
@@ -98,27 +101,37 @@ export function QuoteList({ initialQuotes }: QuoteListProps) {
   }
 
   return (
-    <div className={cn(
-      "space-y-8",
-      "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
-      "gap-6"
-    )}>
-      {data.pages.map((page, i) => (
-        <div key={i} className="space-y-8">
-          {page.data.map((quote) => (
-            <QuoteCard key={quote.id} quote={quote} />
-          ))}
-        </div>
-      ))}
-      
-      <div className="flex justify-center col-span-full" ref={ref}>
-        {isFetchingNextPage && (
-          <Button variant="ghost" disabled>
-            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-            Loading more...
-          </Button>
-        )}
+    <>
+      <div className="mb-4">
+        <Input
+          placeholder="Search quotes..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full"
+        />
       </div>
-    </div>
+      <div className={cn(
+        "space-y-8",
+        "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
+        "gap-6"
+      )}>
+        {data.pages.map((page, i) => (
+          <div key={i} className="space-y-8">
+            {page.data.map((quote) => (
+              <QuoteCard key={quote.id} quote={quote} />
+            ))}
+          </div>
+        ))}
+        
+        <div className="flex justify-center col-span-full" ref={ref}>
+          {isFetchingNextPage && (
+            <Button variant="ghost" disabled>
+              <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+              Loading more...
+            </Button>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

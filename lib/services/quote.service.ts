@@ -185,35 +185,33 @@ class QuoteServiceImpl implements QuoteService {
     const limit = params.limit || 10;
     const skip = (page - 1) * limit;
 
-    const [items, total] = await Promise.all([
-      db.quote.findMany({
-        where: {
-          authorId: params.authorId,
-          categoryId: params.categoryId,
-          authorProfileId: params.authorProfileId
-        },
-        skip,
-        take: limit,
-        orderBy: {
-          createdAt: "desc"
-        }
-      }),
-      db.quote.count({
-        where: {
-          authorId: params.authorId,
-          categoryId: params.categoryId,
-          authorProfileId: params.authorProfileId
-        }
-      })
-    ]);
+    try {
+      const [items, total] = await Promise.all([
+        db.quote.findMany({
+          include: {
+            author: true,
+            category: true
+          },
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' }
+        }),
+        db.quote.count()
+      ]);
 
-    return {
-      items,
-      total,
-      hasMore: total > skip + items.length,
-      page,     // Add this
-      limit     // Add this
-    };
+      return {
+        items,
+        total,
+        hasMore: total > skip + items.length,
+        page,
+        limit
+      };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        throw new AppError("Database error", "DATABASE_ERROR", 500);
+      }
+      throw new AppError("Failed to fetch quotes", "INTERNAL_ERROR", 500);
+    }
   }
 
   async update(id: string, data: UpdateQuoteInput): Promise<Quote> {
