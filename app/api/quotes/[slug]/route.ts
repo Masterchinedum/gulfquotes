@@ -108,8 +108,15 @@ export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteRespo
       return NextResponse.json({ data: updatedQuote });
     } catch (error) {
       if (error instanceof AppError) {
+        // Now error.code will be strictly typed as QuoteErrorCode
         return NextResponse.json(
-          { error: { code: error.code, message: error.message } },
+          { 
+            error: { 
+              code: error.code, 
+              message: error.message,
+              details: error.details 
+            } 
+          },
           { status: error.statusCode }
         );
       }
@@ -118,7 +125,7 @@ export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteRespo
   } catch (error) {
     console.error("[QUOTE_PATCH]", error);
     return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
+      { error: { code: "INTERNAL_ERROR" as const, message: "Internal server error" } },
       { status: 500 }
     );
   }

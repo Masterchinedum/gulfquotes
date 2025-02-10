@@ -96,32 +96,19 @@ export async function GET(req: Request): Promise<NextResponse<QuotesResponse>> {
       authorProfileId,
     });
 
+    // Return response matching QuotesResponseData type
     return NextResponse.json({
       data: {
-        items: result.items,
+        data: result.items,  // Notice the nested data property
         total: result.total,
         hasMore: result.hasMore,
         page: result.page,
-        limit: result.limit,
-        filters: {
-          search: search || null,
-          authorId: authorId || null,
-          categoryId: categoryId || null,
-          authorProfileId: authorProfileId || null
-        }
+        limit: result.limit
       }
     });
 
   } catch (error) {
     console.error("[QUOTES_GET]", error);
-    
-    if (error instanceof AppError) {
-      return NextResponse.json(
-        { error: { code: error.code, message: error.message } },
-        { status: error.statusCode }
-      );
-    }
-
     return NextResponse.json(
       { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
       { status: 500 }

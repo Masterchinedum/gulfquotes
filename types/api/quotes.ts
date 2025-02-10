@@ -42,6 +42,7 @@ export type QuotesResponse = ApiResponse<QuotesResponseData>;
 // Request Parameter Types
 export interface QuoteFilterParams {
   search?: string;
+  authorId?: string;
   categoryId?: string;
   authorProfileId?: string;
 }
@@ -51,8 +52,20 @@ export interface QuotePaginationParams {
   limit?: number;
 }
 
-// Combine both for complete params type
-export interface ListQuotesParams extends QuoteFilterParams, QuotePaginationParams {}
+// Add include options for relationships
+export interface QuoteIncludeParams {
+  include?: {
+    author?: boolean;
+    category?: boolean;
+    authorProfile?: boolean;
+  };
+}
+
+// Combine all params types
+export interface ListQuotesParams extends 
+  QuoteFilterParams, 
+  QuotePaginationParams,
+  QuoteIncludeParams {}
 
 export type QuoteErrorCode = 
   | "UNAUTHORIZED"
@@ -64,7 +77,8 @@ export type QuoteErrorCode =
   | "CONTENT_TOO_LONG"
   | "CONCURRENT_MODIFICATION"
   | "CONCURRENT_DELETE"
-  | "BAD_REQUEST";  // Add this
+  | "BAD_REQUEST"
+  | "QUOTE_ACCESS_DENIED";  // Add this
 
 export interface QuoteApiError extends ApiError {
   code: QuoteErrorCode;

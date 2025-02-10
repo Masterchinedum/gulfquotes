@@ -28,7 +28,8 @@ export default async function QuotesPage() {
       page: 1,
       limit: 10,
       include: {
-        author: true,
+
+        authorProfile: true, // Changed from author to authorProfile to match the schema
         category: true
       }
     });
