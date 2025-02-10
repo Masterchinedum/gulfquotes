@@ -64,9 +64,9 @@ export async function PATCH(
       );
     }
 
-    // Get the quote first
-    const quote = await quoteService.getBySlug(params.slug);
-    if (!quote) {
+    // Get the existing quote first
+    const existingQuote = await quoteService.getBySlug(params.slug);
+    if (!existingQuote) {
       return NextResponse.json(
         { error: { code: "NOT_FOUND", message: "Quote not found" } },
         { status: 404 }
