@@ -7,6 +7,7 @@ import { quoteService } from "@/lib/services/quote.service";
 
 export async function POST(req: Request): Promise<NextResponse<CreateQuoteResponse>> {
   try {
+    // Check authentication
     const session = await auth();
     
     if (!session?.user?.id) {
@@ -23,6 +24,7 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
       );
     }
 
+    // Validate request body
     const body = await req.json();
     const validatedData = createQuoteSchema.safeParse(body);
 
@@ -33,12 +35,24 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
       );
     }
 
-    const quote = await quoteService.create({
-      ...validatedData.data,
-      authorId: session.user.id
-    });
+    try {
+      // Create quote with author profile validation
+      const quote = await quoteService.create({
+        ...validatedData.data,
+        authorId: session.user.id
+      });
 
-    return NextResponse.json({ data: quote });
+      return NextResponse.json({ data: quote });
+    } catch (error) {
+      // Handle specific errors from service
+      if (error instanceof AppError) {
+        return NextResponse.json(
+          { error: { code: error.code, message: error.message } },
+          { status: error.statusCode }
+        );
+      }
+      throw error; // Re-throw unexpected errors
+    }
 
   } catch (error) {
     console.error("[QUOTES_POST]", error);
@@ -56,15 +70,25 @@ export async function GET(req: Request): Promise<NextResponse<QuotesResponse>> {
     const limit = Number(searchParams.get("limit")) || 10;
     const authorId = searchParams.get("authorId") || undefined;
     const categoryId = searchParams.get("categoryId") || undefined;
+    const authorProfileId = searchParams.get("authorProfileId") || undefined; // Add this line
 
     const result = await quoteService.list({
       page,
       limit,
       authorId,
       categoryId,
+      authorProfileId, // Add this field
     });
 
-    return NextResponse.json({ data: result.items });
+    return NextResponse.json({ 
+      data: {
+        items: result.items,
+        total: result.total,
+        hasMore: result.hasMore,
+        page: result.page,
+        limit: result.limit
+      }
+    });
   } catch (error) {
     console.error("[QUOTES_GET]", error);
     return NextResponse.json(

@@ -77,11 +77,33 @@ class QuoteServiceImpl implements QuoteService {
     throw new AppError("Permission denied", "FORBIDDEN", 403);
   }
 
+  // Add new validation method for author profile
+  private async validateAuthorProfile(authorProfileId: string): Promise<void> {
+    const authorProfile = await db.authorProfile.findUnique({
+      where: { id: authorProfileId },
+    });
+
+    if (!authorProfile) {
+      throw new AppError(
+        "Author profile not found", 
+        "AUTHOR_PROFILE_NOT_FOUND", 
+        404
+      );
+    }
+  }
+
   async create(data: CreateQuoteInput & { authorId: string }): Promise<Quote> {
     try {
       if (data.content.length > 500) {
         throw new AppError("Quote content exceeds 500 characters", "CONTENT_TOO_LONG", 400);
       }
+
+      // Validate author profile exists
+      await this.validateAuthorProfile(data.authorProfileId);
+      
+      // Validate category.
+      await this.validateCategory(data.categoryId);
+
       const sanitizedContent = this.sanitizeContent(data.content);
       
       // Use provided slug if available, otherwise auto-generate.
@@ -91,9 +113,6 @@ class QuoteServiceImpl implements QuoteService {
         
       // Validate that slug is unique.
       await this.validateSlug(slug);
-      
-      // Validate category.
-      await this.validateCategory(data.categoryId);
 
       // Create quote using transaction.
       return await db.$transaction(async (tx) => {
