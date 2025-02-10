@@ -23,11 +23,30 @@ export default async function QuotesPage() {
   }
 
   try {
-    // Fetch initial quotes
+    // Fetch initial quotes with author data
     const result = await quoteService.list({
       page: 1,
-      limit: 10
+      limit: 10,
+      include: {
+        author: true,
+        category: true
+      }
     });
+
+    // Transform the quotes to match expected shape
+    const transformedQuotes = result.items.map(quote => ({
+      ...quote,
+      author: {
+        id: quote.authorProfile.id,
+        name: quote.authorProfile.name,
+        email: null,
+        emailVerified: null,
+        image: null,
+        password: null,
+        isTwoFactorEnabled: false,
+        role: session.user.role
+      }
+    }));
 
     return (
       <Shell>
@@ -55,7 +74,7 @@ export default async function QuotesPage() {
                 <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"/>
               </div>
             }>
-              <QuoteList initialQuotes={result.items} />
+              <QuoteList initialQuotes={transformedQuotes} />
             </Suspense>
           </div>
         </div>

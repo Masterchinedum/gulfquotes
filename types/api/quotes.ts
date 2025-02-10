@@ -54,7 +54,17 @@ export interface QuotePaginationParams {
 }
 
 // Combine both for complete params type
-export interface ListQuotesParams extends QuoteFilterParams, QuotePaginationParams {}
+export interface ListQuotesParams extends QuoteFilterParams, QuotePaginationParams {
+  search?: string;
+  authorId?: string;
+  categoryId?: string;
+  authorProfileId?: string;
+  include?: {
+    author?: boolean;
+    category?: boolean;
+    authorProfile?: boolean;
+  };
+}
 
 // Add specific error codes type for better type safety
 export type QuoteErrorCode = 

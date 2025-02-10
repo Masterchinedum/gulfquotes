@@ -1,21 +1,17 @@
-import { Quote, Prisma } from "@prisma/client";
+import { Quote, Prisma, AuthorProfile, Category } from "@prisma/client";
 import { auth } from "@/auth";
 import db from "@/lib/prisma";
 import { CreateQuoteInput, UpdateQuoteInput } from "@/schemas/quote";
 import { slugify } from "@/lib/utils";
 import { AppError } from "@/lib/api-error";
 import { validateQuoteOwnership, QuoteAccessError } from "@/lib/auth/ownership";
-interface ListQuotesParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  authorId?: string;
-  categoryId?: string;
-  authorProfileId?: string;
-}
+import { ListQuotesParams } from "@/types/api/quotes";
 
 interface ListQuotesResult {
-  items: Quote[];
+  items: Array<Quote & {
+    authorProfile: AuthorProfile;
+    category: Category;
+  }>;
   total: number;
   hasMore: boolean;
   page: number;
@@ -25,22 +21,6 @@ interface ListQuotesResult {
 export interface QuoteService {
   // ... other methods
   list(params: ListQuotesParams): Promise<ListQuotesResult>;
-}
-interface ListQuotesParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  authorId?: string;
-  categoryId?: string;
-  authorProfileId?: string;
-}
-
-interface ListQuotesResult {
-  items: Quote[];
-  total: number;
-  hasMore: boolean;
-  page: number;
-  limit: number;
 }
 
 export interface QuoteService {
@@ -186,17 +166,32 @@ class QuoteServiceImpl implements QuoteService {
     const skip = (page - 1) * limit;
 
     try {
+      const whereConditions: Prisma.QuoteWhereInput = {};
+      if (params.authorProfileId) {
+        whereConditions.authorProfileId = params.authorProfileId;
+      }
+      if (params.categoryId) {
+        whereConditions.categoryId = params.categoryId;
+      }
+      if (params.search) {
+        whereConditions.content = {
+          contains: params.search,
+          mode: 'insensitive'
+        };
+      }
+
       const [items, total] = await Promise.all([
         db.quote.findMany({
+          where: whereConditions,
           include: {
-            author: true,
+            authorProfile: true, // Include the author profile instead of author
             category: true
           },
           skip,
           take: limit,
           orderBy: { createdAt: 'desc' }
         }),
-        db.quote.count()
+        db.quote.count({ where: whereConditions })
       ]);
 
       return {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Quote, User, Category } from "@prisma/client";
+import { Quote, User, Category, UserRole } from "@prisma/client";
 import { QuoteCard } from "@/components/quotes/quote-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,16 @@ import { cn } from "@/lib/utils";
 
 interface QuoteListProps {
   initialQuotes: Array<Quote & {
-    author: User;
+    author: {
+      id: string;
+      name: string | null;
+      email: string | null;
+      emailVerified: Date | null;
+      image: string | null;
+      password: string | null;
+      isTwoFactorEnabled: boolean;
+      role: UserRole;
+    };
     category: Category;
   }>;
 }
