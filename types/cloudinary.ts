@@ -46,3 +46,11 @@ export type CloudinaryUploadResult = {
 };
 
 export type CloudinaryWidgetResult = CloudinaryUploadResponse | CloudinaryError;
+
+// Add CloudinaryConfig type
+export interface CloudinaryConfig {
+  cloudName: string | undefined;
+  uploadPreset: string | undefined;
+  folder: string;
+  maxFiles: number;
+}

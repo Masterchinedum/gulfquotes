@@ -9,13 +9,14 @@ export const cloudinaryConfig = {
   cloudName: CLOUD_NAME,
   uploadPreset: UPLOAD_PRESET,
   folder: 'author-profiles',
+  maxFiles: 5 // Add maxFiles to config
 } as const;
 
 export const defaultUploadOptions: CloudinaryUploadOptions = {
-  maxFiles: 5,
-  maxFileSize: 2 * 1024 * 1024, // 2MB
+  maxFiles: cloudinaryConfig.maxFiles, // Reference from config
+  maxFileSize: 7 * 1024 * 1024, // 7MB
   uploadPreset: UPLOAD_PRESET,
-  folder: 'author-profiles',
+  folder: cloudinaryConfig.folder,
   sources: ['local', 'url', 'camera'],
   clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
 } as const;
