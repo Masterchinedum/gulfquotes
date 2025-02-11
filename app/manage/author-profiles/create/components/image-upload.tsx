@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CldUploadWidget } from "next-cloudinary";
+import type { CloudinaryUploadWidgetInfo } from "next-cloudinary"; // Add this import
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ImagePlus, X } from "lucide-react";
@@ -21,16 +22,14 @@ export function CreateImageUpload({ form, disabled }: CreateImageUploadProps) {
   const currentImages = form.watch("images") || [];
 
   const handleUploadSuccess = (result: CloudinaryUploadResult) => {
-    if (result.event !== "success") return;
+    if (result.event !== "success" || !result.info) return;
 
     const currentImages = form.getValues("images") || [];
     if (currentImages.length >= cloudinaryConfig.maxFiles) {
       return;
     }
 
-    // Type cast info to CloudinaryUploadWidgetInfo
     const info = result.info as CloudinaryUploadWidgetInfo;
-    
     const newImage = {
       url: info.secure_url,
       id: info.public_id,
