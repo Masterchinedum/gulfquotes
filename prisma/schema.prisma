@@ -121,17 +121,29 @@ model Category {
 }
 
 model AuthorProfile {
-  id         String   @id @default(cuid())
+  id         String        @id @default(cuid())
   name       String
-  born       String?   // e.g., "Born in Dublin, Ireland - October 16, 1854"
-  died       String?   // e.g., "November 30, 1900"
-  influences String?   // Comma-separated list or JSON array of names
-  bio        String    @db.Text
-  slug       String    @unique   // for SEO-friendly URLs
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-
-  quotes     Quote[]   // relation, if needed from the AuthorProfile side
+  born       String?
+  died       String?
+  influences String?
+  bio        String        @db.Text
+  slug       String        @unique
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  images     AuthorImage[] // Add this relation
+  quotes     Quote[]
 
   @@map("author_profiles")
+}
+
+// New model for author images
+model AuthorImage {
+  id             String       @id @default(cuid())
+  url            String
+  authorProfile  AuthorProfile @relation(fields: [authorProfileId], references: [id], onDelete: Cascade)
+  authorProfileId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@map("author_images")
 }

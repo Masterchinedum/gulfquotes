@@ -42,4 +42,8 @@ export interface AuthorProfileDto {
   createdAt: Date;
   updatedAt: Date;
   quotesCount?: number;
+  images: {
+    id: string;
+    url: string;
+  }[];
 }

@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+// Add image schema
+const authorImageSchema = z.object({
+  url: z.string().url("Invalid image URL"),
+});
+
 // Base Schema for AuthorProfile validation
 const authorProfileBaseSchema = z.object({
   name: z.string()
@@ -19,6 +24,10 @@ const authorProfileBaseSchema = z.object({
     .max(2000, "Biography must be less than 2000 characters"),
   slug: z.string()
     .optional(), // Make slug optional as it can be auto-generated
+  images: z.array(authorImageSchema)
+    .optional()
+    .default([])
+    .transform(val => val || []), // Handle undefined/null cases
 });
 
 // Schema for creating a new author profile
