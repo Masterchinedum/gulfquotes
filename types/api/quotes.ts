@@ -102,7 +102,11 @@ export type AuthorProfileErrorCode =
   | "AUTHOR_PROFILE_NOT_FOUND"
   | "DUPLICATE_AUTHOR_PROFILE"
   | "INVALID_AUTHOR_PROFILE_DATA"
-  | "AUTHOR_PROFILE_VALIDATION";
+  | "AUTHOR_PROFILE_VALIDATION"
+  | "IMAGE_UPLOAD_ERROR"    // Add this
+  | "IMAGE_DELETE_ERROR"    // Add this
+  | "MAX_IMAGES_EXCEEDED"   // Add this
+  | "INVALID_IMAGE";        // Add this
 
 // Combined error code type for the AppError class
 export type AppErrorCode = QuoteErrorCode | AuthorProfileErrorCode | CategoryErrorCode;
