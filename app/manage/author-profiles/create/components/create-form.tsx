@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -27,6 +26,7 @@ export function CreateForm() {
       died: "",
       influences: "",
       bio: "",
+      images: [], // Add this line
     },
   });
 

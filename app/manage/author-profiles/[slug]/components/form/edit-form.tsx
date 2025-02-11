@@ -31,6 +31,7 @@ export function EditForm({ author }: EditFormProps) {
       died: author.died || "",
       influences: author.influences || "",
       bio: author.bio,
+      images: author.images || [], // Add this line
     },
   });
 
