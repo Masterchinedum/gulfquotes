@@ -21,16 +21,19 @@ export function CreateImageUpload({ form, disabled }: CreateImageUploadProps) {
   const currentImages = form.watch("images") || [];
 
   const handleUploadSuccess = (result: CloudinaryUploadResult) => {
-    if (result.event !== "success" || !result.info) return;
+    if (result.event !== "success") return;
 
     const currentImages = form.getValues("images") || [];
     if (currentImages.length >= cloudinaryConfig.maxFiles) {
       return;
     }
 
+    // Type cast info to CloudinaryUploadWidgetInfo
+    const info = result.info as CloudinaryUploadWidgetInfo;
+    
     const newImage = {
-      url: result.info.secure_url,
-      id: result.info.public_id,
+      url: info.secure_url,
+      id: info.public_id,
     };
 
     form.setValue("images", [...currentImages, newImage], {

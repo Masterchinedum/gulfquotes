@@ -1,7 +1,8 @@
 import type { 
   CloudinaryUploadWidgetResults, // Changed from CldUploadWidgetResults
   CloudinaryUploadWidgetError as NextCloudinaryError,
-  UploadWidgetConfig
+  UploadWidgetConfig,
+  CloudinaryUploadWidgetInfo 
 } from 'next-cloudinary';
 
 // types/cloudinary.ts
@@ -29,6 +30,7 @@ export interface CloudinaryUploadOptions extends Omit<UploadWidgetConfig, 'cloud
   maxFileSize?: number;
   folder?: string;
   sources?: ("local" | "url" | "camera" | "dropbox" | "facebook" | "instagram" | "google_drive" | "shutterstock" | "gettyimages" | "istock" | "unsplash" | "image_search")[];
+  clientAllowedFormats?: string[];
 }
 
 export interface CloudinaryInfo {
@@ -37,7 +39,9 @@ export interface CloudinaryInfo {
 }
 
 // Update the type alias to use the correct import name
-export type CloudinaryUploadResult = CloudinaryUploadWidgetResults;
+export type CloudinaryUploadResult = CloudinaryUploadWidgetResults & {
+  info: CloudinaryUploadWidgetInfo;
+};
 
 export type CloudinaryWidgetResult = CloudinaryUploadResponse | CloudinaryError;
 
