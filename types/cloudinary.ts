@@ -1,7 +1,7 @@
 import type { 
-  CldUploadWidgetResults,
+  CloudinaryUploadWidgetResults, // Changed from CldUploadWidgetResults
   CloudinaryUploadWidgetError as NextCloudinaryError,
-  UploadWidgetConfig // Add this import
+  UploadWidgetConfig
 } from 'next-cloudinary';
 
 // types/cloudinary.ts
@@ -36,7 +36,8 @@ export interface CloudinaryInfo {
   public_id: string;
 }
 
-export type CloudinaryUploadResult = CldUploadWidgetResults;
+// Update the type alias to use the correct import name
+export type CloudinaryUploadResult = CloudinaryUploadWidgetResults;
 
 export type CloudinaryWidgetResult = CloudinaryUploadResponse | CloudinaryError;
 
