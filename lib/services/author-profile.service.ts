@@ -4,15 +4,21 @@ import {
   AuthorProfileListParams, 
   AuthorProfileListResponse 
 } from "./interfaces/author-profile-service.interface";
-import { CreateAuthorProfileInput, UpdateAuthorProfileInput, validateInfluences } from "@/schemas/author-profile";
+import { CreateAuthorProfileInput, UpdateAuthorProfileInput } from "@/schemas/author-profile";
 import { slugify } from "@/lib/utils";
 import db from "@/lib/prisma";
 import { 
   AuthorProfileNotFoundError,
   DuplicateAuthorProfileError,
+  ImageUploadError,
+  ImageDeleteError,
+  MaxImagesExceededError
 } from "./errors/author-profile.errors";
+import { deleteImage } from "@/lib/cloudinary";
 
 class AuthorProfileServiceImpl implements AuthorProfileService {
+  private readonly MAX_IMAGES = 5;
+
   private async validateSlug(slug: string, excludeId?: string): Promise<void> {
     const existing = await db.authorProfile.findFirst({
       where: {
@@ -26,22 +32,73 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
     }
   }
 
+  private async handleImageDeletion(imageId: string): Promise<void> {
+    try {
+      const image = await db.authorImage.findUnique({
+        where: { id: imageId }
+      });
+
+      if (!image) return;
+
+      // Delete from Cloudinary
+      const success = await deleteImage(image.url);
+      if (!success) {
+        throw new ImageDeleteError();
+      }
+
+      // Delete from database
+      await db.authorImage.delete({
+        where: { id: imageId }
+      });
+    } catch (error) {
+      throw new ImageDeleteError();
+    }
+  }
+
+  private async validateImagesCount(authorId: string, newImagesCount: number): Promise<void> {
+    const currentImagesCount = await db.authorImage.count({
+      where: { authorProfileId: authorId }
+    });
+
+    if (currentImagesCount + newImagesCount > this.MAX_IMAGES) {
+      throw new MaxImagesExceededError();
+    }
+  }
+
   async create(data: CreateAuthorProfileInput): Promise<AuthorProfile> {
     try {
       const slug = data.slug || slugify(data.name);
       await this.validateSlug(slug);
 
-      if (data.influences) {
-        validateInfluences(data.influences);
+      // Handle images if provided
+      if (data.images && data.images.length > 0) {
+        await this.validateImagesCount("", data.images.length);
       }
 
       return await db.$transaction(async (tx) => {
-        return tx.authorProfile.create({
+        // Create author profile
+        const profile = await tx.authorProfile.create({
           data: {
-            ...data,
+            name: data.name,
+            born: data.born,
+            died: data.died,
+            influences: data.influences,
+            bio: data.bio,
             slug,
           },
         });
+
+        // Create images if provided
+        if (data.images && data.images.length > 0) {
+          await tx.authorImage.createMany({
+            data: data.images.map((image) => ({
+              url: image.url,
+              authorProfileId: profile.id,
+            })),
+          });
+        }
+
+        return profile;
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -60,19 +117,51 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
         throw new AuthorProfileNotFoundError();
       }
 
+      // Handle slug updates
       if (data.name || data.slug) {
         const newSlug = data.slug || (data.name ? slugify(data.name) : existing.slug);
         await this.validateSlug(newSlug, id);
         data.slug = newSlug;
       }
 
-      if (data.influences) {
-        validateInfluences(data.influences);
+      // Handle image updates if provided
+      if (data.images) {
+        await this.validateImagesCount(id, data.images.length);
       }
 
-      return await db.authorProfile.update({
-        where: { id },
-        data,
+      return await db.$transaction(async (tx) => {
+        // Update basic profile data
+        const profile = await tx.authorProfile.update({
+          where: { id },
+          data: {
+            name: data.name,
+            born: data.born,
+            died: data.died,
+            influences: data.influences,
+            bio: data.bio,
+            slug: data.slug,
+          },
+        });
+
+        // Update images if provided
+        if (data.images) {
+          // Delete existing images
+          await tx.authorImage.deleteMany({
+            where: { authorProfileId: id }
+          });
+
+          // Create new images
+          if (data.images.length > 0) {
+            await tx.authorImage.createMany({
+              data: data.images.map((image) => ({
+                url: image.url,
+                authorProfileId: id,
+              })),
+            });
+          }
+        }
+
+        return profile;
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -86,9 +175,28 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
 
   async delete(id: string): Promise<AuthorProfile> {
     try {
-      return await db.authorProfile.delete({
-        where: { id },
+      // Get all images before deletion
+      const images = await db.authorImage.findMany({
+        where: { authorProfileId: id }
       });
+
+      // Delete the profile and its images from the database
+      const deletedProfile = await db.$transaction(async (tx) => {
+        await tx.authorImage.deleteMany({
+          where: { authorProfileId: id }
+        });
+
+        return tx.authorProfile.delete({
+          where: { id },
+        });
+      });
+
+      // Delete images from Cloudinary after successful database deletion
+      await Promise.all(
+        images.map(image => this.handleImageDeletion(image.id))
+      );
+
+      return deletedProfile;
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
@@ -102,12 +210,28 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
   async getById(id: string): Promise<AuthorProfile | null> {
     return db.authorProfile.findUnique({
       where: { id },
+      include: {
+        images: {
+          select: {
+            id: true,
+            url: true
+          }
+        }
+      }
     });
   }
 
   async getBySlug(slug: string): Promise<AuthorProfile | null> {
     return db.authorProfile.findUnique({
       where: { slug },
+      include: {
+        images: {
+          select: {
+            id: true,
+            url: true
+          }
+        }
+      }
     });
   }
 
@@ -128,6 +252,14 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
     const [items, total] = await Promise.all([
       db.authorProfile.findMany({
         where: whereCondition,
+        include: {
+          images: {
+            select: {
+              id: true,
+              url: true
+            }
+          }
+        },
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },

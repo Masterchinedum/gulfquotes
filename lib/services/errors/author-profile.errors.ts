@@ -23,3 +23,27 @@ export class AuthorProfileValidationError extends AppError {
     super(message, "AUTHOR_PROFILE_VALIDATION", 400);
   }
 }
+
+export class ImageUploadError extends AppError {
+  constructor(message: string = "Failed to upload image") {
+    super(message, "IMAGE_UPLOAD_ERROR", 400);
+  }
+}
+
+export class ImageDeleteError extends AppError {
+  constructor(message: string = "Failed to delete image") {
+    super(message, "IMAGE_DELETE_ERROR", 400);
+  }
+}
+
+export class MaxImagesExceededError extends AppError {
+  constructor(message: string = "Maximum number of images exceeded") {
+    super(message, "MAX_IMAGES_EXCEEDED", 400);
+  }
+}
+
+export class InvalidImageError extends AppError {
+  constructor(message: string = "Invalid image format or size") {
+    super(message, "INVALID_IMAGE", 400);
+  }
+}
