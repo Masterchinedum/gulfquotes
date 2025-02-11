@@ -48,7 +48,7 @@ export const registerSchema = z.object({
 export type RegisterSchema = z.infer<typeof registerSchema>
 
 export const resetSchema = z.object({
-  email: z.string().email('Email is required'),
+  email: z.string().email('Email is required')
 })
 
 export type ResetSchema = z.infer<typeof resetSchema>
