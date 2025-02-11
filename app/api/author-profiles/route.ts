@@ -5,7 +5,8 @@ import { auth } from "@/auth";
 import { createAuthorProfileSchema } from "@/schemas/author-profile";
 import { authorProfileService } from "@/lib/services/author-profile.service";
 import type { AuthorProfileResponse, AuthorProfilesResponse } from "@/types/api/author-profiles";
-import { DuplicateAuthorProfileError } from "@/lib/services/errors/author-profile.errors";
+import { DuplicateAuthorProfileError, MaxImagesExceededError } from "@/lib/services/errors/author-profile.errors";
+import { cloudinaryConfig } from "@/lib/cloudinary";
 
 // GET handler for listing author profiles
 export async function GET(req: Request): Promise<NextResponse<AuthorProfilesResponse>> {
@@ -70,10 +71,42 @@ export async function POST(req: Request): Promise<NextResponse<AuthorProfileResp
       );
     }
 
-    // Create author profile
+    // Validate images if present
+    if (validatedData.data.images && validatedData.data.images.length > 0) {
+      // Check maximum number of images
+      if (validatedData.data.images.length > cloudinaryConfig.maxFiles) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "VALIDATION_ERROR",
+              message: `Maximum ${cloudinaryConfig.maxFiles} images allowed`,
+            }
+          },
+          { status: 400 }
+        );
+      }
+
+      // Validate each image URL
+      for (const image of validatedData.data.images) {
+        if (!image.url.includes(cloudinaryConfig.cloudName)) {
+          return NextResponse.json(
+            {
+              error: {
+                code: "VALIDATION_ERROR",
+                message: "Invalid image URL. Images must be uploaded to Cloudinary",
+              }
+            },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
+    // Create author profile with images
     const authorProfile = await authorProfileService.create(validatedData.data);
 
     return NextResponse.json({ data: authorProfile });
+
   } catch (error: unknown) {
     console.error("[AUTHOR_PROFILES_POST]", error);
 
@@ -84,6 +117,18 @@ export async function POST(req: Request): Promise<NextResponse<AuthorProfileResp
             code: "DUPLICATE_AUTHOR_PROFILE", 
             message: error.message 
           } 
+        },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof MaxImagesExceededError) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "MAX_IMAGES_EXCEEDED",
+            message: `Maximum ${cloudinaryConfig.maxFiles} images allowed`
+          }
         },
         { status: 400 }
       );
