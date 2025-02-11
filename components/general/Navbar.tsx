@@ -6,7 +6,7 @@ import Link from "next/link";
 import { LoginButton } from "@/components/auth/login-button";
 import { Button } from "@/components/ui/button";
 import { UserButton } from "@/components/auth/user-button";
-import SearchField from "@/components/SearchField";
+import { SearchField } from "@/components/search/SearchField";
 
 export function Navbar() {
   const { status } = useSession();
