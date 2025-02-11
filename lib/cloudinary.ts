@@ -25,7 +25,7 @@ export const defaultUploadOptions: CloudinaryUploadOptions = {
   maxFileSize: 7 * 1024 * 1024, // 7MB
   uploadPreset: UPLOAD_PRESET,
   folder: cloudinaryConfig.folder,
-  sources: ['local', 'url', 'camera'],
+  sources: ['local', 'url', 'camera'] as const, // Add type assertion
   clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
 } as const;
 

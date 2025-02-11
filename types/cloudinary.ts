@@ -1,4 +1,8 @@
-import type { CldUploadWidgetResults } from 'next-cloudinary';
+import type { 
+  CldUploadWidgetResults,
+  CloudinaryUploadWidgetError as NextCloudinaryError,
+  UploadWidgetConfig // Add this import
+} from 'next-cloudinary';
 
 // types/cloudinary.ts
 
@@ -20,12 +24,11 @@ export interface CloudinaryError {
   };
 }
 
-export interface CloudinaryUploadOptions {
+export interface CloudinaryUploadOptions extends Omit<UploadWidgetConfig, 'cloudName' | 'uploadPreset'> {
   maxFiles?: number;
   maxFileSize?: number;
   folder?: string;
-  clientAllowedFormats?: string[];
-  sources?: string[];
+  sources?: ("local" | "url" | "camera" | "dropbox" | "facebook" | "instagram" | "google_drive" | "shutterstock" | "gettyimages" | "istock" | "unsplash" | "image_search")[];
 }
 
 export interface CloudinaryInfo {
@@ -37,9 +40,18 @@ export type CloudinaryUploadResult = CldUploadWidgetResults;
 
 export type CloudinaryWidgetResult = CloudinaryUploadResponse | CloudinaryError;
 
+// Use the error type from next-cloudinary
+export type CloudinaryUploadWidgetError = NextCloudinaryError;
+
 export interface CloudinaryConfig {
   cloudName: string | undefined;
   uploadPreset: string | undefined;
   folder: string;
   maxFiles: number;
+}
+
+export interface CloudinaryUploadWidgetProps {
+  onUploadSuccess: (result: CloudinaryUploadResult) => void;
+  onUploadError?: (error: CloudinaryUploadWidgetError) => void;
+  disabled?: boolean;
 }

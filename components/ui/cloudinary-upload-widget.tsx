@@ -4,12 +4,16 @@ import { useCallback } from "react";
 import { CldUploadWidget } from "next-cloudinary";
 import { Button } from "@/components/ui/button";
 import { cloudinaryConfig, defaultUploadOptions } from "@/lib/cloudinary";
-import type { CloudinaryUploadResult } from "@/types/cloudinary";
+import type { 
+  CloudinaryUploadResult, 
+  CloudinaryResource,
+  CloudinaryUploadWidgetError 
+} from "@/types/cloudinary";
 import { ImagePlus } from "lucide-react";
 
 interface CloudinaryUploadWidgetProps {
   onUploadSuccess: (result: CloudinaryUploadResult) => void;
-  onUploadError?: (error: Error) => void;
+  onUploadError?: (error: CloudinaryUploadWidgetError) => void;
   disabled?: boolean;
 }
 
@@ -18,18 +22,17 @@ export function CloudinaryUploadWidget({
   onUploadError,
   disabled = false
 }: CloudinaryUploadWidgetProps) {
-  const handleUploadSuccess = useCallback((result: CloudinaryUploadResponse) => {
+  const handleUploadSuccess = useCallback((result: CloudinaryUploadResult) => {
     if (result.event !== "success") return;
-
-    const uploadInfo = result.info;
     
+    const info = result.info as CloudinaryResource;
     onUploadSuccess({
-      secure_url: uploadInfo.secure_url,
-      public_id: uploadInfo.public_id,
+      secure_url: info.secure_url,
+      public_id: info.public_id,
     });
   }, [onUploadSuccess]);
 
-  const handleUploadError = useCallback((error: Error) => {
+  const handleUploadError = useCallback((error: CloudinaryUploadWidgetError) => {
     console.error("Upload error:", error);
     onUploadError?.(error);
   }, [onUploadError]);
@@ -37,14 +40,7 @@ export function CloudinaryUploadWidget({
   return (
     <CldUploadWidget
       uploadPreset={cloudinaryConfig.uploadPreset}
-      options={{
-        ...defaultUploadOptions,
-        maxFiles: cloudinaryConfig.maxFiles,
-        folder: cloudinaryConfig.folder,
-        clientAllowedFormats: ["jpg", "jpeg", "png", "webp"],
-        sources: ["local", "url", "camera"],
-        maxFileSize: 7000000, // 7MB
-      }}
+      options={defaultUploadOptions}
       onSuccess={handleUploadSuccess}
       onError={handleUploadError}
     >
