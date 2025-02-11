@@ -4,6 +4,7 @@ import { CldImage } from "next-cloudinary";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { imageTransforms, getImagePublicId } from "@/lib/cloudinary";
+import type { CloudinaryUploadWidgetInfo } from "next-cloudinary";
 import type { CloudinaryUploadResult } from "@/types/cloudinary";
 
 interface ImagePreviewProps {
@@ -18,7 +19,10 @@ export function ImagePreview({ images, onDelete, disabled = false }: ImagePrevie
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
       {images.map((image) => {
-        const publicId = getImagePublicId(image.secure_url);
+        if (image.event !== "success" || !image.info) return null;
+        
+        const info = image.info as CloudinaryUploadWidgetInfo;
+        const publicId = getImagePublicId(info.secure_url);
         if (!publicId) return null;
 
         return (
@@ -43,7 +47,7 @@ export function ImagePreview({ images, onDelete, disabled = false }: ImagePrevie
               disabled={disabled}
             >
               <X className="h-4 w-4" />
-              <span className="sr-only">Delete image</span>
+              <span className="sr-only">Remove image</span>
             </Button>
           </div>
         );

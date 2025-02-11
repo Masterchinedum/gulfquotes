@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cloudinaryConfig, defaultUploadOptions } from "@/lib/cloudinary";
 import type { 
   CloudinaryUploadResult, 
-  CloudinaryResource,
+  // CloudinaryResource,
   CloudinaryUploadWidgetError 
 } from "@/types/cloudinary";
 import { ImagePlus } from "lucide-react";
@@ -23,13 +23,10 @@ export function CloudinaryUploadWidget({
   disabled = false
 }: CloudinaryUploadWidgetProps) {
   const handleUploadSuccess = useCallback((result: CloudinaryUploadResult) => {
-    if (result.event !== "success") return;
+    if (result.event !== "success" || !result.info) return;
     
-    const info = result.info as CloudinaryResource;
-    onUploadSuccess({
-      secure_url: info.secure_url,
-      public_id: info.public_id,
-    });
+    // Pass the original result object since that's what the type expects
+    onUploadSuccess(result);
   }, [onUploadSuccess]);
 
   const handleUploadError = useCallback((error: CloudinaryUploadWidgetError) => {

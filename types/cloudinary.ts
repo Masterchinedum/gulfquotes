@@ -1,8 +1,8 @@
 import type { 
   CloudinaryUploadWidgetResults,
-  CloudinaryUploadWidgetError,
-  UploadWidgetConfig,
-  // CloudinaryUploadWidgetInfo 
+  CloudinaryUploadWidgetError as NextCloudinaryError,
+  CloudinaryUploadWidgetConfig, // Changed from UploadWidgetConfig
+  CloudinaryUploadWidgetInfo 
 } from 'next-cloudinary';
 
 // types/cloudinary.ts
@@ -12,10 +12,17 @@ export interface CloudinaryResource {
   secure_url: string;
 }
 
-// Update the result type to match next-cloudinary's type
+// Define a more specific upload result type using CloudinaryUploadWidgetInfo
+export interface CloudinaryUploadSuccess {
+  event: 'success';
+  info: CloudinaryUploadWidgetInfo;
+}
+
+// Use the same type as next-cloudinary expects
 export type CloudinaryUploadResult = CloudinaryUploadWidgetResults;
 
-export interface CloudinaryUploadOptions extends Omit<UploadWidgetConfig, 'cloudName' | 'uploadPreset'> {
+// Update to use CloudinaryUploadWidgetConfig
+export interface CloudinaryUploadOptions extends Omit<CloudinaryUploadWidgetConfig, 'cloudName' | 'uploadPreset'> {
   maxFiles?: number;
   maxFileSize?: number;
   folder?: string;
@@ -30,7 +37,8 @@ export interface CloudinaryConfig {
   maxFiles: number;
 }
 
-export type CloudinaryUploadWidgetError = CloudinaryUploadWidgetError;
+// Use the error type from next-cloudinary
+export type CloudinaryUploadWidgetError = NextCloudinaryError;
 
 export interface CloudinaryUploadWidgetProps {
   onUploadSuccess: (result: CloudinaryUploadResult) => void;
