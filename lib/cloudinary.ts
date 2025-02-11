@@ -1,5 +1,13 @@
 // lib/cloudinary.ts
 
+if (!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
+  throw new Error('NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME is not defined');
+}
+
+if (!process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET) {
+  throw new Error('NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET is not defined');
+}
+
 import { CloudinaryUploadOptions } from '@/types/cloudinary';
 
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;

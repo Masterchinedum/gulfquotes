@@ -86,6 +86,19 @@ export async function POST(req: Request): Promise<NextResponse<AuthorProfileResp
         );
       }
 
+      // Verify cloudinary configuration
+      if (!cloudinaryConfig.cloudName) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "CONFIGURATION_ERROR",
+              message: "Cloudinary configuration is missing",
+            }
+          },
+          { status: 500 }
+        );
+      }
+
       // Validate each image URL
       for (const image of validatedData.data.images) {
         if (!image.url.includes(cloudinaryConfig.cloudName)) {
