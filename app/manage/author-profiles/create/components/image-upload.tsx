@@ -21,7 +21,7 @@ export function CreateImageUpload({ form, disabled }: CreateImageUploadProps) {
   const currentImages = form.watch("images") || [];
 
   const handleUploadSuccess = (result: CloudinaryUploadResult) => {
-    if (result.event !== "success") return;
+    if (result.event !== "success" || !result.info) return;
 
     const currentImages = form.getValues("images") || [];
     if (currentImages.length >= cloudinaryConfig.maxFiles) {
