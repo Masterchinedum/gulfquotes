@@ -3,7 +3,13 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { updateAuthorProfileSchema } from "@/schemas/author-profile";
 import { authorProfileService } from "@/lib/services/author-profile.service";
-import { AuthorProfileNotFoundError } from "@/lib/services/errors/author-profile.errors";
+import { 
+  AuthorProfileNotFoundError, 
+  MaxImagesExceededError,
+  InvalidImageError 
+} from "@/lib/services/errors/author-profile.errors";
+import { cloudinaryConfig } from "@/lib/cloudinary";
+import type { AuthorProfileResponse } from "@/types/api/author-profiles";
 
 export async function GET(req: Request) {
   try {
@@ -30,8 +36,9 @@ export async function GET(req: Request) {
   }
 }
 
-export async function PATCH(req: Request) {
+export async function PATCH(req: Request): Promise<NextResponse<AuthorProfileResponse>> {
   try {
+    // Auth checks
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ 
@@ -45,6 +52,7 @@ export async function PATCH(req: Request) {
       }, { status: 403 });
     }
 
+    // Get slug from URL
     const slug = req.url.split('/author-profiles/')[1]?.split('/')[0];
     if (!slug) {
       return NextResponse.json({ 
@@ -52,6 +60,7 @@ export async function PATCH(req: Request) {
       }, { status: 400 });
     }
 
+    // Parse and validate request body
     const body = await req.json();
     const validatedData = updateAuthorProfileSchema.safeParse(body);
 
@@ -65,6 +74,32 @@ export async function PATCH(req: Request) {
       }, { status: 400 });
     }
 
+    // Validate images if present
+    if (validatedData.data.images?.length) {
+      // Check maximum images
+      if (validatedData.data.images.length > cloudinaryConfig.maxFiles) {
+        return NextResponse.json({
+          error: {
+            code: "VALIDATION_ERROR",
+            message: `Maximum ${cloudinaryConfig.maxFiles} images allowed`
+          }
+        }, { status: 400 });
+      }
+
+      // Validate each image URL
+      for (const image of validatedData.data.images) {
+        if (!image.url.includes(cloudinaryConfig.cloudName)) {
+          return NextResponse.json({
+            error: {
+              code: "VALIDATION_ERROR",
+              message: "Invalid image URL. Images must be uploaded to Cloudinary"
+            }
+          }, { status: 400 });
+        }
+      }
+    }
+
+    // Get existing profile
     const authorProfile = await authorProfileService.getBySlug(slug);
     if (!authorProfile) {
       return NextResponse.json({ 
@@ -72,12 +107,14 @@ export async function PATCH(req: Request) {
       }, { status: 404 });
     }
 
+    // Update profile with validated data
     const updatedProfile = await authorProfileService.update(
       authorProfile.id,
       validatedData.data
     );
 
     return NextResponse.json({ data: updatedProfile });
+
   } catch (error) {
     console.error("[AUTHOR_PROFILE_PATCH]", error);
     
@@ -85,6 +122,24 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ 
         error: { code: "NOT_FOUND", message: error.message }
       }, { status: 404 });
+    }
+
+    if (error instanceof MaxImagesExceededError) {
+      return NextResponse.json({
+        error: {
+          code: "MAX_IMAGES_EXCEEDED",
+          message: error.message
+        }
+      }, { status: 400 });
+    }
+
+    if (error instanceof InvalidImageError) {
+      return NextResponse.json({
+        error: {
+          code: "INVALID_IMAGE",
+          message: error.message
+        }
+      }, { status: 400 });
     }
 
     return NextResponse.json({ 
