@@ -1,19 +1,9 @@
+import type { CldUploadWidgetResults } from 'next-cloudinary';
+
 // types/cloudinary.ts
 
 export interface CloudinaryResource {
-  asset_id: string;
   public_id: string;
-  version: string;
-  version_id: string;
-  signature: string;
-  width: number;
-  height: number;
-  format: string;
-  resource_type: string;
-  created_at: string;
-  bytes: number;
-  type: string;
-  url: string;
   secure_url: string;
 }
 
@@ -33,21 +23,20 @@ export interface CloudinaryError {
 export interface CloudinaryUploadOptions {
   maxFiles?: number;
   maxFileSize?: number;
-  uploadPreset?: string;
   folder?: string;
-  sources?: string[];
   clientAllowedFormats?: string[];
+  sources?: string[];
 }
 
-export type CloudinaryUploadResult = {
+export interface CloudinaryInfo {
   secure_url: string;
   public_id: string;
-  error?: string;
-};
+}
+
+export type CloudinaryUploadResult = CldUploadWidgetResults;
 
 export type CloudinaryWidgetResult = CloudinaryUploadResponse | CloudinaryError;
 
-// Add CloudinaryConfig type
 export interface CloudinaryConfig {
   cloudName: string | undefined;
   uploadPreset: string | undefined;

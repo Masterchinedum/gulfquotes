@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { CldUploadWidget } from "next-cloudinary";
+import type { CloudinaryUploadWidgetResults } from "next-cloudinary"; // Fixed import
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ImagePlus, X } from "lucide-react";
 import { cloudinaryConfig } from "@/lib/cloudinary";
 import { CldImage } from "next-cloudinary";
 import { UseFormReturn } from "react-hook-form";
-import type { CloudinaryUploadResult } from "@/types/cloudinary";
+import type { CloudinaryResource } from "@/types/cloudinary"; // Updated import
 import { UpdateAuthorProfileInput } from "@/schemas/author-profile";
 
 interface EditImageUploadProps {
@@ -20,17 +21,18 @@ export function EditImageUpload({ form, disabled }: EditImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const currentImages = form.watch("images") || [];
 
-  const handleUploadSuccess = (result: CloudinaryUploadResult) => {
-    if (result.event !== "success") return;
+  const handleUploadSuccess = (results: CloudinaryUploadWidgetResults) => { // Updated type
+    if (results.event !== "success") return;
 
     const currentImages = form.getValues("images") || [];
     if (currentImages.length >= cloudinaryConfig.maxFiles) {
       return;
     }
 
+    const info = results.info as CloudinaryResource;
     const newImage = {
-      url: result.info.secure_url,
-      id: result.info.public_id,
+      url: info.secure_url,
+      id: info.public_id,
     };
 
     form.setValue("images", [...currentImages, newImage], {
