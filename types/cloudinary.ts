@@ -1,7 +1,6 @@
 import type { 
   CloudinaryUploadWidgetResults,
   CloudinaryUploadWidgetError as NextCloudinaryError,
-  CloudinaryUploadWidgetConfig, // Changed from UploadWidgetConfig
   CloudinaryUploadWidgetInfo 
 } from 'next-cloudinary';
 
@@ -21,11 +20,12 @@ export interface CloudinaryUploadSuccess {
 // Use the same type as next-cloudinary expects
 export type CloudinaryUploadResult = CloudinaryUploadWidgetResults;
 
-// Update to use CloudinaryUploadWidgetConfig
-export interface CloudinaryUploadOptions extends Omit<CloudinaryUploadWidgetConfig, 'cloudName' | 'uploadPreset'> {
+// Define our own upload options interface since CloudinaryUploadWidgetConfig doesn't exist
+export interface CloudinaryUploadOptions {
   maxFiles?: number;
   maxFileSize?: number;
   folder?: string;
+  uploadPreset?: string; // Add this field
   sources?: ("local" | "url" | "camera" | "dropbox" | "facebook" | "instagram" | "google_drive" | "shutterstock" | "gettyimages" | "istock" | "unsplash" | "image_search")[];
   clientAllowedFormats?: string[];
 }
