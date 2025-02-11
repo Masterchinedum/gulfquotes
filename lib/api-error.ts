@@ -1,14 +1,14 @@
-import { ApiError, QuoteErrorCode } from "@/types/api/quotes";
+import { ApiError, AppErrorCode } from "@/types/api/quotes";
 import { ZodError } from "zod";
 
 export class AppError extends Error {
-  code: QuoteErrorCode;
+  code: AppErrorCode;
   statusCode: number;
   details?: Record<string, string[]>;
 
   constructor(
     message: string, 
-    code: QuoteErrorCode, 
+    code: AppErrorCode, 
     statusCode: number = 400, 
     details?: Record<string, string[]>
   ) {

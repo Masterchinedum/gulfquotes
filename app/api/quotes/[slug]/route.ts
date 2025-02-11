@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { updateQuoteSchema } from "@/schemas/quote";
 import { quoteService } from "@/lib/services/quote.service";
 import { AppError } from "@/lib/api-error";
-import type { QuoteResponse, UpdateQuoteResponse } from "@/types/api/quotes";
+import type { QuoteResponse, UpdateQuoteResponse, QuoteErrorCode } from "@/types/api/quotes";
 import { formatZodError } from "@/lib/api-error";
 
 // GET endpoint to fetch quote details
@@ -108,11 +108,11 @@ export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteRespo
       return NextResponse.json({ data: updatedQuote });
     } catch (error) {
       if (error instanceof AppError) {
-        // Now error.code will be strictly typed as QuoteErrorCode
+        // Cast the error code to QuoteErrorCode since we know this endpoint only throws quote-related errors
         return NextResponse.json(
           { 
             error: { 
-              code: error.code, 
+              code: error.code as QuoteErrorCode, 
               message: error.message,
               details: error.details 
             } 
@@ -125,7 +125,7 @@ export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteRespo
   } catch (error) {
     console.error("[QUOTE_PATCH]", error);
     return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR" as const, message: "Internal server error" } },
+      { error: { code: "INTERNAL_ERROR" as QuoteErrorCode, message: "Internal server error" } },
       { status: 500 }
     );
   }

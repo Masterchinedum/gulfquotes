@@ -67,18 +67,45 @@ export interface ListQuotesParams extends
   QuotePaginationParams,
   QuoteIncludeParams {}
 
-export type QuoteErrorCode = 
+// Base error codes that can be shared across different features
+export type BaseErrorCode = 
   | "UNAUTHORIZED"
   | "FORBIDDEN"
   | "NOT_FOUND"
   | "VALIDATION_ERROR"
   | "INTERNAL_ERROR"
+  | "BAD_REQUEST"
+  | "DATABASE_ERROR";  // Add this to base error codes
+
+// Category specific error codes
+export type CategoryErrorCode =
+  | BaseErrorCode
+  | "CATEGORY_NOT_FOUND"
+  | "DUPLICATE_CATEGORY"
+  | "INVALID_CATEGORY_DATA";
+
+// Quote specific error codes
+export type QuoteErrorCode = 
+  | BaseErrorCode
   | "DUPLICATE_SLUG"
   | "CONTENT_TOO_LONG"
   | "CONCURRENT_MODIFICATION"
   | "CONCURRENT_DELETE"
-  | "BAD_REQUEST"
-  | "QUOTE_ACCESS_DENIED";  // Add this
+  | "QUOTE_ACCESS_DENIED"
+  | "NO_CHANGES"
+  | "CATEGORY_NOT_FOUND"
+  | "INVALID_REFERENCE";  // Add this error code
+
+// Author Profile specific error codes
+export type AuthorProfileErrorCode =
+  | BaseErrorCode
+  | "AUTHOR_PROFILE_NOT_FOUND"
+  | "DUPLICATE_AUTHOR_PROFILE"
+  | "INVALID_AUTHOR_PROFILE_DATA"
+  | "AUTHOR_PROFILE_VALIDATION";
+
+// Combined error code type for the AppError class
+export type AppErrorCode = QuoteErrorCode | AuthorProfileErrorCode | CategoryErrorCode;
 
 export interface QuoteApiError extends ApiError {
   code: QuoteErrorCode;

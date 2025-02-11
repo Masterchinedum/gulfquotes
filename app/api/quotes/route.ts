@@ -1,42 +1,44 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { createQuoteSchema } from "@/schemas/quote";
-import { CreateQuoteResponse, QuotesResponse } from "@/types/api/quotes";
-import { formatZodError, AppError } from "@/lib/api-error"; // Add AppError import here
+import { CreateQuoteResponse, QuotesResponse, QuoteErrorCode } from "@/types/api/quotes";
+import { formatZodError, AppError } from "@/lib/api-error";
 import { quoteService } from "@/lib/services/quote.service";
 
 export async function POST(req: Request): Promise<NextResponse<CreateQuoteResponse>> {
   try {
-    // Check authentication
     const session = await auth();
     
     if (!session?.user?.id) {
       return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Unauthorized" } },
+        { error: { code: "UNAUTHORIZED" as QuoteErrorCode, message: "Unauthorized" } },
         { status: 401 }
       );
     }
 
     if (session.user.role !== "ADMIN" && session.user.role !== "AUTHOR") {
       return NextResponse.json(
-        { error: { code: "FORBIDDEN", message: "Permission denied" } },
+        { error: { code: "FORBIDDEN" as QuoteErrorCode, message: "Permission denied" } },
         { status: 403 }
       );
     }
 
-    // Validate request body
     const body = await req.json();
     const validatedData = createQuoteSchema.safeParse(body);
 
     if (!validatedData.success) {
       return NextResponse.json(
-        { error: formatZodError(validatedData.error) },
+        { error: { 
+            code: "VALIDATION_ERROR" as QuoteErrorCode, 
+            message: "Invalid input data",
+            details: formatZodError(validatedData.error).details 
+          } 
+        },
         { status: 400 }
       );
     }
 
     try {
-      // Create quote with author profile validation
       const quote = await quoteService.create({
         ...validatedData.data,
         authorId: session.user.id
@@ -44,20 +46,24 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
 
       return NextResponse.json({ data: quote });
     } catch (error) {
-      // Handle specific errors from service
       if (error instanceof AppError) {
         return NextResponse.json(
-          { error: { code: error.code, message: error.message } },
+          { error: { 
+              code: error.code as QuoteErrorCode, 
+              message: error.message,
+              details: error.details 
+            } 
+          },
           { status: error.statusCode }
         );
       }
-      throw error; // Re-throw unexpected errors
+      throw error;
     }
 
   } catch (error) {
     console.error("[QUOTES_POST]", error);
     return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
+      { error: { code: "INTERNAL_ERROR" as QuoteErrorCode, message: "Internal server error" } },
       { status: 500 }
     );
   }
