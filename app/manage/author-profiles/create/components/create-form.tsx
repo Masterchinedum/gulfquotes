@@ -26,7 +26,7 @@ export function CreateForm() {
       died: "",
       influences: "",
       bio: "",
-      images: [], // Add this line
+      images: [], 
     },
   });
 

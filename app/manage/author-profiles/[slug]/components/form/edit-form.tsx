@@ -16,7 +16,12 @@ import { ReloadIcon } from "@radix-ui/react-icons";
 import { AuthorProfile } from "@prisma/client";
 
 interface EditFormProps {
-  author: AuthorProfile;
+  author: AuthorProfile & {
+    images: {
+      id: string;
+      url: string;
+    }[];
+  };
 }
 
 export function EditForm({ author }: EditFormProps) {

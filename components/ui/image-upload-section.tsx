@@ -9,14 +9,24 @@ import { cloudinaryConfig } from "@/lib/cloudinary";
 import { CldImage } from "next-cloudinary";
 import { UseFormReturn } from "react-hook-form";
 import type { CloudinaryUploadResult } from "@/types/cloudinary";
+import { AuthorProfileBase } from "@/types/api/author-profiles";
+
+// Create a type for the common form structure
+// type AuthorProfileFormData = {
+//   name: string;
+//   bio: string;
+//   images: Array<{
+//     id: string;
+//     url: string;
+//   }>;
+//   born?: string | null;
+//   died?: string | null;
+//   influences?: string | null;
+//   slug?: string;
+// };
 
 interface ImageUploadSectionProps {
-  form: UseFormReturn<{
-    images?: Array<{
-      url: string;
-      id: string;
-    }>;
-  }>;
+  form: UseFormReturn<AuthorProfileBase>;
   disabled?: boolean;
 }
 

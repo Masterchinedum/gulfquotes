@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { UseFormReturn } from "react-hook-form";
 import { UpdateAuthorProfileInput } from "@/schemas/author-profile";
+import { ImageUploadSection } from "@/components/ui/image-upload-section";
 
 interface FormSectionsProps {
   form: UseFormReturn<UpdateAuthorProfileInput>;
@@ -114,6 +115,12 @@ export function FormSections({ form, disabled }: FormSectionsProps) {
           )}
         />
       </div>
+
+      {/* Add Image Upload Section */}
+      <ImageUploadSection 
+        form={form} 
+        disabled={disabled} 
+      />
     </div>
   );
 }

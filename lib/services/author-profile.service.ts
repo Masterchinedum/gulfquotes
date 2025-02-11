@@ -220,8 +220,8 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
     });
   }
 
-  async getBySlug(slug: string): Promise<AuthorProfile | null> {
-    return db.authorProfile.findUnique({
+  async getBySlug(slug: string): Promise<AuthorProfile & { images: { id: string; url: string; }[] }> {
+    const authorProfile = await db.authorProfile.findUnique({
       where: { slug },
       include: {
         images: {
@@ -232,6 +232,12 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
         }
       }
     });
+
+    if (!authorProfile) {
+      throw new AuthorProfileNotFoundError();
+    }
+
+    return authorProfile;
   }
 
   async list(params: AuthorProfileListParams): Promise<AuthorProfileListResponse> {

@@ -130,7 +130,10 @@ export function FormSections({ form, disabled }: FormSectionsProps) {
       </div>
 
       {/* Add Image Upload Section */}
-      <ImageUploadSection form={form} disabled={disabled} />
+      <ImageUploadSection 
+        form={form} 
+        disabled={disabled} 
+      />
     </div>
   );
 }

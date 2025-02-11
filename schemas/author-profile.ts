@@ -1,33 +1,18 @@
 import { z } from "zod";
 
-// Add image schema
-const authorImageSchema = z.object({
+export const authorImageSchema = z.object({
+  id: z.string(),
   url: z.string().url("Invalid image URL"),
 });
 
-// Base Schema for AuthorProfile validation
-const authorProfileBaseSchema = z.object({
-  name: z.string()
-    .min(1, "Name is required")
-    .max(100, "Name must be less than 100 characters"),
-  born: z.string()
-    .nullable()
-    .optional(),
-  died: z.string()
-    .nullable()
-    .optional(),
-  influences: z.string()
-    .nullable()
-    .optional(),
-  bio: z.string()
-    .min(1, "Biography is required")
-    .max(2000, "Biography must be less than 2000 characters"),
-  slug: z.string()
-    .optional(), // Make slug optional as it can be auto-generated
-  images: z.array(authorImageSchema)
-    .optional()
-    .default([])
-    .transform(val => val || []), // Handle undefined/null cases
+export const authorProfileBaseSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100),
+  bio: z.string().min(1, "Biography is required").max(2000),
+  born: z.string().nullable().optional(),
+  died: z.string().nullable().optional(),
+  influences: z.string().nullable().optional(),
+  slug: z.string().optional(),
+  images: z.array(authorImageSchema).default([]),
 });
 
 // Schema for creating a new author profile
@@ -44,7 +29,7 @@ export const updateAuthorProfileSchema = authorProfileBaseSchema
   });
 
 // TypeScript Types
-export type CreateAuthorProfileInput = z.infer<typeof createAuthorProfileSchema>;
+export type CreateAuthorProfileInput = z.infer<typeof authorProfileBaseSchema>;
 export type UpdateAuthorProfileInput = z.infer<typeof updateAuthorProfileSchema>;
 
 // Custom validator for influences

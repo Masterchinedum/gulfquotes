@@ -31,19 +31,22 @@ export type AuthorProfileResponse = ApiResponse<AuthorProfile>;
 export type AuthorProfilesResponse = ApiResponse<PaginatedResponse<AuthorProfile>>;
 
 // DTO Types
-export interface AuthorProfileDto {
-  id: string;
+export interface AuthorProfileBase {
   name: string;
+  bio: string;
   born?: string | null;
   died?: string | null;
   influences?: string | null;
-  bio: string;
-  slug: string;
+  slug?: string;
+  images: Array<{
+    id: string;
+    url: string;
+  }>;
+}
+
+export interface AuthorProfileDto extends AuthorProfileBase {
+  id: string;
   createdAt: Date;
   updatedAt: Date;
   quotesCount?: number;
-  images: {
-    id: string;
-    url: string;
-  }[];
 }
