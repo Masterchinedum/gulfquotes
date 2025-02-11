@@ -10,7 +10,6 @@ import db from "@/lib/prisma";
 import { 
   AuthorProfileNotFoundError,
   DuplicateAuthorProfileError,
-  ImageUploadError,
   ImageDeleteError,
   MaxImagesExceededError
 } from "./errors/author-profile.errors";
@@ -50,7 +49,7 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
       await db.authorImage.delete({
         where: { id: imageId }
       });
-    } catch (error) {
+    } catch {  // Remove the unused error parameter
       throw new ImageDeleteError();
     }
   }
