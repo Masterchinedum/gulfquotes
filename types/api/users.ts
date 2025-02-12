@@ -1,5 +1,10 @@
 import { Prisma } from "@prisma/client";
 
+// Update search params interface
+export interface SearchParams {
+  [key: string]: string | string[] | undefined;
+}
+
 // Base API Response Types
 export interface ApiResponse<T> {
   data?: T;
@@ -48,10 +53,10 @@ export interface UserPaginationParams {
 }
 
 // Combined params type
-export interface ListUsersParams extends UserFilterParams, UserPaginationParams {
+export interface ListUsersParams {
   page?: number;
   limit?: number;
-  search?: string;
+  search?: string | undefined;
 }
 
 // Prisma Where Input Type

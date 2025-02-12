@@ -4,10 +4,13 @@ import { redirect } from "next/navigation";
 import { Shell } from "@/components/users/shell"; 
 import { UsersList } from "@/components/users/users-list";
 
-// Update the interface to match Next.js 13+ types
-interface PageProps {
-  params: { [key: string]: string | undefined };
-  searchParams: { [key: string]: string | string[] | undefined };
+interface SearchParams {
+  [key: string]: string | string[] | undefined;
+}
+
+export interface PageProps {
+  params: { slug: string };
+  searchParams: SearchParams;
 }
 
 export default async function UsersPage({ 
@@ -19,9 +22,9 @@ export default async function UsersPage({
     redirect("/login");
   }
 
-  // Extract and validate search params
+  // Extract and validate search params with proper type safety
   const limit = Math.min(50, Math.max(1, Number(searchParams.limit) || 10));
-  const search = (searchParams.search as string)?.trim();
+  const search = typeof searchParams.search === 'string' ? searchParams.search.trim() : undefined;
 
   return (
     <Shell>
