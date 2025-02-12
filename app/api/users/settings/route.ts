@@ -95,15 +95,17 @@ export async function PATCH(
         },
         create: {
           userId: session.user.id,
-          username: data.username,
-          bio: data.bio,
-          slug
-        }
+          slug,
+          // Only include optional fields if they exist in data
+          ...(data.username && { username: data.username }),
+          ...(data.bio && { bio: data.bio })
+        } as const // Add type assertion to make the object literal type more specific
       });
 
-      // Return user with updated profile
       return await tx.user.findUnique({
-        where: { id: session.user.id },
+        where: { 
+          id: session.user.id 
+        },
         select: {
           id: true,
           name: true,
