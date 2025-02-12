@@ -4,24 +4,24 @@ import { redirect } from "next/navigation";
 import { Shell } from "@/components/users/shell"; 
 import { UsersList } from "@/components/users/users-list";
 
+// Next.js Page Props interface
 interface SearchParams {
-  page?: string;
   search?: string;
   limit?: string;
 }
 
-interface Props {
+interface PageProps {
   searchParams: SearchParams;
 }
 
-export default async function UsersPage({ searchParams }: Props) {
+export default async function UsersPage({ searchParams }: PageProps) {
   const session = await auth();
   
   if (!session?.user) {
     redirect("/login");
   }
 
-  const page = Math.max(1, Number(searchParams.page) || 1);
+  // Extract and validate search params
   const limit = Math.min(50, Math.max(1, Number(searchParams.limit) || 10));
   const search = searchParams.search?.trim();
 
@@ -30,8 +30,8 @@ export default async function UsersPage({ searchParams }: Props) {
       <div className="flex flex-col gap-8 p-8">
         <div className="mx-auto w-full max-w-6xl space-y-6">
           <UsersList 
-            initialPage={page} 
             initialLimit={limit}
+            pageSize={10}
             initialSearch={search}
           />
         </div>

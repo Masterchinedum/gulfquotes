@@ -1,78 +1,27 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import InfiniteScroll from "react-infinite-scroll-component";
-import { UsersResponse } from "@/types/api/users";
+import { useUsers } from "@/hooks/use-users";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SearchInput } from "@/components/users/search-input";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
+import InfiniteScroll from "react-infinite-scroll-component";
 
 interface UsersListProps {
-  initialLimit: number;
-  initialSearch?: string;
+  pageSize?: number;
+  initialLimit?: number;
 }
 
-export function UsersList({ initialLimit, initialSearch }: UsersListProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const [users, setUsers] = useState<UsersResponse["data"]>();
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string>();
-
-  const fetchUsers = useCallback(async (pageNumber: number, limit: number, search?: string) => {
-    setIsLoading(true);
-    setError(undefined);
-
-    try {
-      const params = new URLSearchParams({
-        page: String(pageNumber),
-        limit: String(limit),
-        ...(search && { search }),
-      });
-
-      const response = await fetch(`/api/users?${params}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error.message);
-      }
-
-      setUsers(prevUsers => {
-        if (pageNumber === 1) {
-          return data.data;
-        }
-        return {
-          ...data.data,
-          items: [...(prevUsers?.items || []), ...data.data.items]
-        };
-      });
-      
-      setHasMore(data.data.hasMore);
-      router.push(`${pathname}?${params}`);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to load users");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [router, pathname]);
-
-  const loadMore = () => {
-    if (!isLoading && hasMore) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchUsers(nextPage, initialLimit, initialSearch);
-    }
-  };
-
-  useEffect(() => {
-    setPage(1);
-    fetchUsers(1, initialLimit, initialSearch);
-  }, [initialSearch, initialLimit, fetchUsers]);
+export function UsersList({ pageSize = 10 }: UsersListProps) {
+  const { 
+    users, 
+    isLoading, // We'll use this now
+    error, 
+    hasMore, 
+    loadMore, 
+    searchUsers 
+  } = useUsers({ pageSize });
 
   return (
     <div className="space-y-6">
@@ -84,15 +33,29 @@ export function UsersList({ initialLimit, initialSearch }: UsersListProps) {
           </p>
         </div>
         <SearchInput 
-          onSearch={(term) => {
-            setPage(1);
-            fetchUsers(1, initialLimit, term);
-          }}
-          defaultValue={initialSearch}
+          onSearch={searchUsers}
+          className="w-full md:w-[300px]"
+          disabled={isLoading} // Add disabled state
         />
       </div>
 
-      {error ? (
+      {isLoading && !users?.items ? ( // Show loading state only on initial load
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: pageSize }).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-full bg-muted" />
+                  <div className="space-y-2">
+                    <div className="h-4 w-24 rounded bg-muted" />
+                    <div className="h-3 w-16 rounded bg-muted" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : error ? (
         <Card>
           <CardContent className="p-6 text-center text-sm text-muted-foreground">
             {error}
@@ -110,7 +73,7 @@ export function UsersList({ initialLimit, initialSearch }: UsersListProps) {
           }
           endMessage={
             <p className="text-center text-sm text-muted-foreground py-4">
-              No more users to load
+              {users?.items.length ? 'No more users to load' : 'No users found'}
             </p>
           }
         >
