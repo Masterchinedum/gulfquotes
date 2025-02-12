@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils";
+
 interface ShellProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
