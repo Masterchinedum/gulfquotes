@@ -52,26 +52,23 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       return true
     },
     async session({ token, session }) {
-      // This already handles all providers
       if (token.sub && session.user) {
         session.user.id = token.sub;
       }
 
       if (token.role && session.user) {
-        session.user.role = token.role
+        // Cast token.role to the allowed types ("ADMIN" | "AUTHOR" | "USER")
+        session.user.role = token.role as "ADMIN" | "AUTHOR" | "USER";
       }
 
       if (session.user) {
-        session.user.isTwoFactorEnabled = token.isTwoFactorEnabled
+        session.user.isTwoFactorEnabled = token.isTwoFactorEnabled;
+        session.user.name = token.name;
+        session.user.email = token.email!;
+        session.user.isOAuth = token.isOAuth;
       }
 
-      if (session.user) {
-        session.user.name = token.name
-        session.user.email = token.email! 
-        session.user.isOAuth = token.isOAuth
-      }
-
-      return session
+      return session;
     },
     async jwt({ token }) {
       if (!token.sub) return token
