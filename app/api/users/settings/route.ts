@@ -94,12 +94,11 @@ export async function PATCH(
           slug
         },
         create: {
-          userId: session.user.id,
-          slug,
-          // Only include optional fields if they exist in data
-          ...(data.username && { username: data.username }),
-          ...(data.bio && { bio: data.bio })
-        } as const // Add type assertion to make the object literal type more specific
+          userId: session.user.id as string, // Type assertion since we've already checked
+          slug: slug as string, // Type assertion since generateUserSlug always returns string
+          ...(data.username !== undefined ? { username: data.username } : {}),
+          ...(data.bio !== undefined ? { bio: data.bio } : {})
+        }
       });
 
       return await tx.user.findUnique({
