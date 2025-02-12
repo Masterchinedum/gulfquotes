@@ -25,6 +25,7 @@ model User {
   accounts              Account[]
   TwoFactorConfirmation TwoFactorConfirmation?
   quotes                Quote[]                @relation("QuoteAuthor")
+  userProfile           UserProfile?           // Add this relation
 
   @@map("users")
 }
@@ -146,4 +147,27 @@ model AuthorImage {
   updatedAt      DateTime     @updatedAt
 
   @@map("author_images")
+}
+
+// New UserProfile model
+model UserProfile {
+  id          String    @id @default(cuid())
+  username    String?   @unique
+  bio         String?   @db.Text
+  slug        String    @unique
+  website     String?
+  location    String?
+  // Social links
+  twitter     String?
+  github      String?
+  linkedin    String?
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  // Relation to User
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String    @unique // For 1:1 relationship
+
+  @@index([slug])
+  @@map("user_profiles")
 }
