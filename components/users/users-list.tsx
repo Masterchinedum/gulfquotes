@@ -2,37 +2,35 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import InfiniteScroll from "react-infinite-scroll-component";
 import { UsersResponse } from "@/types/api/users";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SearchInput } from "@/components/users/search-input";
-import { Pagination } from "@/components/ui/pagination";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 
 interface UsersListProps {
-  initialPage: number;
   initialLimit: number;
   initialSearch?: string;
 }
 
-export function UsersList({ 
-  initialPage, 
-  initialLimit, 
-  initialSearch 
-}: UsersListProps) {
+export function UsersList({ initialLimit, initialSearch }: UsersListProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [users, setUsers] = useState<UsersResponse["data"]>();
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
 
-  const fetchUsers = useCallback(async (page: number, limit: number, search?: string) => {
+  const fetchUsers = useCallback(async (pageNumber: number, limit: number, search?: string) => {
     setIsLoading(true);
     setError(undefined);
 
     try {
       const params = new URLSearchParams({
-        page: String(page),
+        page: String(pageNumber),
         limit: String(limit),
         ...(search && { search }),
       });
@@ -44,9 +42,17 @@ export function UsersList({
         throw new Error(data.error.message);
       }
 
-      setUsers(data.data);
+      setUsers(prevUsers => {
+        if (pageNumber === 1) {
+          return data.data;
+        }
+        return {
+          ...data.data,
+          items: [...(prevUsers?.items || []), ...data.data.items]
+        };
+      });
       
-      // Update URL with new params
+      setHasMore(data.data.hasMore);
       router.push(`${pathname}?${params}`);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Failed to load users");
@@ -55,13 +61,21 @@ export function UsersList({
     }
   }, [router, pathname]);
 
+  const loadMore = () => {
+    if (!isLoading && hasMore) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchUsers(nextPage, initialLimit, initialSearch);
+    }
+  };
+
   useEffect(() => {
-    fetchUsers(initialPage, initialLimit, initialSearch);
-  }, [fetchUsers, initialPage, initialLimit, initialSearch]);
+    setPage(1);
+    fetchUsers(1, initialLimit, initialSearch);
+  }, [initialSearch, initialLimit, fetchUsers]);
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1.5">
           <h1 className="text-2xl font-bold tracking-tight">Users</h1>
@@ -70,30 +84,38 @@ export function UsersList({
           </p>
         </div>
         <SearchInput 
-          onSearch={(term) => fetchUsers(1, initialLimit, term)}
+          onSearch={(term) => {
+            setPage(1);
+            fetchUsers(1, initialLimit, term);
+          }}
           defaultValue={initialSearch}
         />
       </div>
 
-      {/* Users Grid */}
-      {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: initialLimit }).map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6" />
-            </Card>
-          ))}
-        </div>
-      ) : error ? (
+      {error ? (
         <Card>
           <CardContent className="p-6 text-center text-sm text-muted-foreground">
             {error}
           </CardContent>
         </Card>
-      ) : users?.items && users.items.length > 0 ? (
-        <>
+      ) : (
+        <InfiniteScroll
+          dataLength={users?.items?.length || 0}
+          next={loadMore}
+          hasMore={hasMore}
+          loader={
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          }
+          endMessage={
+            <p className="text-center text-sm text-muted-foreground py-4">
+              No more users to load
+            </p>
+          }
+        >
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {users.items.map((user) => (
+            {users?.items.map((user) => (
               <Link 
                 key={user.id} 
                 href={`/users/${user.userProfile?.slug || user.id}`}
@@ -119,23 +141,7 @@ export function UsersList({
               </Link>
             ))}
           </div>
-
-          {/* Pagination Controls */}
-          {users.total > initialLimit && (
-            <Pagination 
-              className="mt-6"
-              current={users.page}
-              total={Math.ceil(users.total / users.limit)}
-              onPageChange={(page) => fetchUsers(page, initialLimit, initialSearch)}
-            />
-          )}
-        </>
-      ) : (
-        <Card>
-          <CardContent className="p-6 text-center text-sm text-muted-foreground">
-            No users found
-          </CardContent>
-        </Card>
+        </InfiniteScroll>
       )}
     </div>
   );
