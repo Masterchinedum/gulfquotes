@@ -75,8 +75,12 @@ export async function PATCH(
       }
     }
 
-    // Generate slug if username is provided
-    const updateData: Partial<{ username: string; bio: string; slug: string }> = { 
+    // First, let's properly type our update data
+    const updateData: Partial<{
+      username: string;
+      bio: string;
+      slug: string;
+    }> = { 
       ...data,
       ...(data.username && { slug: slugify(data.username) })
     };
@@ -90,9 +94,9 @@ export async function PATCH(
         },
         update: updateData,
         create: {
-          ...updateData,
+          username: updateData.username,
+          bio: updateData.bio,
           userId: session.user.id,
-          // Ensure slug is always a string for create operation
           slug: updateData.slug ?? slugify(session.user.id)
         }
       });
