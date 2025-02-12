@@ -1,18 +1,20 @@
-// app/users/page.tsx
+// app/(general)/users/page.tsx
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { Shell } from "@/components/users/shell"; 
 import { UsersList } from "@/components/users/users-list";
 
-interface UsersPageProps {
-  searchParams: {
-    page?: string;
-    search?: string;
-    limit?: string;
-  };
+interface SearchParams {
+  page?: string;
+  search?: string;
+  limit?: string;
 }
 
-export default async function UsersPage({ searchParams }: UsersPageProps) {
+interface Props {
+  searchParams: SearchParams;
+}
+
+export default async function UsersPage({ searchParams }: Props) {
   const session = await auth();
   
   if (!session?.user) {
