@@ -1,4 +1,4 @@
-import { Prisma, UserRole } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 // Base API Response Types
 export interface ApiResponse<T> {
@@ -24,7 +24,6 @@ export interface UserData {
   name: string | null;
   email: string | null;
   image: string | null;
-  role: UserRole;
   userProfile?: UserProfileData | null;
 }
 
@@ -49,7 +48,11 @@ export interface UserPaginationParams {
 }
 
 // Combined params type
-export interface ListUsersParams extends UserFilterParams, UserPaginationParams {}
+export interface ListUsersParams extends UserFilterParams, UserPaginationParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
 
 // Prisma Where Input Type
 export type UserWhereInput = Prisma.UserWhereInput;

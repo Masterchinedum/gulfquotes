@@ -4,17 +4,15 @@ import { redirect } from "next/navigation";
 import { Shell } from "@/components/users/shell"; 
 import { UsersList } from "@/components/users/users-list";
 
-// Next.js Page Props interface
-interface SearchParams {
-  search?: string;
-  limit?: string;
-}
-
+// Update the interface to match Next.js 13+ types
 interface PageProps {
-  searchParams: SearchParams;
+  params: { [key: string]: string | undefined };
+  searchParams: { [key: string]: string | string[] | undefined };
 }
 
-export default async function UsersPage({ searchParams }: PageProps) {
+export default async function UsersPage({ 
+  searchParams 
+}: PageProps) {
   const session = await auth();
   
   if (!session?.user) {
@@ -23,7 +21,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
 
   // Extract and validate search params
   const limit = Math.min(50, Math.max(1, Number(searchParams.limit) || 10));
-  const search = searchParams.search?.trim();
+  const search = (searchParams.search as string)?.trim();
 
   return (
     <Shell>
