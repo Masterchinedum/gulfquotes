@@ -57,15 +57,15 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       }
 
       if (token.role && session.user) {
-        // Cast token.role to the allowed types ("ADMIN" | "AUTHOR" | "USER")
         session.user.role = token.role as "ADMIN" | "AUTHOR" | "USER";
       }
 
       if (session.user) {
-        session.user.isTwoFactorEnabled = token.isTwoFactorEnabled;
+        // Convert token.isTwoFactorEnabled to a boolean using the double bang operator.
+        session.user.isTwoFactorEnabled = !!token.isTwoFactorEnabled;
         session.user.name = token.name;
         session.user.email = token.email!;
-        session.user.isOAuth = token.isOAuth;
+        session.user.isOAuth = !!token.isOAuth;
       }
 
       return session;
