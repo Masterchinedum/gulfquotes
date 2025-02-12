@@ -154,7 +154,7 @@ model UserProfile {
   id          String    @id @default(cuid())
   username    String?   @unique
   bio         String?   @db.Text
-  slug        String    @unique
+  slug        String    @unique @default("")  // We'll set this in a createMiddleware
   website     String?
   location    String?
   // Social links
@@ -166,7 +166,7 @@ model UserProfile {
   updatedAt   DateTime  @updatedAt
   // Relation to User
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String    @unique // For 1:1 relationship
+  userId      String    @unique
 
   @@index([slug])
   @@map("user_profiles")

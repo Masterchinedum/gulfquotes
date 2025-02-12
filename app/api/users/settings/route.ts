@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import db from "@/lib/prisma";
-import { slugify } from "@/lib/utils";
+import { generateUserSlug } from "@/lib/utils";
 import type { SettingsResponse } from "@/types/api/users";
 import { z } from "zod";
 
@@ -25,7 +25,7 @@ export async function PATCH(
   try {
     // Check authentication
     const session = await auth();
-    if (!session?.user) {
+    if (!session?.user?.id) {  // Add explicit check for id
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
         { status: 401 }
@@ -75,29 +75,29 @@ export async function PATCH(
       }
     }
 
-    // First, let's properly type our update data
-    const updateData: Partial<{
-      username: string;
-      bio: string;
-      slug: string;
-    }> = { 
-      ...data,
-      ...(data.username && { slug: slugify(data.username) })
-    };
+    // Generate slug based on priority order
+    const slug = generateUserSlug({
+      username: data.username,
+      firstName: session.user.name?.split(' ')[0] || null,
+      lastName: session.user.name?.split(' ').slice(1).join(' ') || null,
+      userId: session.user.id  // Now we know this is definitely a string
+    });
 
     // Update user profile using transaction
     const updatedUser = await db.$transaction(async (tx) => {
-      // Create profile if it doesn't exist
       await tx.userProfile.upsert({
         where: {
           userId: session.user.id
         },
-        update: updateData,
+        update: {
+          ...data,
+          slug
+        },
         create: {
-          username: updateData.username,
-          bio: updateData.bio,
           userId: session.user.id,
-          slug: updateData.slug ?? slugify(session.user.id)
+          username: data.username,
+          bio: data.bio,
+          slug
         }
       });
 
