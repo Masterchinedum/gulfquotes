@@ -92,7 +92,8 @@ export async function PATCH(
         create: {
           ...updateData,
           userId: session.user.id,
-          slug: updateData.slug || session.user.id
+          // Ensure slug is always a string for create operation
+          slug: updateData.slug ?? slugify(session.user.id)
         }
       });
 
