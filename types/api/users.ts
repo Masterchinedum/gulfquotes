@@ -69,3 +69,18 @@ export interface UserResponse extends ApiResponse<UserData> {
     details?: Record<string, string[]>;
   };
 }
+
+// Profile update input type
+export interface UpdateProfileInput {
+  username?: string;
+  bio?: string;
+}
+
+// Settings update response
+export interface SettingsResponse extends ApiResponse<UserData> {
+  error?: {
+    code: UserErrorCode;
+    message: string;
+    details?: Record<string, string[]>;
+  };
+}
