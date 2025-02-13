@@ -105,3 +105,11 @@ export interface SettingsResponse extends ApiResponse<UserData> {
     details?: Record<string, string[]>;
   };
 }
+
+export interface UpdateProfileData {
+  username?: string;
+  bio?: string;
+  name?: string;
+  image?: string;
+  slug?: string;
+}
