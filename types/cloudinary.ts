@@ -1,7 +1,7 @@
 import type { 
   CloudinaryUploadWidgetResults,
   CloudinaryUploadWidgetError as NextCloudinaryError,
-  CloudinaryUploadWidgetInfo 
+  CloudinaryUploadWidgetInfo // Ensure this is imported
 } from 'next-cloudinary';
 
 // types/cloudinary.ts
@@ -25,7 +25,7 @@ export interface CloudinaryUploadOptions {
   maxFiles?: number;
   maxFileSize?: number;
   folder?: string;
-  uploadPreset?: string; // Add this field
+  uploadPreset?: string;
   sources?: ("local" | "url" | "camera" | "dropbox" | "facebook" | "instagram" | "google_drive" | "shutterstock" | "gettyimages" | "istock" | "unsplash" | "image_search")[];
   clientAllowedFormats?: string[];
 }
@@ -34,7 +34,7 @@ export interface CloudinaryConfig {
   cloudName: string | undefined;
   uploadPreset: string | undefined;
   folder: string;
-  profileFolder: string; // Add profile images folder
+  profileFolder: string;
   maxFiles: number;
 }
 
@@ -52,3 +52,6 @@ export interface ProfileUploadWidgetProps extends CloudinaryUploadWidgetProps {
   folder?: string;
   maxFiles?: number;
 }
+
+// Ensure CloudinaryUploadWidgetInfo is exported
+export type { CloudinaryUploadWidgetInfo };
