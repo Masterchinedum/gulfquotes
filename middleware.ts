@@ -42,10 +42,12 @@ export default auth(async (req) => {
     }
 
     // Ensure users can only update their own profiles
-    const userId = req.auth.user.id
-    const urlUserId = nextUrl.pathname.split("/users/settings/")[1]
-    if (urlUserId && urlUserId !== userId) {
-      return Response.redirect(new URL("/unauthorized", nextUrl))
+    if (req.auth) {
+      const userId = req.auth.user.id
+      const urlUserId = nextUrl.pathname.split("/users/settings/")[1]
+      if (urlUserId && urlUserId !== userId) {
+        return Response.redirect(new URL("/unauthorized", nextUrl))
+      }
     }
 
     return
