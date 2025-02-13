@@ -1,45 +1,69 @@
 // components/home/HeroSection.tsx
 import { Button } from "@/components/ui/button";
+import { SearchField } from "@/components/search/SearchField";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
+// import Link from "next/link";
+import { BookMarked, Sparkles, TrendingUp } from "lucide-react";
 
 export function HeroSection() {
   return (
-    <div className={cn(
-      "w-full min-h-[70vh]",
+    <section className={cn(
+      "relative w-full min-h-[80vh]",
       "flex flex-col items-center justify-center",
-      "bg-gradient-to-b from-background to-muted",
-      "px-4 py-16 md:py-24"
+      "bg-gradient-to-b from-background via-background/50 to-muted/20",
+      "border-b"
     )}>
-      <div className="container max-w-5xl mx-auto text-center space-y-8">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 bg-grid-pattern opacity-5" />
+      </div>
+
+      <div className="container relative max-w-5xl mx-auto text-center space-y-8 px-4">
         {/* Main Headline */}
         <h1 className={cn(
-          "text-4xl md:text-6xl font-bold tracking-tight",
-          "bg-gradient-to-r from-foreground to-foreground/70",
+          "text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight",
+          "bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70",
           "bg-clip-text text-transparent"
         )}>
-          Discover and Share Inspiring Quotes
+          Your Personal Collection of Wisdom
         </h1>
 
         {/* Tagline */}
         <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
-          Your daily source of wisdom, inspiration, and thought-provoking quotes from great minds throughout history.
+          Discover, collect, and share meaningful quotes that inspire and transform.
         </p>
+
+        {/* Search Bar */}
+        <div className="max-w-2xl mx-auto w-full">
+          <SearchField />
+        </div>
+
+        {/* Quick Stats */}
+        <div className="flex flex-wrap justify-center gap-8 text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4" />
+            <span>10k+ Quotes</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <BookMarked className="w-4 h-4" />
+            <span>1k+ Collections</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4" />
+            <span>New Quotes Daily</span>
+          </div>
+        </div>
 
         {/* Call-to-Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
-          <Button size="lg" asChild>
-            <Link href="/browse">
-              Explore Quotes
-            </Link>
+          <Button size="lg" className="text-base">
+            Start Your Collection
           </Button>
-          <Button size="lg" variant="outline" asChild>
-            <Link href="/auth/login">
-              Start Contributing
-            </Link>
+          <Button size="lg" variant="secondary" className="text-base">
+            Browse Popular Quotes
           </Button>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
