@@ -7,7 +7,7 @@ import { LoginButton } from "@/components/auth/login-button";
 import { Button } from "@/components/ui/button";
 import { UserButton } from "@/components/auth/user-button";
 import { SearchField } from "@/components/search/SearchField";
-import { Bell, BookOpen, Home, MessageSquare, Users } from "lucide-react";
+import { Bell, BookOpen, Home, Users } from "lucide-react";
 
 export function Navbar() {
   const { status } = useSession();
@@ -76,9 +76,9 @@ export function Navbar() {
             </Button>
             
             {/* Messages */}
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+            {/* <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
               <MessageSquare size={20} />
-            </Button>
+            </Button> */}
             
             {/* User Menu */}
             <UserButton />
