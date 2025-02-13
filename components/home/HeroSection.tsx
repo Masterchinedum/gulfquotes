@@ -1,9 +1,8 @@
 // components/home/HeroSection.tsx
-import { Button } from "@/components/ui/button";
 import { SearchField } from "@/components/search/SearchField";
 import { cn } from "@/lib/utils";
-// import Link from "next/link";
 import { BookMarked, Sparkles, TrendingUp } from "lucide-react";
+import { QuickActions } from "./QuickActions";
 
 export function HeroSection() {
   return (
@@ -54,15 +53,8 @@ export function HeroSection() {
           </div>
         </div>
 
-        {/* Call-to-Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
-          <Button size="lg" className="text-base">
-            Start Your Collection
-          </Button>
-          <Button size="lg" variant="secondary" className="text-base">
-            Browse Popular Quotes
-          </Button>
-        </div>
+        {/* Quick Actions */}
+        <QuickActions />
       </div>
     </section>
   );
