@@ -1,15 +1,13 @@
 import { HeroSection } from "@/components/home/HeroSection";
 import { HomeLayout } from "@/components/home/HomeLayout";
-// import { Shell } from "@/components/shells/shell";
+import { FeaturedQuotes } from "@/components/home/FeaturedQuotes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Home() {
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
       <HeroSection />
 
-      {/* Main Content */}
       <div className="container px-4 md:px-6 py-6 md:py-16 space-y-8">
         <HomeLayout
           sidebar={
@@ -50,28 +48,7 @@ export default function Home() {
             </div>
           }
         >
-          {/* Featured Quotes Section */}
-          <section className="space-y-6">
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold tracking-tight">Featured Quotes</h2>
-              <p className="text-muted-foreground">
-                Discover today&apos;s most inspiring quotes
-              </p>
-            </div>
-            
-            <div className="grid gap-4 md:gap-6 sm:grid-cols-2">
-              {[1, 2, 3, 4].map((i) => (
-                <Card key={i} className="hover:bg-muted/50 transition-colors shadow-sm">
-                  <CardContent className="p-4 md:p-6">
-                    <p className="text-muted-foreground italic">
-                      &quot;This is a placeholder for a featured quote.&quot;
-                    </p>
-                    <p className="text-sm mt-2">- Author Name</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
+          <FeaturedQuotes />
         </HomeLayout>
       </div>
     </div>
