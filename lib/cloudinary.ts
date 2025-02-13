@@ -47,7 +47,7 @@ export function buildImageUrl(publicId: string, transforms = imageTransforms.ful
 
 export async function deleteImage(publicId: string): Promise<boolean> {
   try {
-    const response = await fetch('/api/cloudinary/delete', {
+    const response = await fetch('/api/users/profile-image', {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

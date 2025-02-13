@@ -1,3 +1,5 @@
+// app/(general)/users/settings/page.tsx
+
 import React, { Suspense } from "react";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
