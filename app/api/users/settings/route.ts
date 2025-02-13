@@ -91,6 +91,9 @@ export async function PATCH(
       userId: session.user.id
     });
 
+    // Ensure userId is a string
+    const userId = session.user.id as string;
+
     // Update user profile using transaction
     const updatedUser = await db.$transaction(async (tx) => {
       // Handle old image cleanup if image is being updated
@@ -103,7 +106,7 @@ export async function PATCH(
 
       await tx.userProfile.upsert({
         where: {
-          userId: session.user.id
+          userId
         },
         update: {
           ...data,
@@ -111,14 +114,14 @@ export async function PATCH(
         },
         create: {
           ...data,
-          userId: session.user.id,
+          userId,
           slug
         }
       });
 
       return await tx.user.findUnique({
         where: { 
-          id: session.user.id 
+          id: userId 
         },
         select: {
           id: true,
