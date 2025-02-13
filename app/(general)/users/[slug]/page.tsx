@@ -10,9 +10,7 @@ import type { Metadata } from "next";
 import type { UserResponse } from "@/types/api/users";
 
 interface PageProps {
-  params: Promise<{
-    slug: string;
-  }>;
+  params: Promise<{ slug: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -39,7 +37,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function UserProfilePage({ params: paramsPromise }: PageProps) {
+export default async function UserProfilePage({ params }: PageProps) {
   // Check for an authenticated session
   const session = await auth();
   if (!session?.user) {
@@ -47,17 +45,12 @@ export default async function UserProfilePage({ params: paramsPromise }: PagePro
   }
 
   try {
-    // Resolve params promise first
-    const params = await paramsPromise;
-
-    // Await headers
-    const headersList = await headers();
-
+    const resolvedParams = await params;
     // Build an absolute URL using NEXTAUTH_URL
     const origin = process.env.NEXTAUTH_URL || "";
-    const res = await fetch(`${origin}/api/users/${params.slug}`, {
+    const res = await fetch(`${origin}/api/users/${resolvedParams.slug}`, {
       headers: {
-        cookie: headersList.get("cookie") || "",
+        cookie: headers().get("cookie") || "",
       },
       cache: "no-store",
     });
