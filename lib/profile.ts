@@ -70,8 +70,6 @@ export async function updateUserProfile(userId: string, data: Partial<UserProfil
   // Generate slug if username is provided
   if (data.username) {
     data.slug = generateUserSlug({ username: data.username, userId });
-  } else if (data.name) {
-    data.slug = generateUserSlug({ name: data.name, userId });
   } else {
     data.slug = generateUserSlug({ userId });
   }
