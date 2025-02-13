@@ -60,6 +60,7 @@
     "sonner": "^1.7.4",
     "stream-chat": "^8.56.0",
     "stream-chat-react": "^12.11.1",
+    "swr": "^2.3.2",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
     "uploadthing": "^7.4.4",

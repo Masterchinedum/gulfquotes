@@ -1,6 +1,6 @@
 // hooks/use-user-profile.ts
 import useSWR from "swr";
-import { fetchUserProfile } from "@/lib/actions/user-profile";
+import { fetchUserProfile } from "@/actions/user-profile";
 import type { UserResponse } from "@/types/api/users";
 
 export function useUserProfile(slug: string) {

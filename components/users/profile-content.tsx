@@ -14,6 +14,12 @@ export function ProfileContent({ user }: ProfileContentProps) {
     { id: "2", content: "Another dummy quote." },
   ];
 
+  // Dummy data for likes if userProfile.likes is not available
+  const dummyLikes = user.userProfile?.likes || [
+    { id: "1", content: "This is a liked quote." },
+    { id: "2", content: "Another liked quote." },
+  ];
+
   return (
     <Card className="border-none shadow-none">
       <CardContent className="p-0">
@@ -43,7 +49,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
               <div className="flex items-center gap-2">
                 <span>Likes</span>
                 <span className="text-sm text-muted-foreground">
-                  {user.userProfile?.likes?.length || 0}
+                  {dummyLikes.length}
                 </span>
               </div>
             </TabsTrigger>
@@ -78,14 +84,18 @@ export function ProfileContent({ user }: ProfileContentProps) {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">
-                  {user.userProfile?.likes?.length 
-                    ? `${user.userProfile.likes.length} Liked Quotes`
+                  {dummyLikes.length 
+                    ? `${dummyLikes.length} Liked Quotes`
                     : "No likes yet"}
                 </CardTitle>
               </CardHeader>
-              {user.userProfile?.likes?.length ? (
+              {dummyLikes.length ? (
                 <CardContent className="grid gap-4">
-                  {/* Liked quote items will be rendered here */}
+                  {dummyLikes.map((like) => (
+                    <div key={like.id} className="p-4 border rounded">
+                      {like.content}
+                    </div>
+                  ))}
                 </CardContent>
               ) : (
                 <CardContent className="text-muted-foreground text-center py-8">
