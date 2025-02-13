@@ -38,6 +38,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
+function isErrorWithMessage(error: unknown): error is { code?: string; message: string } {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+  );
+}
+
 export default async function UserProfilePage({ params }: PageProps) {
   // Check for an authenticated session
   const session = await auth();
@@ -88,7 +97,10 @@ export default async function UserProfilePage({ params }: PageProps) {
   } catch (error) {
     console.error("[USER_PROFILE_PAGE]", error);
     return (
-      <ErrorBoundary error={error} reset={() => window.location.reload()} />
+      <ErrorBoundary
+        error={isErrorWithMessage(error) ? error : { message: "An unknown error occurred" }}
+        reset={() => window.location.reload()}
+      />
     );
   }
 }

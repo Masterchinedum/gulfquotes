@@ -8,6 +8,15 @@ import { ErrorBoundary } from "@/components/users/error-boundary";
 import { LoadingSkeleton } from "@/components/users/loading";
 import type { UserResponse } from "@/types/api/users";
 
+function isErrorWithMessage(error: unknown): error is { code?: string; message: string } {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+  );
+}
+
 export default async function SettingsPage() {
   // Check for an authenticated session
   const session = await auth();
@@ -45,7 +54,10 @@ export default async function SettingsPage() {
     console.error("[SETTINGS_PAGE]", error);
     return (
       <Shell>
-        <ErrorBoundary error={error} reset={() => window.location.reload()} />
+        <ErrorBoundary
+          error={isErrorWithMessage(error) ? error : { message: "An unknown error occurred" }}
+          reset={() => window.location.reload()}
+        />
       </Shell>
     );
   }
