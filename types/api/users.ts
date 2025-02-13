@@ -84,6 +84,17 @@ export interface UserResponse extends ApiResponse<UserData> {
 export interface UpdateProfileInput {
   username?: string;
   bio?: string;
+  name?: string;  // Add name field
+  image?: string; // Add image field URL
+}
+
+// Add new type for image upload result
+export interface ProfileImageUploadResult {
+  url: string;
+  publicId: string;
+  height: number;
+  width: number;
+  format: string;
 }
 
 // Settings update response
