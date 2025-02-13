@@ -9,7 +9,7 @@ import { CldImage } from "next-cloudinary";
 import type { CloudinaryUploadResult, CloudinaryUploadWidgetInfo } from "@/types/cloudinary";
 
 interface ProfileImageUploadProps {
-  imageUrl?: string;
+  imageUrl?: string | null;
   onImageChange: (url: string | null) => void;
   disabled?: boolean;
 }
