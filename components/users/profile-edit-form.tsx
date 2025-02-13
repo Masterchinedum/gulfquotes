@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
+import { ProfileImageUpload } from "@/components/users/profile-image-upload";
 import type { UpdateProfileInput, UserData } from "@/types/api/users";
 
 // Validation schema
@@ -20,6 +21,11 @@ const updateProfileSchema = z.object({
   bio: z.string()
     .max(500, "Bio must not exceed 500 characters")
     .optional(),
+  name: z.string()
+    .min(1, "Name is required")
+    .max(50, "Name must not exceed 50 characters")
+    .optional(),
+  image: z.string().optional(),
 }).refine((data) => Object.keys(data).length > 0, {
   message: "At least one field must be provided"
 });
@@ -33,11 +39,13 @@ export function ProfileEditForm({ user }: ProfileEditFormProps) {
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { register, handleSubmit, formState: { errors } } = useForm<UpdateProfileInput>({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<UpdateProfileInput>({
     resolver: zodResolver(updateProfileSchema),
     defaultValues: {
       username: user.userProfile?.username || "",
       bio: user.userProfile?.bio || "",
+      name: user.name || "",
+      image: user.image || "",
     },
   });
 
@@ -73,6 +81,10 @@ export function ProfileEditForm({ user }: ProfileEditFormProps) {
     }
   };
 
+  const handleImageChange = (url: string | null) => {
+    setValue("image", url || "");
+  };
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {successMessage && (
@@ -85,6 +97,21 @@ export function ProfileEditForm({ user }: ProfileEditFormProps) {
           {errorMessage}
         </div>
       )}
+      <div>
+        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+          Name
+        </label>
+        <Input
+          id="name"
+          {...register("name")}
+          disabled={loading}
+          className="mt-1"
+        />
+        {errors.name && (
+          <p className="mt-2 text-sm text-red-600">{errors.name.message}</p>
+        )}
+      </div>
+
       <div>
         <label htmlFor="username" className="block text-sm font-medium text-gray-700">
           Username
@@ -114,6 +141,12 @@ export function ProfileEditForm({ user }: ProfileEditFormProps) {
           <p className="mt-2 text-sm text-red-600">{errors.bio.message}</p>
         )}
       </div>
+
+      <ProfileImageUpload
+        imageUrl={user.image}
+        onImageChange={handleImageChange}
+        disabled={loading}
+      />
 
       <Button type="submit" disabled={loading}>
         {loading ? "Saving..." : "Save Changes"}

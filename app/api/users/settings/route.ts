@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import db from "@/lib/prisma";
 import { generateUserSlug } from "@/lib/utils";
+import { deleteImage, getImagePublicId } from "@/lib/cloudinary";
 import type { SettingsResponse } from "@/types/api/users";
 import { z } from "zod";
 
@@ -15,6 +16,13 @@ const updateProfileSchema = z.object({
   bio: z.string()
     .max(500, "Bio must not exceed 500 characters")
     .optional(),
+  name: z.string()
+    .min(1, "Name is required")
+    .max(50, "Name must not exceed 50 characters")
+    .optional(),
+  image: z.string()
+    .url("Invalid image URL")
+    .optional(),
 }).refine((data) => Object.keys(data).length > 0, {
   message: "At least one field must be provided"
 });
@@ -25,7 +33,7 @@ export async function PATCH(
   try {
     // Check authentication
     const session = await auth();
-    if (!session?.user?.id) {  // Add explicit check for id
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
         { status: 401 }
@@ -80,11 +88,19 @@ export async function PATCH(
       username: data.username,
       firstName: session.user.name?.split(' ')[0] || null,
       lastName: session.user.name?.split(' ').slice(1).join(' ') || null,
-      userId: session.user.id  // Now we know this is definitely a string
+      userId: session.user.id
     });
 
     // Update user profile using transaction
     const updatedUser = await db.$transaction(async (tx) => {
+      // Handle old image cleanup if image is being updated
+      if (data.image && session.user.image) {
+        const oldImagePublicId = getImagePublicId(session.user.image);
+        if (oldImagePublicId) {
+          await deleteImage(oldImagePublicId);
+        }
+      }
+
       await tx.userProfile.upsert({
         where: {
           userId: session.user.id
@@ -94,10 +110,9 @@ export async function PATCH(
           slug
         },
         create: {
-          userId: session.user.id as string, // Type assertion since we've already checked
-          slug: slug as string, // Type assertion since generateUserSlug always returns string
-          ...(data.username !== undefined ? { username: data.username } : {}),
-          ...(data.bio !== undefined ? { bio: data.bio } : {})
+          ...data,
+          userId: session.user.id,
+          slug
         }
       });
 
