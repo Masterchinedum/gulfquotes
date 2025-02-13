@@ -10,13 +10,16 @@ import type { Metadata } from "next";
 import type { UserResponse } from "@/types/api/users";
 
 interface PageProps {
-  params: { slug: string };
+  params: Promise<{
+    slug: string;
+  }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   try {
+    const resolvedParams = await params;
     const origin = process.env.NEXTAUTH_URL || "";
-    const res = await fetch(`${origin}/api/users/${params.slug}`);
+    const res = await fetch(`${origin}/api/users/${resolvedParams.slug}`);
     const result: UserResponse = await res.json();
 
     if (result.data) {
@@ -36,7 +39,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function UserProfilePage({ params }: PageProps) {
+export default async function UserProfilePage({ params: paramsPromise }: PageProps) {
   // Check for an authenticated session
   const session = await auth();
   if (!session?.user) {
@@ -44,11 +47,17 @@ export default async function UserProfilePage({ params }: PageProps) {
   }
 
   try {
+    // Resolve params promise first
+    const params = await paramsPromise;
+
+    // Await headers
+    const headersList = await headers();
+
     // Build an absolute URL using NEXTAUTH_URL
     const origin = process.env.NEXTAUTH_URL || "";
     const res = await fetch(`${origin}/api/users/${params.slug}`, {
       headers: {
-        cookie: headers().get("cookie") || "",
+        cookie: headersList.get("cookie") || "",
       },
       cache: "no-store",
     });
