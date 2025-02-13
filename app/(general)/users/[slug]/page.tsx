@@ -45,12 +45,13 @@ export default async function UserProfilePage({ params }: PageProps) {
   }
 
   try {
+    const headersList = await headers();
     const resolvedParams = await params;
     // Build an absolute URL using NEXTAUTH_URL
     const origin = process.env.NEXTAUTH_URL || "";
     const res = await fetch(`${origin}/api/users/${resolvedParams.slug}`, {
       headers: {
-        cookie: headers().get("cookie") || "",
+        cookie: headersList.get("cookie") || "",
       },
       cache: "no-store",
     });
