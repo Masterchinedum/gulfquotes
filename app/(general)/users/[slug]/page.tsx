@@ -16,9 +16,23 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   try {
+    const headersList = await headers();
     const resolvedParams = await params;
     const origin = process.env.NEXTAUTH_URL || "";
-    const res = await fetch(`${origin}/api/users/${resolvedParams.slug}`);
+    
+    // Include auth cookies in the metadata request
+    const res = await fetch(`${origin}/api/users/${resolvedParams.slug}`, {
+      headers: {
+        cookie: headersList.get("cookie") || "",
+      },
+      cache: "no-store",
+    });
+
+    // Check if response is ok before trying to parse JSON
+    if (!res.ok) {
+      throw new Error(`Failed to fetch user data: ${res.status}`);
+    }
+
     const result: UserResponse = await res.json();
 
     if (result.data) {
