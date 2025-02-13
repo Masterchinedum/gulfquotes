@@ -8,6 +8,12 @@ interface ProfileContentProps {
 }
 
 export function ProfileContent({ user }: ProfileContentProps) {
+  // Dummy data for quotes if userProfile.quotes is not available
+  const dummyQuotes = user.userProfile?.quotes || [
+    { id: "1", content: "This is a dummy quote." },
+    { id: "2", content: "Another dummy quote." },
+  ];
+
   return (
     <Card className="border-none shadow-none">
       <CardContent className="p-0">
@@ -23,7 +29,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
               <div className="flex items-center gap-2">
                 <span>Quotes</span>
                 <span className="text-sm text-muted-foreground">
-                  {user.quotes?.length || 0}
+                  {dummyQuotes.length}
                 </span>
               </div>
             </TabsTrigger>
@@ -37,7 +43,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
               <div className="flex items-center gap-2">
                 <span>Likes</span>
                 <span className="text-sm text-muted-foreground">
-                  {user.likes?.length || 0}
+                  {user.userProfile?.likes?.length || 0}
                 </span>
               </div>
             </TabsTrigger>
@@ -47,14 +53,18 @@ export function ProfileContent({ user }: ProfileContentProps) {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">
-                  {user.quotes?.length 
-                    ? `${user.quotes.length} Quotes`
+                  {dummyQuotes.length 
+                    ? `${dummyQuotes.length} Quotes`
                     : "No quotes yet"}
                 </CardTitle>
               </CardHeader>
-              {user.quotes?.length ? (
+              {dummyQuotes.length ? (
                 <CardContent className="grid gap-4">
-                  {/* Quote items will be rendered here */}
+                  {dummyQuotes.map((quote) => (
+                    <div key={quote.id} className="p-4 border rounded">
+                      {quote.content}
+                    </div>
+                  ))}
                 </CardContent>
               ) : (
                 <CardContent className="text-muted-foreground text-center py-8">
@@ -68,12 +78,12 @@ export function ProfileContent({ user }: ProfileContentProps) {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">
-                  {user.likes?.length 
-                    ? `${user.likes.length} Liked Quotes`
+                  {user.userProfile?.likes?.length 
+                    ? `${user.userProfile.likes.length} Liked Quotes`
                     : "No likes yet"}
                 </CardTitle>
               </CardHeader>
-              {user.likes?.length ? (
+              {user.userProfile?.likes?.length ? (
                 <CardContent className="grid gap-4">
                   {/* Liked quote items will be rendered here */}
                 </CardContent>

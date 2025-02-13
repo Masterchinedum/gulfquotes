@@ -22,6 +22,8 @@ export interface UserProfileData {
   username: string | null;
   bio: string | null;
   slug: string;
+  quotes?: Array<{ id: string; content: string }>; // Add this line
+  likes?: Array<{ id: string; content: string }>; // Add this line
 }
 
 export interface UserData {
