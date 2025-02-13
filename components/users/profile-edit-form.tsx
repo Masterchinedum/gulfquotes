@@ -63,7 +63,11 @@ export function ProfileEditForm({ user }: ProfileEditFormProps) {
       router.refresh();
     } catch (error) {
       console.error("[PROFILE_EDIT_FORM]", error);
-      setErrorMessage(error.message || "An error occurred while updating the profile.");
+      if (error instanceof Error) {
+        setErrorMessage(error.message || "An error occurred while updating the profile.");
+      } else {
+        setErrorMessage("An unknown error occurred while updating the profile.");
+      }
     } finally {
       setLoading(false);
     }
