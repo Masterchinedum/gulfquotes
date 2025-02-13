@@ -31,6 +31,8 @@ interface ProfileEditFormProps {
 export function ProfileEditForm({ user }: ProfileEditFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { register, handleSubmit, formState: { errors } } = useForm<UpdateProfileInput>({
     resolver: zodResolver(updateProfileSchema),
     defaultValues: {
@@ -41,6 +43,8 @@ export function ProfileEditForm({ user }: ProfileEditFormProps) {
 
   const onSubmit = async (data: UpdateProfileInput) => {
     setLoading(true);
+    setSuccessMessage(null);
+    setErrorMessage(null);
     try {
       const response = await fetch("/api/users/settings", {
         method: "PATCH",
@@ -55,10 +59,11 @@ export function ProfileEditForm({ user }: ProfileEditFormProps) {
         throw new Error(result.error.message);
       }
 
+      setSuccessMessage("Profile updated successfully!");
       router.refresh();
     } catch (error) {
       console.error("[PROFILE_EDIT_FORM]", error);
-      // Handle error (e.g., show a notification)
+      setErrorMessage(error.message || "An error occurred while updating the profile.");
     } finally {
       setLoading(false);
     }
@@ -66,6 +71,16 @@ export function ProfileEditForm({ user }: ProfileEditFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {successMessage && (
+        <div className="text-green-600">
+          {successMessage}
+        </div>
+      )}
+      {errorMessage && (
+        <div className="text-red-600">
+          {errorMessage}
+        </div>
+      )}
       <div>
         <label htmlFor="username" className="block text-sm font-medium text-gray-700">
           Username

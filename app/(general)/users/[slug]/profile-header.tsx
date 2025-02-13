@@ -50,7 +50,7 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
           {/* Edit Button */}
           {isOwnProfile && (
             <Button variant="outline" size="sm" asChild>
-              <Link href="/settings" className="flex items-center gap-2">
+              <Link href="/users/settings" className="flex items-center gap-2">
                 <Pencil className="h-4 w-4" />
                 Edit profile
               </Link>
