@@ -1,9 +1,11 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { fetchUserProfile } from "@/actions/user-profile";
 import { ProfileEditForm } from "@/components/users/profile-edit-form";
 import { Shell } from "@/components/shells/shell";
+import { ErrorBoundary } from "@/components/users/error-boundary";
+import { LoadingSkeleton } from "@/components/users/loading";
 import type { UserResponse } from "@/types/api/users";
 
 export default async function SettingsPage() {
@@ -32,7 +34,9 @@ export default async function SettingsPage() {
         <div className="flex flex-col gap-8 p-8">
           <div className="mx-auto w-full max-w-3xl space-y-8">
             <h1 className="text-2xl font-bold">Edit Profile</h1>
-            <ProfileEditForm user={result.data} />
+            <Suspense fallback={<LoadingSkeleton />}>
+              <ProfileEditForm user={result.data} />
+            </Suspense>
           </div>
         </div>
       </Shell>
@@ -41,12 +45,7 @@ export default async function SettingsPage() {
     console.error("[SETTINGS_PAGE]", error);
     return (
       <Shell>
-        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-          <h3 className="font-semibold">Something went wrong</h3>
-          <p className="text-sm text-muted-foreground">
-            Unable to load profile settings. Please try again later.
-          </p>
-        </div>
+        <ErrorBoundary error={error} reset={() => window.location.reload()} />
       </Shell>
     );
   }

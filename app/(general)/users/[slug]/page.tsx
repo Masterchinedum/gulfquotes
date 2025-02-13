@@ -1,11 +1,12 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { Shell } from "@/components/shells/shell";
 import { ProfileHeader } from "./profile-header";
 import { ProfileContent } from "@/components/users/profile-content";
-import { Suspense } from "react";
+import { ErrorBoundary } from "@/components/users/error-boundary";
+import { LoadingSkeleton, LoadingIndicator } from "@/components/users/loading";
 import type { Metadata } from "next";
 import type { UserResponse } from "@/types/api/users";
 
@@ -47,7 +48,6 @@ export default async function UserProfilePage({ params }: PageProps) {
   try {
     const headersList = await headers();
     const resolvedParams = await params;
-    // Build an absolute URL using NEXTAUTH_URL
     const origin = process.env.NEXTAUTH_URL || "";
     const res = await fetch(`${origin}/api/users/${resolvedParams.slug}`, {
       headers: {
@@ -73,11 +73,11 @@ export default async function UserProfilePage({ params }: PageProps) {
       <Shell>
         <div className="flex flex-col gap-8 p-8">
           <div className="mx-auto w-full max-w-3xl space-y-8">
-            <Suspense fallback={<div>Loading profile...</div>}>
+            <Suspense fallback={<LoadingSkeleton />}>
               <ProfileHeader user={result.data} />
             </Suspense>
             
-            <Suspense fallback={<div>Loading content...</div>}>
+            <Suspense fallback={<LoadingIndicator />}>
               <ProfileContent user={result.data} />
             </Suspense>
           </div>
@@ -87,6 +87,8 @@ export default async function UserProfilePage({ params }: PageProps) {
 
   } catch (error) {
     console.error("[USER_PROFILE_PAGE]", error);
-    throw error; // Let error boundary handle it
+    return (
+      <ErrorBoundary error={error} reset={() => window.location.reload()} />
+    );
   }
 }
