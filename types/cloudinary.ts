@@ -34,6 +34,7 @@ export interface CloudinaryConfig {
   cloudName: string | undefined;
   uploadPreset: string | undefined;
   folder: string;
+  profileFolder: string; // Add profile images folder
   maxFiles: number;
 }
 
@@ -44,4 +45,10 @@ export interface CloudinaryUploadWidgetProps {
   onUploadSuccess: (result: CloudinaryUploadResult) => void;
   onUploadError?: (error: CloudinaryUploadWidgetError) => void;
   disabled?: boolean;
+}
+
+// Add profile-specific upload widget props
+export interface ProfileUploadWidgetProps extends CloudinaryUploadWidgetProps {
+  folder?: string;
+  maxFiles?: number;
 }

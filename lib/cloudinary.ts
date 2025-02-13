@@ -17,6 +17,7 @@ export const cloudinaryConfig = {
   cloudName: CLOUD_NAME,
   uploadPreset: UPLOAD_PRESET,
   folder: 'author-profiles',
+  profileFolder: 'profile-pictures', // Add profile images folder
   maxFiles: 5 // Add maxFiles to config
 } as const;
 
@@ -27,6 +28,12 @@ export const defaultUploadOptions: CloudinaryUploadOptions = {
   folder: cloudinaryConfig.folder,
   sources: ['local', 'url', 'camera'] as const, // Add type assertion
   clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
+} as const;
+
+export const profileUploadOptions: CloudinaryUploadOptions = {
+  ...defaultUploadOptions,
+  folder: cloudinaryConfig.profileFolder, // Use profile images folder
+  maxFiles: 1, // Only allow one profile image
 } as const;
 
 export function buildImageUrl(publicId: string, transforms = imageTransforms.full) {
@@ -86,6 +93,14 @@ export const imageTransforms = {
   full: {
     width: 1024,
     crop: 'scale',
+    quality: 'auto',
+    format: 'webp',
+  },
+  profile: { // Add profile image transform preset
+    width: 150,
+    height: 150,
+    crop: 'thumb',
+    gravity: 'face',
     quality: 'auto',
     format: 'webp',
   },
