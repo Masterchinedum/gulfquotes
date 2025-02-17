@@ -39,11 +39,25 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
     }
 
     try {
-      // Create quote with images
+      // Transform image data to match QuoteImageData interface
+      const transformedImages = validatedData.data.images?.map(img => ({
+        public_id: img.publicId,
+        secure_url: img.url,
+        format: 'webp', // Default format
+        width: 1200,    // Default width
+        height: 630,    // Default height
+        resource_type: 'image',
+        created_at: new Date().toISOString(),
+        bytes: 0,       // Will be updated by service
+        folder: 'quote-images',
+        isActive: img.isActive
+      }));
+
+      // Create quote with transformed images
       const quote = await quoteService.create({
         ...validatedData.data,
         authorId: session.user.id,
-        images: validatedData.data.images,
+        images: transformedImages,
         backgroundImage: validatedData.data.backgroundImage
       });
 
