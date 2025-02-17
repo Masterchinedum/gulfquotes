@@ -18,19 +18,25 @@ interface ListQuotesResult {
   limit: number;
 }
 
-export interface QuoteService {
-  // ... other methods
-  list(params: ListQuotesParams): Promise<ListQuotesResult>;
+// First, add the new image-related types
+interface QuoteImageData {
+  url: string;
+  publicId: string;
+  isActive: boolean;
 }
 
 export interface QuoteService {
-  create(data: CreateQuoteInput & { authorId: string }): Promise<Quote>;
+  // ... other methods
+  list(params: ListQuotesParams): Promise<ListQuotesResult>;
+  create(data: CreateQuoteInput & { authorId: string; images?: QuoteImageData[] }): Promise<Quote>;
   getById(id: string): Promise<Quote | null>;
   getBySlug(slug: string): Promise<Quote | null>;
-  list(params: ListQuotesParams): Promise<ListQuotesResult>;
   update(id: string, data: UpdateQuoteInput): Promise<Quote>;
   delete(id: string): Promise<Quote>;
   search(query: string): Promise<Quote[]>;
+  addImages(quoteId: string, images: QuoteImageData[]): Promise<Quote>;
+  removeImage(quoteId: string, publicId: string): Promise<Quote>;
+  setBackgroundImage(quoteId: string, imageUrl: string | null): Promise<Quote>;
 }
 
 class QuoteServiceImpl implements QuoteService {
@@ -100,7 +106,29 @@ class QuoteServiceImpl implements QuoteService {
     }
   }
 
-  async create(data: CreateQuoteInput & { authorId: string }): Promise<Quote> {
+  // Add new validation method for images
+  private async validateImages(images: QuoteImageData[]): Promise<void> {
+    if (images.length > 30) {
+      throw new AppError(
+        "Maximum 30 images allowed per quote",
+        "MAX_IMAGES_EXCEEDED",
+        400
+      );
+    }
+
+    // Validate each image URL is from Cloudinary
+    for (const image of images) {
+      if (!image.url.includes(cloudinaryConfig.cloudName)) {
+        throw new AppError(
+          "Invalid image URL. Images must be uploaded to Cloudinary",
+          "INVALID_IMAGE",
+          400
+        );
+      }
+    }
+  }
+
+  async create(data: CreateQuoteInput & { authorId: string; images?: QuoteImageData[] }): Promise<Quote> {
     try {
       if (data.content.length > 1500) {
         throw new AppError("Quote content exceeds 500 characters", "CONTENT_TOO_LONG", 400);
@@ -122,15 +150,33 @@ class QuoteServiceImpl implements QuoteService {
       // Validate that slug is unique.
       await this.validateSlug(slug);
 
+      if (data.images) {
+        await this.validateImages(data.images);
+      }
+
       // Create quote using transaction.
       return await db.$transaction(async (tx) => {
-        return tx.quote.create({
+        const quote = await tx.quote.create({
           data: {
             ...data,
             content: sanitizedContent,
             slug,
-          },
+            backgroundImage: data.images?.find(img => img.isActive)?.url || null
+          }
         });
+
+        if (data.images?.length) {
+          await tx.quoteImage.createMany({
+            data: data.images.map(img => ({
+              quoteId: quote.id,
+              url: img.url,
+              publicId: img.publicId,
+              isActive: img.isActive
+            }))
+          });
+        }
+
+        return quote;
       });
     } catch (error) {
       if (error instanceof AppError) throw error;
@@ -411,6 +457,134 @@ class QuoteServiceImpl implements QuoteService {
       },
       take: 10,
     });
+  }
+
+  // Add method to associate images with a quote
+  async addImages(quoteId: string, images: QuoteImageData[]): Promise<Quote> {
+    try {
+      await this.validateImages(images);
+
+      return await db.$transaction(async (tx) => {
+        // First, get current images count
+        const currentCount = await tx.quoteImage.count({
+          where: { quoteId }
+        });
+
+        if (currentCount + images.length > 30) {
+          throw new AppError(
+            "Adding these images would exceed the maximum limit of 30 images",
+            "MAX_IMAGES_EXCEEDED",
+            400
+          );
+        }
+
+        // Create the new images
+        await tx.quoteImage.createMany({
+          data: images.map(img => ({
+            quoteId,
+            url: img.url,
+            publicId: img.publicId,
+            isActive: img.isActive
+          }))
+        });
+
+        // Return updated quote with images
+        return tx.quote.findUniqueOrThrow({
+          where: { id: quoteId },
+          include: {
+            images: true,
+            category: true,
+            authorProfile: true
+          }
+        });
+      });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError("Failed to add images", "INTERNAL_ERROR", 500);
+    }
+  }
+
+  // Add method to remove an image
+  async removeImage(quoteId: string, publicId: string): Promise<Quote> {
+    try {
+      return await db.$transaction(async (tx) => {
+        // Check if image exists and belongs to the quote
+        const image = await tx.quoteImage.findFirst({
+          where: { quoteId, publicId }
+        });
+
+        if (!image) {
+          throw new AppError("Image not found", "NOT_FOUND", 404);
+        }
+
+        // Delete from Cloudinary
+        const deleted = await deleteImage(publicId);
+        if (!deleted) {
+          throw new AppError("Failed to delete image from storage", "INTERNAL_ERROR", 500);
+        }
+
+        // Delete from database
+        await tx.quoteImage.delete({
+          where: { id: image.id }
+        });
+
+        // If this was the background image, clear it
+        if (image.isActive) {
+          await tx.quote.update({
+            where: { id: quoteId },
+            data: { backgroundImage: null }
+          });
+        }
+
+        // Return updated quote
+        return tx.quote.findUniqueOrThrow({
+          where: { id: quoteId },
+          include: {
+            images: true,
+            category: true,
+            authorProfile: true
+          }
+        });
+      });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError("Failed to remove image", "INTERNAL_ERROR", 500);
+    }
+  }
+
+  // Add method to set background image
+  async setBackgroundImage(quoteId: string, imageUrl: string | null): Promise<Quote> {
+    try {
+      return await db.$transaction(async (tx) => {
+        // Reset all images to not active
+        await tx.quoteImage.updateMany({
+          where: { quoteId },
+          data: { isActive: false }
+        });
+
+        if (imageUrl) {
+          // Set the selected image as active
+          await tx.quoteImage.updateMany({
+            where: { quoteId, url: imageUrl },
+            data: { isActive: true }
+          });
+        }
+
+        // Update quote's background image
+        return tx.quote.update({
+          where: { id: quoteId },
+          data: { backgroundImage: imageUrl },
+          include: {
+            images: true,
+            category: true,
+            authorProfile: true
+          }
+        });
+      });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError("Failed to set background image", "INTERNAL_ERROR", 500);
+    }
   }
 }
 

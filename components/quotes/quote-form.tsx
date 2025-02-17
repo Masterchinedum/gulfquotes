@@ -14,18 +14,27 @@ import { Category, AuthorProfile } from "@prisma/client"; // Update existing imp
 import { useToast } from "@/hooks/use-toast";
 import { Icons } from "@/components/ui/icons";
 import { slugify } from "@/lib/utils"; // Import slugify utility
+import { ImageGallery } from "@/components/quotes/image-gallery";
+import type { CloudinaryUploadResult, QuoteImageResource } from "@/types/cloudinary";
+import { CldImage } from "next-cloudinary";
 
 interface QuoteFormProps {
   categories: Category[];
   authorProfiles: AuthorProfile[];  // Add this
-  initialData?: CreateQuoteInput;
+  initialData?: CreateQuoteInput & {
+    images?: QuoteImageResource[];
+    backgroundImage?: string;
+  };
 }
 
 export function QuoteForm({ categories, authorProfiles, initialData }: QuoteFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [charCount, setCharCount] = useState(initialData?.content?.length || 0);
-  
+  const [images, setImages] = useState<QuoteImageResource[]>(initialData?.images || []);
+  const [selectedImage, setSelectedImage] = useState<string | null>(initialData?.backgroundImage || null);
+  const [isUploading, setIsUploading] = useState(false);
+
   const form = useForm<CreateQuoteInput>({
     resolver: zodResolver(createQuoteSchema),
     defaultValues: initialData || {
@@ -45,7 +54,15 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          backgroundImage: selectedImage,
+          images: images.map(img => ({
+            url: img.secure_url,
+            publicId: img.public_id,
+            isActive: img.secure_url === selectedImage
+          }))
+        }),
       });
 
       const result = await response.json();
@@ -85,6 +102,82 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
     if (currentContent) {
       const generatedSlug = slugify(currentContent.substring(0, 50));
       form.setValue("slug", generatedSlug);
+    }
+  };
+
+  // Handle image upload
+  const handleImageUpload = async (result: CloudinaryUploadResult) => {
+    setIsUploading(true);
+    try {
+      if (result.event !== "success" || !result.info) {
+        throw new Error("Upload failed");
+      }
+
+      const newImage: QuoteImageResource = {
+        public_id: result.info.public_id,
+        secure_url: result.info.secure_url,
+        format: result.info.format,
+        width: result.info.width,
+        height: result.info.height,
+        resource_type: 'image',
+        created_at: new Date().toISOString(),
+        bytes: result.info.bytes,
+        folder: 'quote-images',
+      };
+
+      setImages(prev => [...prev, newImage]);
+      
+      // Optionally set this as the selected image if it's the first one
+      if (images.length === 0) {
+        setSelectedImage(newImage.secure_url);
+        form.setValue('backgroundImage', newImage.secure_url);
+      }
+
+    } catch (uploadError) {
+      toast({
+        title: "Error",
+        description: uploadError instanceof Error 
+          ? uploadError.message 
+          : "Failed to process uploaded image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Handle image selection
+  const handleImageSelect = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
+    // Update the form data with the selected background image
+    form.setValue('backgroundImage', imageUrl);
+  };
+
+  // Handle image deletion
+  const handleImageDelete = async (publicId: string) => {
+    try {
+      const response = await fetch('/api/images', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ publicId }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete image');
+      }
+
+      setImages(prev => prev.filter(img => img.public_id !== publicId));
+      if (images.find(img => img.secure_url === selectedImage)?.public_id === publicId) {
+        setSelectedImage(null);
+        form.setValue('backgroundImage', null);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete image",
+        variant: "destructive",
+      });
     }
   };
 
@@ -246,6 +339,33 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
             </FormItem>
           )}
         />
+
+        {/* Add Image Gallery */}
+        <div className="space-y-4">
+          <FormLabel>Quote Background</FormLabel>
+          <ImageGallery
+            images={images}
+            selectedImage={selectedImage}
+            onSelect={handleImageSelect}
+            onUpload={handleImageUpload}
+            onDelete={handleImageDelete}
+            disabled={isSubmitting || isUploading}
+          />
+          {selectedImage && (
+            <div className="mt-4">
+              <h4 className="text-sm font-medium mb-2">Selected Background</h4>
+              <div className="relative aspect-[1.91/1] w-full max-w-xl mx-auto overflow-hidden rounded-lg border">
+                <CldImage
+                  src={selectedImage}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  alt="Selected background"
+                  className="object-cover"
+                />
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="flex justify-end">
           <Button type="submit" disabled={isSubmitting}>
