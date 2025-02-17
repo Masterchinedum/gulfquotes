@@ -9,7 +9,6 @@ if (!process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET) {
 }
 
 import { CloudinaryUploadOptions } from '@/types/cloudinary';
-import fetch from 'node-fetch';
 
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;

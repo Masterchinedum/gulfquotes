@@ -70,7 +70,9 @@ export type UserErrorCode =
   | "FORBIDDEN"
   | "NOT_FOUND"
   | "BAD_REQUEST"
-  | "INTERNAL_ERROR";
+  | "INTERNAL_ERROR"
+  | "TRANSACTION_ERROR"  // Add this
+  | "VALIDATION_ERROR";  // Add this if needed
 
 export interface UserResponse extends ApiResponse<UserData> {
   error?: {
