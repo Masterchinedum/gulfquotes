@@ -58,24 +58,32 @@ export async function fetchAuthors({
   search,
   letter
 }: FetchAuthorsParams) {
-  // Calculate offset
-  const skip = (page - 1) * limit
+  // Add debug logging
+  console.log("[FETCH_AUTHORS] Params:", { page, limit, search, letter })
 
-  // Build where conditions
+  const skip = (page - 1) * limit
   const whereConditions = buildWhereConditions(search, letter)
 
-  // Execute queries in parallel
+  // Log where conditions
+  console.log("[FETCH_AUTHORS] Where conditions:", whereConditions)
+
   const [items, total] = await Promise.all([
     fetchAuthorItems(whereConditions, skip, limit),
     countAuthors(whereConditions)
   ])
 
+  // Log results
+  console.log("[FETCH_AUTHORS] Results:", { itemsCount: items.length, total })
+
+  // Return with the correct structure matching AuthorsResponse
   return {
-    items: formatAuthors(items),
-    total,
-    hasMore: total > skip + items.length,
-    page,
-    limit
+    data: {
+      items: formatAuthors(items),
+      total,
+      hasMore: total > skip + items.length,
+      page,
+      limit
+    }
   }
 }
 
