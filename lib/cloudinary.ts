@@ -1,5 +1,10 @@
 // lib/cloudinary.ts
 
+import type { 
+  CloudinaryUploadOptions,
+  CloudinaryConfig 
+} from '@/types/cloudinary';
+
 if (!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
   throw new Error('NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME is not defined');
 }
@@ -8,13 +13,10 @@ if (!process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET) {
   throw new Error('NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET is not defined');
 }
 
-import { CloudinaryUploadOptions } from '@/types/cloudinary';
-
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
-// Update cloudinary config with more specific profile settings
-export const cloudinaryConfig = {
+export const cloudinaryConfig: CloudinaryConfig = {
   cloudName: CLOUD_NAME,
   uploadPreset: UPLOAD_PRESET,
   folders: {
@@ -44,14 +46,19 @@ export function getFolder(type: 'profiles' | 'authors'): string {
   return cloudinaryConfig.folders[type];
 }
 
-// Profile-specific upload options
-export const profileUploadOptions: CloudinaryUploadOptions = {
-  maxFiles: cloudinaryConfig.limits.profiles.maxFiles,
+// Update the upload options interfaces
+export const defaultUploadOptions: Partial<CloudinaryUploadOptions> = {
   maxFileSize: cloudinaryConfig.limits.maxFileSize,
   uploadPreset: UPLOAD_PRESET,
-  folder: cloudinaryConfig.folders.profiles,
   sources: ['local', 'url', 'camera'] as const,
-  clientAllowedFormats: cloudinaryConfig.limits.profiles.allowedFormats,
+} as const;
+
+// Profile-specific upload options
+export const profileUploadOptions: CloudinaryUploadOptions = {
+  ...defaultUploadOptions,
+  maxFiles: getMaxFiles('profiles'),
+  folder: getFolder('profiles'),
+  clientAllowedFormats: [...cloudinaryConfig.limits.profiles.allowedFormats],
   styles: {
     palette: {
       window: "#ffffff",
@@ -71,13 +78,12 @@ export const profileUploadOptions: CloudinaryUploadOptions = {
   }
 } as const;
 
-export const defaultUploadOptions: CloudinaryUploadOptions = {
-  maxFiles: cloudinaryConfig.limits.authors.maxFiles, // Reference from config
-  maxFileSize: cloudinaryConfig.limits.maxFileSize, // 7MB
-  uploadPreset: UPLOAD_PRESET,
-  folder: cloudinaryConfig.folders.authors,
-  sources: ['local', 'url', 'camera'] as const, // Add type assertion
-  clientAllowedFormats: cloudinaryConfig.limits.authors.allowedFormats,
+// Author-specific upload options
+export const authorUploadOptions: CloudinaryUploadOptions = {
+  ...defaultUploadOptions,
+  maxFiles: getMaxFiles('authors'),
+  folder: getFolder('authors'),
+  clientAllowedFormats: [...cloudinaryConfig.limits.authors.allowedFormats],
 } as const;
 
 export function buildImageUrl(publicId: string, transforms = imageTransforms.full) {

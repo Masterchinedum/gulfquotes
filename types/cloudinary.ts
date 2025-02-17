@@ -39,8 +39,8 @@ export interface CloudinaryUploadOptions {
   maxFileSize?: number;
   folder?: string;
   uploadPreset?: string;
-  sources?: ("local" | "url" | "camera")[];
-  clientAllowedFormats?: string[];
+  sources?: readonly ("local" | "url" | "camera")[];
+  clientAllowedFormats?: readonly string[];
   styles?: {
     palette?: {
       window?: string;
@@ -74,18 +74,18 @@ export interface CloudinaryConfig {
   cloudName: string | undefined;
   uploadPreset: string | undefined;
   folders: {
-    profiles: string;
-    authors: string;
+    readonly profiles: string;
+    readonly authors: string;
   };
   limits: {
-    maxFileSize: number;
-    profiles: {
-      maxFiles: number;
-      allowedFormats: readonly string[];
+    readonly maxFileSize: number;
+    readonly profiles: {
+      readonly maxFiles: number;
+      readonly allowedFormats: readonly string[];
     };
-    authors: {
-      maxFiles: number;
-      allowedFormats: readonly string[];
+    readonly authors: {
+      readonly maxFiles: number;
+      readonly allowedFormats: readonly string[];
     };
   };
 }

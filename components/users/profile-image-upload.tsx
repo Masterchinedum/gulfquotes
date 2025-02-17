@@ -148,7 +148,7 @@ export function ProfileImageUpload({ imageUrl, onImageChange, disabled = false }
             options={{
               maxFiles: 1,
               folder: getFolder('profiles'),
-              clientAllowedFormats: cloudinaryConfig.limits.profiles.allowedFormats,
+              clientAllowedFormats: [...cloudinaryConfig.limits.profiles.allowedFormats],
               maxFileSize: cloudinaryConfig.limits.maxFileSize,
               sources: ['local', 'url', 'camera'],
               showPoweredBy: false,

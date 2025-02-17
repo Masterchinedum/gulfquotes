@@ -21,11 +21,11 @@ export function EditImageUpload({ form, disabled }: EditImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const currentImages = form.watch("images") || [];
 
-  const handleUploadSuccess = (results: CloudinaryUploadWidgetResults) => { // Updated type
+  const handleUploadSuccess = (results: CloudinaryUploadWidgetResults) => {
     if (results.event !== "success") return;
 
     const currentImages = form.getValues("images") || [];
-    if (currentImages.length >= cloudinaryConfig.maxFiles) {
+    if (currentImages.length >= getMaxFiles('authors')) {
       return;
     }
 
@@ -87,14 +87,14 @@ export function EditImageUpload({ form, disabled }: EditImageUploadProps) {
               )}
 
               {/* Upload Button */}
-              {currentImages.length < cloudinaryConfig.maxFiles && (
+              {currentImages.length < getMaxFiles('authors') && (
                 <CldUploadWidget
                   uploadPreset={cloudinaryConfig.uploadPreset}
                   options={{
-                    maxFiles: cloudinaryConfig.maxFiles - currentImages.length,
-                    folder: cloudinaryConfig.folder,
-                    clientAllowedFormats: ["jpg", "jpeg", "png", "webp"],
-                    maxFileSize: 7000000, // 7MB
+                    maxFiles: getMaxFiles('authors') - currentImages.length,
+                    folder: getFolder('authors'),
+                    clientAllowedFormats: [...cloudinaryConfig.limits.authors.allowedFormats],
+                    maxFileSize: cloudinaryConfig.limits.maxFileSize,
                   }}
                   onSuccess={handleUploadSuccess}
                   onOpen={() => setUploading(true)}
