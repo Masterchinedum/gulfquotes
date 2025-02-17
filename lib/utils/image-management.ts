@@ -1,0 +1,124 @@
+// lib/utils/image-management.ts
+
+import { cloudinaryConfig, imageTransforms } from "@/lib/cloudinary";
+import type { CloudinaryResource, QuoteImageResource } from "@/types/cloudinary";
+
+interface ImageTransformOptions {
+  width?: number;
+  height?: number;
+  crop?: 'fill' | 'scale' | 'thumb';
+  quality?: 'auto' | string;
+  format?: 'webp' | 'jpg' | 'png';
+  gravity?: 'face' | 'center';
+  aspectRatio?: number;
+}
+
+/**
+ * Build a Cloudinary URL with transformations
+ */
+export function buildImageUrl(publicId: string, options: ImageTransformOptions = {}): string {
+  const baseUrl = `https://res.cloudinary.com/${cloudinaryConfig.cloudName}/image/upload`;
+  const transformations = Object.entries(options)
+    .filter(([, value]) => value !== undefined) // Remove underscore, use just comma
+    .map(([key, value]) => `${key}_${value}`)
+    .join(',');
+
+  return `${baseUrl}${transformations ? '/' + transformations : ''}/${publicId}`;
+}
+
+/**
+ * Get optimized quote image URLs for different contexts
+ */
+export function getQuoteImageUrls(image: QuoteImageResource) {
+  return {
+    thumbnail: buildImageUrl(image.public_id, imageTransforms.quote.thumbnail),
+    preview: buildImageUrl(image.public_id, imageTransforms.quote.preview),
+    social: buildImageUrl(image.public_id, imageTransforms.quote.social),
+    original: image.secure_url
+  };
+}
+
+/**
+ * Validate image dimensions
+ */
+export function validateImageDimensions(
+  image: CloudinaryResource,
+  { minWidth = 0, minHeight = 0, maxWidth = Infinity, maxHeight = Infinity }
+): boolean {
+  return (
+    image.width >= minWidth &&
+    image.height >= minHeight &&
+    image.width <= maxWidth &&
+    image.height <= maxHeight
+  );
+}
+
+/**
+ * Calculate optimal image dimensions maintaining aspect ratio
+ */
+export function calculateOptimalDimensions(
+  originalWidth: number,
+  originalHeight: number,
+  maxWidth: number,
+  maxHeight: number
+): { width: number; height: number } {
+  const ratio = Math.min(maxWidth / originalWidth, maxHeight / originalHeight);
+  return {
+    width: Math.round(originalWidth * ratio),
+    height: Math.round(originalHeight * ratio)
+  };
+}
+
+/**
+ * Generate responsive image srcSet
+ */
+export function generateImageSrcSet(publicId: string, breakpoints: number[] = [320, 640, 768, 1024, 1280]): string {
+  return breakpoints
+    .map(width => {
+      const url = buildImageUrl(publicId, { width, quality: 'auto', format: 'webp' });
+      return `${url} ${width}w`;
+    })
+    .join(', ');
+}
+
+/**
+ * Calculate social media image dimensions
+ */
+export function getSocialImageDimensions(platform: 'twitter' | 'facebook' | 'linkedin' = 'twitter'): {
+  width: number;
+  height: number;
+  aspectRatio: number;
+} {
+  const dimensions = {
+    twitter: { width: 1200, height: 630, aspectRatio: 1.91 },
+    facebook: { width: 1200, height: 630, aspectRatio: 1.91 },
+    linkedin: { width: 1200, height: 627, aspectRatio: 1.91 }
+  };
+
+  return dimensions[platform];
+}
+
+/**
+ * Transform quote text to fit image
+ */
+export function formatQuoteText(
+  text: string,
+  maxLength: number = 180,
+  options: { ellipsis?: boolean } = {}
+): string {
+  if (text.length <= maxLength) return text;
+  
+  return options.ellipsis 
+    ? `${text.slice(0, maxLength - 3)}...`
+    : text.slice(0, maxLength);
+}
+
+/**
+ * Get image size category
+ */
+export function getImageSizeCategory(fileSize: number): 'small' | 'medium' | 'large' {
+  const MB = 1024 * 1024;
+  if (fileSize <= MB) return 'small';
+  if (fileSize <= 5 * MB) return 'medium';
+  return 'large';
+}
