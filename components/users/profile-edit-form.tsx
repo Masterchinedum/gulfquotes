@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
-import { ProfileImageUpload } from "@/components/users/profile-image-upload";
+// import { ProfileImageUpload } from "@/components/users/profile-image-upload";
 import type { UpdateProfileInput, UserData } from "@/types/api/users";
 
 // Validation schema
@@ -39,13 +39,14 @@ export function ProfileEditForm({ user }: ProfileEditFormProps) {
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<UpdateProfileInput>({
     resolver: zodResolver(updateProfileSchema),
     defaultValues: {
       username: user.userProfile?.username || "",
       bio: user.userProfile?.bio || "",
       name: user.name || "",
-      image: user.image || "",
+      // image: user.image || "",
     },
   });
 
@@ -54,12 +55,15 @@ export function ProfileEditForm({ user }: ProfileEditFormProps) {
     setSuccessMessage(null);
     setErrorMessage(null);
     try {
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { image, ...updateData } = data;
       const response = await fetch("/api/users/settings", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(updateData),
       });
 
       const result = await response.json();
@@ -81,9 +85,9 @@ export function ProfileEditForm({ user }: ProfileEditFormProps) {
     }
   };
 
-  const handleImageChange = (url: string | null) => {
-    setValue("image", url || "");
-  };
+  // const handleImageChange = (url: string | null) => {
+  //   setValue("image", url || "");
+  // };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -142,11 +146,11 @@ export function ProfileEditForm({ user }: ProfileEditFormProps) {
         )}
       </div>
 
-      <ProfileImageUpload
+      {/* <ProfileImageUpload
         imageUrl={user.image}
         onImageChange={handleImageChange}
         disabled={loading}
-      />
+      /> */}
 
       <Button type="submit" disabled={loading}>
         {loading ? "Saving..." : "Save Changes"}

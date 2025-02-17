@@ -9,6 +9,7 @@ if (!process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET) {
 }
 
 import { CloudinaryUploadOptions } from '@/types/cloudinary';
+import fetch from 'node-fetch';
 
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -47,15 +48,27 @@ export function buildImageUrl(publicId: string, transforms = imageTransforms.ful
 
 export async function deleteImage(publicId: string): Promise<boolean> {
   try {
-    const response = await fetch('/api/users/profile-image', {
+    const origin = process.env.NEXTAUTH_URL || 
+                  (typeof window !== 'undefined' ? window.location.origin : '');
+    
+    const imageUrl = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${publicId}`;
+    
+    const response = await fetch(`${origin}/api/users/profile-image`, {
       method: 'DELETE',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ publicId }),
+      body: JSON.stringify({ imageUrl }),
     });
 
-    if (!response.ok) throw new Error('Failed to delete image');
+    if (response.status === 401) {
+      throw new Error("Unauthorized");
+    }
+
+    if (!response.ok) {
+      throw new Error("Failed to delete image");
+    }
     
     return true;
   } catch (error) {

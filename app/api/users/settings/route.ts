@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import db from "@/lib/prisma";
 import { generateUserSlug } from "@/lib/utils";
-import { deleteImage, getImagePublicId } from "@/lib/cloudinary";
+// import { deleteImage, getImagePublicId } from "@/lib/cloudinary";
 import type { SettingsResponse } from "@/types/api/users";
 import { z } from "zod";
 
@@ -31,7 +31,7 @@ export async function PATCH(
   req: Request
 ): Promise<NextResponse<SettingsResponse>> {
   try {
-    // Check authentication
+    // 1. Check authentication
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -40,10 +40,19 @@ export async function PATCH(
       );
     }
 
-    // Parse and validate request body
-    const body = await req.json();
-    const validationResult = updateProfileSchema.safeParse(body);
+    // 2. Parse and validate request body
+    let body;
+    try {
+      body = await req.json();
+    } catch {  // Remove the unused parameter completely
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "Invalid JSON payload" } },
+        { status: 400 }
+      );
+    }
 
+    // 3. Validate input data
+    const validationResult = updateProfileSchema.safeParse(body);
     if (!validationResult.success) {
       return NextResponse.json(
         {
@@ -58,96 +67,85 @@ export async function PATCH(
     }
 
     const data = validationResult.data;
+    const userId = session.user.id;
 
-    // Check username uniqueness if updating username
-    if (data.username) {
-      const existingUser = await db.userProfile.findFirst({
-        where: {
-          username: data.username,
-          user: {
-            id: { not: session.user.id }
+    // 4. Perform update transaction
+    try {
+      const updatedUser = await db.$transaction(async (tx) => {
+        // Handle profile update
+        await tx.userProfile.upsert({
+          where: { userId },
+          create: {
+            userId,
+            username: data.username,
+            bio: data.bio,
+            slug: generateUserSlug({
+              username: data.username,
+              firstName: session.user.name?.split(' ')[0] || null,
+              lastName: session.user.name?.split(' ').slice(1).join(' ') || null,
+              userId
+            })
+          },
+          update: {
+            username: data.username,
+            bio: data.bio,
+            slug: generateUserSlug({
+              username: data.username,
+              firstName: session.user.name?.split(' ')[0] || null,
+              lastName: session.user.name?.split(' ').slice(1).join(' ') || null,
+              userId
+            })
           }
+        });
+
+        // Handle name update if provided
+        if (data.name) {
+          await tx.user.update({
+            where: { id: userId },
+            data: { name: data.name }
+          });
         }
+
+        // Return complete updated user data
+        const updatedUserData = await tx.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            userProfile: {
+              select: {
+                username: true,
+                bio: true,
+                slug: true
+              }
+            }
+          }
+        });
+
+        return updatedUserData;
       });
 
-      if (existingUser) {
+      if (!updatedUser) {
         return NextResponse.json(
-          {
-            error: {
-              code: "BAD_REQUEST",
-              message: "Username already taken"
-            }
-          },
-          { status: 400 }
+          { error: { code: "NOT_FOUND", message: "Failed to update user" } },
+          { status: 404 }
         );
       }
-    }
 
-    // Generate slug based on priority order
-    const slug = generateUserSlug({
-      username: data.username,
-      firstName: session.user.name?.split(' ')[0] || null,
-      lastName: session.user.name?.split(' ').slice(1).join(' ') || null,
-      userId: session.user.id
-    });
+      return NextResponse.json({ data: updatedUser });
 
-    // Ensure userId is a string
-    const userId = session.user.id as string;
-
-    // Update user profile using transaction
-    const updatedUser = await db.$transaction(async (tx) => {
-      // Handle old image cleanup if image is being updated
-      if (data.image && session.user.image) {
-        const oldImagePublicId = getImagePublicId(session.user.image);
-        if (oldImagePublicId) {
-          await deleteImage(oldImagePublicId);
-        }
+    } catch (error) {
+      console.error("[TRANSACTION_ERROR]", error);
+      if (error instanceof Error) {
+        return NextResponse.json(
+          { error: { code: "TRANSACTION_ERROR", message: error.message } },
+          { status: 500 }
+        );
       }
-
-      await tx.userProfile.upsert({
-        where: {
-          userId
-        },
-        update: {
-          ...data,
-          slug
-        },
-        create: {
-          ...data,
-          userId,
-          slug
-        }
-      });
-
-      return await tx.user.findUnique({
-        where: { 
-          id: userId 
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
-          role: true,
-          userProfile: {
-            select: {
-              username: true,
-              bio: true,
-              slug: true
-            }
-          }
-        }
-      });
-    });
-
-    if (!updatedUser) {
-      return NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "User not found" } },
-        { status: 404 }
-      );
+      throw error;
     }
-
-    return NextResponse.json({ data: updatedUser });
 
   } catch (error) {
     console.error("[USER_SETTINGS_PATCH]", error);
