@@ -6,7 +6,7 @@ import { createAuthorProfileSchema } from "@/schemas/author-profile";
 import { authorProfileService } from "@/lib/services/author-profile.service";
 import type { AuthorProfileResponse, AuthorProfilesResponse } from "@/types/api/author-profiles";
 import { DuplicateAuthorProfileError, MaxImagesExceededError } from "@/lib/services/errors/author-profile.errors";
-import { cloudinaryConfig } from "@/lib/cloudinary";
+import { cloudinaryConfig, getMaxFiles } from "@/lib/cloudinary";
 
 // GET handler for listing author profiles
 export async function GET(req: Request): Promise<NextResponse<AuthorProfilesResponse>> {
@@ -73,13 +73,13 @@ export async function POST(req: Request): Promise<NextResponse<AuthorProfileResp
 
     // Validate images if present
     if (validatedData.data.images && validatedData.data.images.length > 0) {
-      // Check maximum number of images
-      if (validatedData.data.images.length > cloudinaryConfig.maxFiles) {
+      // Check maximum number of images using helper function
+      if (validatedData.data.images.length > getMaxFiles('authors')) {
         return NextResponse.json(
           {
             error: {
               code: "VALIDATION_ERROR",
-              message: `Maximum ${cloudinaryConfig.maxFiles} images allowed`,
+              message: `Maximum ${getMaxFiles('authors')} images allowed`,
             }
           },
           { status: 400 }

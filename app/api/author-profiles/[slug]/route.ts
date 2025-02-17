@@ -8,7 +8,7 @@ import {
   MaxImagesExceededError,
   InvalidImageError 
 } from "@/lib/services/errors/author-profile.errors";
-import { cloudinaryConfig } from "@/lib/cloudinary";
+import { cloudinaryConfig, getMaxFiles } from "@/lib/cloudinary";
 import type { AuthorProfileResponse } from "@/types/api/author-profiles";
 
 export async function GET(req: Request) {
@@ -76,12 +76,12 @@ export async function PATCH(req: Request): Promise<NextResponse<AuthorProfileRes
 
     // Validate images if present
     if (validatedData.data.images?.length) {
-      // Check maximum images
-      if (validatedData.data.images.length > cloudinaryConfig.maxFiles) {
+      // Check maximum images using the helper function
+      if (validatedData.data.images.length > getMaxFiles('authors')) {
         return NextResponse.json({
           error: {
             code: "VALIDATION_ERROR",
-            message: `Maximum ${cloudinaryConfig.maxFiles} images allowed`
+            message: `Maximum ${getMaxFiles('authors')} images allowed`
           }
         }, { status: 400 });
       }
