@@ -71,7 +71,24 @@ export function ProfileImageUpload({ imageUrl, onImageChange, disabled = false }
       setUploading(true);
       
       if (currentImage) {
-        const response = await fetch("/api/users/settings", {
+        // First, delete the image from Cloudinary
+        const response = await fetch("/api/users/profile-image", {
+          method: "DELETE",
+          headers: { 
+            "Content-Type": "application/json" 
+          },
+          body: JSON.stringify({ 
+            imageUrl: currentImage 
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error?.message || "Failed to delete image from storage");
+        }
+
+        // Then update the user profile
+        const updateResponse = await fetch("/api/users/settings", {
           method: "PATCH",
           headers: { 
             "Content-Type": "application/json" 
@@ -81,8 +98,8 @@ export function ProfileImageUpload({ imageUrl, onImageChange, disabled = false }
           }),
         });
 
-        if (!response.ok) {
-          const error = await response.json();
+        if (!updateResponse.ok) {
+          const error = await updateResponse.json();
           throw new Error(error.error?.message || "Failed to remove profile image");
         }
       }

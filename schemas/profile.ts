@@ -37,13 +37,15 @@ export const profileSchema = z.object({
     .transform((bio) => bio.trim())
     .optional(),
     
-  image: z.string()
-    .url("Invalid image URL")
-    .refine(
-      isCloudinaryUrl,
-      "Image must be uploaded to Cloudinary"
-    )
-    .optional(),
+  image: z.union([
+    z.string()
+      .url("Invalid image URL")
+      .refine(
+        isCloudinaryUrl,
+        "Image must be uploaded to Cloudinary"
+      ),
+    z.null()
+  ]).optional(),
 }).refine((data) => {
   // Ensure at least one field is provided
   return Object.keys(data).length > 0;

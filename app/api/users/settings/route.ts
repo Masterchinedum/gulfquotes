@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { db } from "@/lib/db";
-import { updateProfileSchema } from "@/schemas/user";
+import db from "@/lib/prisma"; // Fixed import
+import { profileSchema as updateProfileSchema } from "@/schemas/profile"; // Use existing schema
 import { generateUserSlug } from "@/lib/utils";
 import { deleteImage, getImagePublicId } from "@/lib/cloudinary";
 import type { SettingsResponse } from "@/types/api/users";
@@ -59,6 +59,21 @@ export async function PATCH(
           });
 
           if (user?.image && user.image !== data.image) {
+            const oldImagePublicId = getImagePublicId(user.image);
+            if (oldImagePublicId) {
+              await deleteImage(oldImagePublicId);
+            }
+          }
+        }
+
+        // Handle image deletion
+        if (data.image === null) {
+          const user = await tx.user.findUnique({
+            where: { id: userId },
+            select: { image: true }
+          });
+
+          if (user?.image) {
             const oldImagePublicId = getImagePublicId(user.image);
             if (oldImagePublicId) {
               await deleteImage(oldImagePublicId);
