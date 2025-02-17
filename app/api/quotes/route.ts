@@ -39,11 +39,21 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
     }
 
     try {
-      // Transform image data to match the schema's expected format
+      // Transform image data to match service expectations
       const transformedImages = validatedData.data.images?.map(img => ({
         url: img.url,
         publicId: img.publicId,
-        isActive: img.isActive
+        isActive: img.isActive,
+        // Additional metadata that will be handled by the service
+        secure_url: img.url,
+        public_id: img.publicId,
+        format: 'webp',
+        width: 1200,
+        height: 630,
+        resource_type: 'image',
+        created_at: new Date().toISOString(),
+        bytes: 0,
+        folder: 'quote-images'
       }));
 
       // Create quote with transformed images
@@ -55,6 +65,7 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
       });
 
       return NextResponse.json({ data: quote });
+
     } catch (error) {
       if (error instanceof AppError) {
         return NextResponse.json(

@@ -20,17 +20,10 @@ interface ListQuotesResult {
   limit: number;
 }
 
-// First, update the QuoteImageData interface to extend QuoteImageResource
+// Update the QuoteImageData interface
 interface QuoteImageData {
-  public_id: string;
-  secure_url: string;
-  format: string;
-  width: number;
-  height: number;
-  resource_type: string;
-  created_at: string;
-  bytes: number;
-  folder: string;
+  url: string;
+  publicId: string;
   isActive: boolean;
 }
 
@@ -127,7 +120,7 @@ class QuoteServiceImpl implements QuoteService {
 
     // Validate each image URL is from Cloudinary
     for (const image of images) {
-      if (!image.secure_url.includes(cloudinaryConfig.cloudName)) {
+      if (!image.url.includes(cloudinaryConfig.cloudName)) {
         throw new AppError(
           "Invalid image URL. Images must be uploaded to Cloudinary",
           "INVALID_IMAGE",
@@ -154,7 +147,6 @@ class QuoteServiceImpl implements QuoteService {
         await this.validateImages(data.images);
       }
 
-      // Create quote using transaction with proper nested create
       return await db.$transaction(async (tx) => {
         const quote = await tx.quote.create({
           data: {
@@ -163,13 +155,12 @@ class QuoteServiceImpl implements QuoteService {
             authorId: data.authorId,
             categoryId: data.categoryId,
             authorProfileId: data.authorProfileId,
-            backgroundImage: data.images?.find(img => img.isActive)?.secure_url || null,
-            // Use proper nested create syntax for images
+            backgroundImage: data.images?.find(img => img.isActive)?.url || null,
             images: data.images ? {
               createMany: {
                 data: data.images.map(img => ({
-                  url: img.secure_url,
-                  publicId: img.public_id,
+                  url: img.url,
+                  publicId: img.publicId,
                   isActive: img.isActive
                 }))
               }
@@ -489,8 +480,8 @@ class QuoteServiceImpl implements QuoteService {
         await tx.quoteImage.createMany({
           data: images.map(img => ({
             quoteId,
-            url: img.secure_url,
-            publicId: img.public_id,
+            url: img.url,
+            publicId: img.publicId,
             isActive: img.isActive
           }))
         });
