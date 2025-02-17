@@ -20,10 +20,17 @@ interface ListQuotesResult {
   limit: number;
 }
 
-// First, add the new image-related types
+// First, update the QuoteImageData interface to extend QuoteImageResource
 interface QuoteImageData {
-  url: string;
-  publicId: string;
+  public_id: string;
+  secure_url: string;
+  format: string;
+  width: number;
+  height: number;
+  resource_type: string;
+  created_at: string;
+  bytes: number;
+  folder: string;
   isActive: boolean;
 }
 
@@ -108,11 +115,11 @@ class QuoteServiceImpl implements QuoteService {
     }
   }
 
-  // Add new validation method for images
+  // Then update the validateImages method to handle QuoteImageData
   private async validateImages(images: QuoteImageData[]): Promise<void> {
-    if (images.length > 30) {
+    if (images.length > cloudinaryConfig.limits.quotes.maxFiles) {
       throw new AppError(
-        "Maximum 30 images allowed per quote",
+        `Maximum ${cloudinaryConfig.limits.quotes.maxFiles} images allowed per quote`,
         "MAX_IMAGES_EXCEEDED",
         400
       );
@@ -120,7 +127,7 @@ class QuoteServiceImpl implements QuoteService {
 
     // Validate each image URL is from Cloudinary
     for (const image of images) {
-      if (!image.url.includes(cloudinaryConfig.cloudName)) {
+      if (!image.secure_url.includes(cloudinaryConfig.cloudName)) {
         throw new AppError(
           "Invalid image URL. Images must be uploaded to Cloudinary",
           "INVALID_IMAGE",
@@ -156,13 +163,13 @@ class QuoteServiceImpl implements QuoteService {
             authorId: data.authorId,
             categoryId: data.categoryId,
             authorProfileId: data.authorProfileId,
-            backgroundImage: data.images?.find(img => img.isActive)?.url || null,
+            backgroundImage: data.images?.find(img => img.isActive)?.secure_url || null,
             // Use proper nested create syntax for images
             images: data.images ? {
               createMany: {
                 data: data.images.map(img => ({
-                  url: img.url,
-                  publicId: img.publicId,
+                  url: img.secure_url,
+                  publicId: img.public_id,
                   isActive: img.isActive
                 }))
               }
@@ -456,6 +463,50 @@ class QuoteServiceImpl implements QuoteService {
       },
       take: 10,
     });
+  }
+
+  // Update the addImages method
+  async addImages(quoteId: string, images: QuoteImageData[]): Promise<Quote> {
+    try {
+      // Use the class's own validateImages method instead
+      await this.validateImages(images);
+
+      return await db.$transaction(async (tx) => {
+        // Check current count
+        const currentCount = await tx.quoteImage.count({
+          where: { quoteId }
+        });
+
+        if (currentCount + images.length > cloudinaryConfig.limits.quotes.maxFiles) {
+          throw new AppError(
+            `Adding these images would exceed the maximum limit of ${cloudinaryConfig.limits.quotes.maxFiles} images`,
+            "MAX_IMAGES_EXCEEDED",
+            400
+          );
+        }
+
+        // Create the new images
+        await tx.quoteImage.createMany({
+          data: images.map(img => ({
+            quoteId,
+            url: img.secure_url,
+            publicId: img.public_id,
+            isActive: img.isActive
+          }))
+        });
+
+        return tx.quote.findUniqueOrThrow({
+          where: { id: quoteId },
+          include: {
+            images: true,
+            category: true,
+            authorProfile: true
+          }
+        });
+      });
+    } catch (error) {
+      handleUploadError(error);
+    }
   }
 
   // Add method to associate images with a quote

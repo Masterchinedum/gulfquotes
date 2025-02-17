@@ -102,6 +102,7 @@ export type QuoteErrorCode =
   | "DUPLICATE_SLUG"
   | "CONTENT_TOO_LONG"
   | "CONCURRENT_MODIFICATION"
+  | "CONCURRENT_DELETE" 
   | "QUOTE_ACCESS_DENIED"
   | "NO_CHANGES"
   | "CATEGORY_NOT_FOUND"
@@ -114,10 +115,10 @@ export type AuthorProfileErrorCode =
   | "DUPLICATE_AUTHOR_PROFILE"
   | "INVALID_AUTHOR_PROFILE_DATA"
   | "AUTHOR_PROFILE_VALIDATION"
-  | "IMAGE_UPLOAD_ERROR"    // Add this
-  | "IMAGE_DELETE_ERROR"    // Add this
-  | "MAX_IMAGES_EXCEEDED"   // Add this
-  | "INVALID_IMAGE";        // Add this
+  | "IMAGE_UPLOAD_ERROR"  
+  | "IMAGE_DELETE_ERROR"   
+  | "MAX_IMAGES_EXCEEDED" 
+  | "INVALID_IMAGE";  
 
 // Combined error code type for the AppError class
 export type AppErrorCode = QuoteErrorCode | AuthorProfileErrorCode | CategoryErrorCode;
