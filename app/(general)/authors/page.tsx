@@ -33,12 +33,20 @@ export default async function AuthorsPage({ searchParams = {} }: PageProps) {
   const letter = params.letter?.toUpperCase()
 
   try {
-    const result = await fetchAuthors({
+    const result: AuthorsResponse = await fetchAuthors({
       page,
       limit,
       search,
       letter,
     })
+
+    if (result.error) {
+      throw new Error(result.error.message)
+    }
+
+    if (!result.data) {
+      throw new Error("No data returned from API")
+    }
 
     return (
       <div className="container space-y-8 py-8">
@@ -52,14 +60,15 @@ export default async function AuthorsPage({ searchParams = {} }: PageProps) {
             </div>
             <AlphabetNav />
             <Suspense fallback={<AuthorSkeleton />}>
-              <AuthorGrid authors={result.data?.items || []} isLoading={false} />
-            </Suspense>
-            {result.data && (
-              <AuthorPagination
-                currentPage={page}
-                totalPages={Math.ceil((result.data.total || 0) / limit)}
+              <AuthorGrid 
+                authors={result.data.items} 
+                isLoading={false} 
               />
-            )}
+            </Suspense>
+            <AuthorPagination
+              currentPage={page}
+              totalPages={Math.ceil(result.data.total / limit)}
+            />
           </div>
         </ErrorBoundary>
       </div>
