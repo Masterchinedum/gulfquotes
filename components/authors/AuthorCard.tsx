@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
+import { cn } from "@/lib/utils"
 
 interface AuthorCardProps {
   author: Author
@@ -11,14 +12,17 @@ interface AuthorCardProps {
 export function AuthorCard({ author }: AuthorCardProps) {
   return (
     <Link href={`/authors/${author.slug}`}>
-      <Card className="hover:bg-muted/50 transition-colors">
+      <Card className={cn(
+        "transition-all duration-200",
+        "hover:bg-muted/50 hover:shadow-md"
+      )}>
         <CardHeader className="flex flex-row items-center gap-4 p-4">
-          <Avatar>
+          <Avatar className="h-12 w-12">
             <AvatarImage src={author.image || ""} alt={author.name} />
             <AvatarFallback>{author.name[0]}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
-            <h3 className="font-medium">{author.name}</h3>
+            <h3 className="font-medium line-clamp-1">{author.name}</h3>
             <p className="text-sm text-muted-foreground">
               {author.quoteCount} quotes
             </p>
