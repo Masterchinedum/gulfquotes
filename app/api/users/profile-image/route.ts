@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { deleteImage, getImagePublicId } from "@/lib/cloudinary";
+import { deleteUserProfileImage } from "@/lib/prisma";
 import type { ApiResponse } from "@/types/api/users";
 
 export async function DELETE(req: Request): Promise<NextResponse<ApiResponse<null>>> {
@@ -33,16 +34,18 @@ export async function DELETE(req: Request): Promise<NextResponse<ApiResponse<nul
     }
 
     // Delete image from Cloudinary
-    const deletionSuccess = await deleteImage(publicId);
-    if (!deletionSuccess) {
+    const deleted = await deleteImage(publicId);
+    if (!deleted) {
       return NextResponse.json(
-        { error: { code: "INTERNAL_ERROR", message: "Failed to delete image" } },
+        { error: { code: "INTERNAL_ERROR", message: "Failed to delete image from storage" } },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ data: null });
+    // Update database
+    await deleteUserProfileImage(session.user.id);
 
+    return NextResponse.json({ data: null });
   } catch (error) {
     console.error("[PROFILE_IMAGE_DELETE]", error);
     return NextResponse.json(

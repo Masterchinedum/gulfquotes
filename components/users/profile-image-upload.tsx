@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CldUploadWidget } from "next-cloudinary";
 import { Button } from "@/components/ui/button";
-import { cloudinaryConfig, profileUploadOptions, getImagePublicId, deleteImage } from "@/lib/cloudinary";
+import { cloudinaryConfig, getFolder } from "@/lib/cloudinary"; // Remove unused import
 import { ImagePlus, X } from "lucide-react";
 import { CldImage } from "next-cloudinary";
 import type { CloudinaryUploadResult, CloudinaryUploadWidgetInfo } from "@/types/cloudinary";
+import { toast } from "sonner";
 
 interface ProfileImageUploadProps {
   imageUrl?: string | null;
@@ -18,28 +19,83 @@ export function ProfileImageUpload({ imageUrl, onImageChange, disabled = false }
   const [uploading, setUploading] = useState(false);
   const [currentImage, setCurrentImage] = useState<string | null>(imageUrl || null);
 
-  const handleUploadSuccess = (result: CloudinaryUploadResult) => {
-    if (result.event !== "success" || !result.info) return;
+  // Sync with external image changes
+  useEffect(() => {
+    setCurrentImage(imageUrl || null);
+  }, [imageUrl]);
 
-    const info = result.info as CloudinaryUploadWidgetInfo;
-    const newImageUrl = info.secure_url;
+  const handleUploadSuccess = async (result: CloudinaryUploadResult) => {
+    try {
+      if (result.event !== "success" || !result.info) return;
 
-    // Update state and notify parent component
-    setCurrentImage(newImageUrl);
-    onImageChange(newImageUrl);
+      const info = result.info as CloudinaryUploadWidgetInfo;
+      const newImageUrl = info.secure_url;
+
+      // Only attempt to delete old image if it's different from the new one
+      if (currentImage && currentImage !== newImageUrl) {
+        try {
+          const response = await fetch("/api/users/settings", {
+            method: "PATCH",
+            headers: { 
+              "Content-Type": "application/json" 
+            },
+            body: JSON.stringify({ 
+              image: newImageUrl 
+            }),
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error?.message || "Failed to update profile image");
+          }
+        } catch (error) {
+          console.error("[PROFILE_IMAGE_UPLOAD]", error);
+          toast.error("Failed to update profile image");
+          return;
+        }
+      }
+
+      setCurrentImage(newImageUrl);
+      onImageChange(newImageUrl);
+      toast.success("Profile image uploaded successfully");
+    } catch (error) {
+      console.error("[PROFILE_IMAGE_UPLOAD]", error);
+      toast.error("Failed to upload profile image");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleRemoveImage = async () => {
-    if (currentImage) {
-      const publicId = getImagePublicId(currentImage);
-      if (publicId) {
-        await deleteImage(publicId);
-      }
-    }
+    try {
+      setUploading(true);
+      
+      if (currentImage) {
+        const response = await fetch("/api/users/settings", {
+          method: "PATCH",
+          headers: { 
+            "Content-Type": "application/json" 
+          },
+          body: JSON.stringify({ 
+            image: null 
+          }),
+        });
 
-    // Update state and notify parent component
-    setCurrentImage(null);
-    onImageChange(null);
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error?.message || "Failed to remove profile image");
+        }
+      }
+
+      setCurrentImage(null);
+      onImageChange(null);
+      toast.success("Profile image removed successfully");
+    } catch (error) {
+      console.error("[PROFILE_IMAGE_DELETE]", error);
+      toast.error("Failed to remove profile image");
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -62,7 +118,7 @@ export function ProfileImageUpload({ imageUrl, onImageChange, disabled = false }
             size="icon"
             className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity scale-75"
             onClick={handleRemoveImage}
-            disabled={disabled}
+            disabled={disabled || uploading}
           >
             <X className="h-3 w-3" />
             <span className="sr-only">Remove image</span>
@@ -73,31 +129,11 @@ export function ProfileImageUpload({ imageUrl, onImageChange, disabled = false }
           <CldUploadWidget
             uploadPreset={cloudinaryConfig.uploadPreset}
             options={{
-              ...profileUploadOptions,
-              styles: {
-                palette: {
-                  window: "#ffffff",
-                  windowBorder: "#90a0b3",
-                  tabIcon: "#0078ff",
-                  menuIcons: "#5a616a",
-                  textDark: "#000000",
-                  textLight: "#ffffff",
-                  link: "#0078ff",
-                  action: "#ff620c",
-                  inactiveTabIcon: "#0e2f5a",
-                  error: "#f44235",
-                  inProgress: "#0078ff",
-                  complete: "#20b832",
-                  sourceBg: "#f4f5f5"
-                },
-                fonts: {
-                  default: null,
-                  "'Space Mono', monospace": {
-                    url: "https://fonts.googleapis.com/css?family=Space+Mono",
-                    active: true
-                  }
-                }
-              },
+              maxFiles: 1,
+              folder: getFolder('profiles'),
+              clientAllowedFormats: cloudinaryConfig.limits.profiles.allowedFormats,
+              maxFileSize: cloudinaryConfig.limits.maxFileSize,
+              sources: ['local', 'url', 'camera'],
               showPoweredBy: false,
               showAdvancedOptions: false,
               cropping: true,
@@ -121,8 +157,14 @@ export function ProfileImageUpload({ imageUrl, onImageChange, disabled = false }
                 disabled={disabled || uploading}
                 className="w-full"
               >
-                <ImagePlus className="h-4 w-4 mr-2" />
-                Upload Image
+                {uploading ? (
+                  "Uploading..."
+                ) : (
+                  <>
+                    <ImagePlus className="h-4 w-4 mr-2" />
+                    Upload Image
+                  </>
+                )}
               </Button>
             )}
           </CldUploadWidget>

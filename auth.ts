@@ -66,11 +66,18 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         session.user.name = token.name;
         session.user.email = token.email!;
         session.user.isOAuth = !!token.isOAuth;
+        session.user.image = token.picture || token.image || null;
       }
 
       return session;
     },
-    async jwt({ token }) {
+    async jwt({ token, user, trigger, session }) {
+      if (trigger === "update" && session?.image) {
+        token.picture = session.image;
+      }
+      if (user) {
+        token.image = user.image;
+      }
       if (!token.sub) return token
       const existingUser = await getUserById(token.sub)
 

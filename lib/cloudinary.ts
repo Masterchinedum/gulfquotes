@@ -13,27 +13,71 @@ import { CloudinaryUploadOptions } from '@/types/cloudinary';
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
+// Update cloudinary config with more specific profile settings
 export const cloudinaryConfig = {
   cloudName: CLOUD_NAME,
   uploadPreset: UPLOAD_PRESET,
-  folder: 'author-profiles',
-  profileFolder: 'profile-pictures', // Add profile images folder
-  maxFiles: 5 // Add maxFiles to config
+  folders: {
+    profiles: 'user-profiles',
+    authors: 'author-profiles',
+  },
+  limits: {
+    maxFileSize: 7 * 1024 * 1024, // 7MB
+    profiles: {
+      maxFiles: 1,
+      allowedFormats: ['jpg', 'jpeg', 'png', 'webp'] as const,
+    },
+    authors: {
+      maxFiles: 5,
+      allowedFormats: ['jpg', 'jpeg', 'png', 'webp'] as const,
+    }
+  }
+} as const;
+
+// Helper function to get max files based on type
+export function getMaxFiles(type: 'profiles' | 'authors'): number {
+  return cloudinaryConfig.limits[type].maxFiles;
+}
+
+// Helper function to get folder based on type
+export function getFolder(type: 'profiles' | 'authors'): string {
+  return cloudinaryConfig.folders[type];
+}
+
+// Profile-specific upload options
+export const profileUploadOptions: CloudinaryUploadOptions = {
+  maxFiles: cloudinaryConfig.limits.profiles.maxFiles,
+  maxFileSize: cloudinaryConfig.limits.maxFileSize,
+  uploadPreset: UPLOAD_PRESET,
+  folder: cloudinaryConfig.folders.profiles,
+  sources: ['local', 'url', 'camera'] as const,
+  clientAllowedFormats: cloudinaryConfig.limits.profiles.allowedFormats,
+  styles: {
+    palette: {
+      window: "#ffffff",
+      sourceBg: "#f4f5f5",
+      windowBorder: "#90a0b3",
+      tabIcon: "#0078ff",
+      inactiveTabIcon: "#0e2f5a",
+      menuIcons: "#555a5f",
+      link: "#0078ff",
+      action: "#339933",
+      inProgress: "#0078ff",
+      complete: "#339933",
+      error: "#cc0000",
+      textDark: "#000000",
+      textLight: "#fcfffd"
+    }
+  }
 } as const;
 
 export const defaultUploadOptions: CloudinaryUploadOptions = {
-  maxFiles: cloudinaryConfig.maxFiles, // Reference from config
-  maxFileSize: 7 * 1024 * 1024, // 7MB
+  maxFiles: cloudinaryConfig.limits.authors.maxFiles, // Reference from config
+  maxFileSize: cloudinaryConfig.limits.maxFileSize, // 7MB
   uploadPreset: UPLOAD_PRESET,
-  folder: cloudinaryConfig.folder,
+  folder: cloudinaryConfig.folders.authors,
   sources: ['local', 'url', 'camera'] as const, // Add type assertion
-  clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
-} as const;
-
-export const profileUploadOptions: CloudinaryUploadOptions = {
-  ...defaultUploadOptions,
-  folder: cloudinaryConfig.profileFolder, // Use profile images folder
-  maxFiles: 1, // Only allow one profile image
+  clientAllowedFormats: cloudinaryConfig.limits.authors.allowedFormats,
 } as const;
 
 export function buildImageUrl(publicId: string, transforms = imageTransforms.full) {
@@ -108,12 +152,30 @@ export const imageTransforms = {
     quality: 'auto',
     format: 'webp',
   },
-  profile: { // Add profile image transform preset
-    width: 150,
-    height: 150,
-    crop: 'thumb',
-    gravity: 'face',
-    quality: 'auto',
-    format: 'webp',
-  },
+  profile: {
+    thumbnail: {
+      width: 64,
+      height: 64,
+      crop: 'thumb',
+      gravity: 'face',
+      format: 'webp',
+      quality: 'auto',
+    },
+    display: {
+      width: 150,
+      height: 150,
+      crop: 'thumb',
+      gravity: 'face',
+      format: 'webp',
+      quality: 'auto',
+    },
+    large: {
+      width: 300,
+      height: 300,
+      crop: 'thumb',
+      gravity: 'face',
+      format: 'webp',
+      quality: 'auto',
+    }
+  }
 } as const;
