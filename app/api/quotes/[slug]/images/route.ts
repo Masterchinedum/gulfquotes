@@ -5,10 +5,7 @@ import { AppError } from "@/lib/api-error";
 import type { QuoteResponse } from "@/types/api/quotes";
 
 // Add images to a quote
-export async function POST(
-  req: Request,
-  { params }: { params: { slug: string } }
-): Promise<NextResponse<QuoteResponse>> {
+export async function POST(req: Request): Promise<NextResponse<QuoteResponse>> {
   try {
     const session = await auth();
     if (!session?.user) {
@@ -18,7 +15,16 @@ export async function POST(
       );
     }
 
-    const quote = await quoteService.getBySlug(params.slug);
+    // Extract slug from URL
+    const slug = req.url.split('/quotes/')[1]?.split('/')[0];
+    if (!slug) {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "Invalid quote slug" } },
+        { status: 400 }
+      );
+    }
+
+    const quote = await quoteService.getBySlug(slug);
     if (!quote) {
       return NextResponse.json(
         { error: { code: "NOT_FOUND", message: "Quote not found" } },
@@ -37,6 +43,7 @@ export async function POST(
         { status: error.statusCode }
       );
     }
+    console.error("[POST /api/quotes/[slug]/images]", error);
     return NextResponse.json(
       { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
       { status: 500 }
@@ -45,10 +52,7 @@ export async function POST(
 }
 
 // Delete an image from a quote
-export async function DELETE(
-  req: Request,
-  { params }: { params: { slug: string } }
-): Promise<NextResponse<QuoteResponse>> {
+export async function DELETE(req: Request): Promise<NextResponse<QuoteResponse>> {
   try {
     const session = await auth();
     if (!session?.user) {
@@ -58,7 +62,16 @@ export async function DELETE(
       );
     }
 
-    const quote = await quoteService.getBySlug(params.slug);
+    // Extract slug from URL
+    const slug = req.url.split('/quotes/')[1]?.split('/')[0];
+    if (!slug) {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "Invalid quote slug" } },
+        { status: 400 }
+      );
+    }
+
+    const quote = await quoteService.getBySlug(slug);
     if (!quote) {
       return NextResponse.json(
         { error: { code: "NOT_FOUND", message: "Quote not found" } },
@@ -77,6 +90,7 @@ export async function DELETE(
         { status: error.statusCode }
       );
     }
+    console.error("[DELETE /api/quotes/[slug]/images]", error);
     return NextResponse.json(
       { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
       { status: 500 }
