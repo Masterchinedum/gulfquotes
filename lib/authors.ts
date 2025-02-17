@@ -58,9 +58,6 @@ export async function fetchAuthors({
   search,
   letter
 }: FetchAuthorsParams) {
-  // Add debug logging
-  console.log("[FETCH_AUTHORS] Params:", { page, limit, search, letter })
-
   const skip = (page - 1) * limit
   const whereConditions = buildWhereConditions(search, letter)
 

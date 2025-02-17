@@ -17,16 +17,8 @@ export async function GET(req: Request): Promise<NextResponse<AuthorsResponse>> 
       letter
     })
 
-    // Make sure we return the correct structure
-    return NextResponse.json({
-      data: {
-        items: result.items,
-        total: result.total,
-        hasMore: result.hasMore,
-        page: result.page,
-        limit: result.limit
-      }
-    })
+    // The result already has the correct structure, just return it
+    return NextResponse.json(result)
   } catch (error) {
     console.error("[AUTHORS_GET]", error)
     return NextResponse.json(
