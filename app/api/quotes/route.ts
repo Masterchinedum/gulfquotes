@@ -39,9 +39,12 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
     }
 
     try {
+      // Create quote with images
       const quote = await quoteService.create({
         ...validatedData.data,
-        authorId: session.user.id
+        authorId: session.user.id,
+        images: validatedData.data.images,
+        backgroundImage: validatedData.data.backgroundImage
       });
 
       return NextResponse.json({ data: quote });
@@ -59,7 +62,6 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
       }
       throw error;
     }
-
   } catch (error) {
     console.error("[QUOTES_POST]", error);
     return NextResponse.json(

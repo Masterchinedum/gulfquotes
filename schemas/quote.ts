@@ -12,6 +12,13 @@ export const quoteSchema = z.object({
   updatedAt: z.date(),
 });
 
+// Add new schema for quote images
+const quoteImageSchema = z.object({
+  url: z.string().url("Invalid image URL"),
+  publicId: z.string(),
+  isActive: z.boolean().default(false)
+});
+
 // Schema for Creating a Quote, now including the optional slug field
 export const createQuoteSchema = z.object({
   content: z.string()
@@ -20,6 +27,8 @@ export const createQuoteSchema = z.object({
   slug: z.string().optional(),
   categoryId: z.string().min(1, "Category is required"),
   authorProfileId: z.string().min(1, "Author profile is required"), // Add this field
+  backgroundImage: z.string().url().nullable().optional(),
+  images: z.array(quoteImageSchema).max(30, "Maximum 30 images allowed").optional()
 });
 
 // Update the updateQuoteSchema with specific edit validations
@@ -38,6 +47,9 @@ export const updateQuoteSchema = z.object({
   authorProfileId: z.string()
     .min(1, "Author profile is required")
     .optional(),
+  backgroundImage: z.string().url().nullable().optional(),
+  addImages: z.array(quoteImageSchema).max(30).optional(),
+  removeImages: z.array(z.string()).optional()
 }).refine(
   (data) => Object.keys(data).length > 0,
   "At least one field must be provided for update"
