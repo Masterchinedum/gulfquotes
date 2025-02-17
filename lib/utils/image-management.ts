@@ -154,13 +154,13 @@ export function validateQuoteImage(image: CloudinaryResource): void {
 
   // Validate dimensions for social sharing
   const minDimensions = {
-    width: 1200,
-    height: 630
+    minWidth: 1200,
+    minHeight: 630
   };
 
   if (!validateImageDimensions(image, minDimensions)) {
     throw new AppError(
-      `Image dimensions must be at least ${minDimensions.width}x${minDimensions.height} pixels`,
+      `Image dimensions must be at least ${minDimensions.minWidth}x${minDimensions.minHeight} pixels`,
       "INVALID_IMAGE_DIMENSIONS",
       400
     );

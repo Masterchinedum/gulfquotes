@@ -1,3 +1,4 @@
+import { deleteImage } from "@/lib/cloudinary"; // Add this import
 import { Quote, Prisma, AuthorProfile, Category } from "@prisma/client";
 import { auth } from "@/auth";
 import db from "@/lib/prisma";
