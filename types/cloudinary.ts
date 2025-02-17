@@ -15,11 +15,11 @@ export interface CloudinaryResource {
   resource_type: 'image';
   created_at: string;
   bytes: number;
+  folder: string;
 }
 
 // Profile image specific resource
 export interface ProfileImageResource extends CloudinaryResource {
-  folder: string;
   context?: {
     userId?: string;
     alt?: string;
@@ -110,7 +110,6 @@ export interface ProfileImageUploadProps {
 
 // Add new quote image specific resource
 export interface QuoteImageResource extends CloudinaryResource {
-  folder: string;
   context?: {
     quoteId?: string;
     alt?: string;
@@ -124,6 +123,22 @@ export interface QuoteImageUploadProps {
   disabled?: boolean;
   maxFiles?: number;
   showAdvancedOptions?: boolean;
+}
+
+// Define QuoteImageData
+export interface QuoteImageData {
+  url: string;
+  publicId: string;
+  isActive: boolean;
+  secure_url: string;
+  public_id: string;
+  format: string;
+  width: number;
+  height: number;
+  resource_type: "image"; // Ensure this is a literal type
+  created_at: string;
+  bytes: number;
+  folder: string;
 }
 
 export type { CloudinaryUploadWidgetInfo };
