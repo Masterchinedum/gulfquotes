@@ -20,8 +20,8 @@ interface ListQuotesResult {
   limit: number;
 }
 
-// Update the QuoteImageData interface
-interface QuoteImageData {
+// Update the QuoteImageData interface to extend QuoteImageResource
+interface QuoteImageData extends Omit<QuoteImageResource, 'context'> {
   url: string;
   publicId: string;
   isActive: boolean;
@@ -461,8 +461,26 @@ class QuoteServiceImpl implements QuoteService {
     try {
       // Use the class's own validateImages method
       await this.validateImages(images);
-      // Also validate using the utility function
-      validateQuoteImages(images);
+
+      // Transform QuoteImageData to QuoteImageResource for validation
+      const imageResources: QuoteImageResource[] = images.map(img => ({
+        public_id: img.publicId,
+        secure_url: img.url,
+        format: 'webp', // Default format
+        width: 1200, // Default width for social sharing
+        height: 630, // Default height for social sharing
+        resource_type: 'image',
+        created_at: new Date().toISOString(),
+        bytes: 0, // This will be updated by Cloudinary
+        folder: 'quote-images',
+        context: {
+          quoteId,
+          alt: 'Quote background'
+        }
+      }));
+
+      // Now validate the transformed images
+      validateQuoteImages(imageResources);
 
       return await db.$transaction(async (tx) => {
         // Check current count
