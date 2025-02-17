@@ -77,6 +77,7 @@ export interface CloudinaryConfig {
   folders: {
     profiles: string;
     authors: string;
+    quotes: string;    // Add this
   };
   limits: {
     maxFileSize: number;
@@ -85,6 +86,10 @@ export interface CloudinaryConfig {
       allowedFormats: readonly string[];
     };
     authors: {
+      maxFiles: number;
+      allowedFormats: readonly string[];
+    };
+    quotes: {         // Add this
       maxFiles: number;
       allowedFormats: readonly string[];
     };
@@ -100,6 +105,24 @@ export interface ProfileImageUploadProps {
   disabled?: boolean;
   maxFiles?: number;
   cropAspectRatio?: number;
+  showAdvancedOptions?: boolean;
+}
+
+// Add new quote image specific resource
+export interface QuoteImageResource extends CloudinaryResource {
+  folder: string;
+  context?: {
+    quoteId?: string;
+    alt?: string;
+  };
+}
+
+// Add quote specific props
+export interface QuoteImageUploadProps {
+  images?: string[];
+  onImagesChange: (urls: string[]) => void;
+  disabled?: boolean;
+  maxFiles?: number;
   showAdvancedOptions?: boolean;
 }
 

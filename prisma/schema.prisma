@@ -98,11 +98,9 @@ model Quote {
   authorId         String
   category         Category       @relation(fields: [categoryId], references: [id])
   categoryId       String
-  
-  // Updated: Make authorProfile required
   authorProfile    AuthorProfile  @relation(fields: [authorProfileId], references: [id])
   authorProfileId  String
-
+  images           QuoteImage[]   // Add this relation
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
@@ -147,6 +145,19 @@ model AuthorImage {
   updatedAt      DateTime     @updatedAt
 
   @@map("author_images")
+}
+
+// New model for quote images
+model QuoteImage {
+  id          String   @id @default(cuid())
+  url         String
+  publicId    String   // Cloudinary public ID
+  quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quoteId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+
+  @@map("quote_images")
 }
 
 // New UserProfile model
