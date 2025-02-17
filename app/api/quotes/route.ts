@@ -39,24 +39,21 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
     }
 
     try {
-      // Transform image data to match service expectations
-      const transformedImages = validatedData.data.images?.map(img => ({
+      const transformedImages: QuoteImageData[] = validatedData.data.images?.map(img => ({
         url: img.url,
         publicId: img.publicId,
         isActive: img.isActive,
-        // Additional metadata that will be handled by the service
         secure_url: img.url,
         public_id: img.publicId,
-        format: 'webp',
-        width: 1200,
-        height: 630,
-        resource_type: 'image',
+        format: 'webp', // Default format
+        width: 1200, // Default width for social sharing
+        height: 630, // Default height for social sharing
+        resource_type: 'image' as const, // Ensure this is a literal type
         created_at: new Date().toISOString(),
-        bytes: 0,
+        bytes: 0, // This will be updated by Cloudinary
         folder: 'quote-images'
-      }));
+      })) || [];
 
-      // Create quote with transformed images
       const quote = await quoteService.create({
         ...validatedData.data,
         authorId: session.user.id,
