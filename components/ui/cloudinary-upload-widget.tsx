@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { cloudinaryConfig, defaultUploadOptions } from "@/lib/cloudinary";
 import type { 
   CloudinaryUploadResult, 
-  CloudinaryUploadWidgetError 
+  CloudinaryUploadWidgetError,
+  CloudinaryUploadOptions  // Add this import
 } from "@/types/cloudinary";
 import { ImagePlus } from "lucide-react";
 
@@ -14,12 +15,16 @@ interface CloudinaryUploadWidgetProps {
   onUploadSuccess: (result: CloudinaryUploadResult) => void;
   onUploadError?: (error: CloudinaryUploadWidgetError) => void;
   disabled?: boolean;
+  options?: Partial<CloudinaryUploadOptions>; // Add this
+  buttonText?: string;                        // Add this
 }
 
 export function CloudinaryUploadWidget({
   onUploadSuccess,
   onUploadError,
-  disabled = false
+  disabled = false,
+  options = {},                               // Add this
+  buttonText = "Upload Image"                 // Add this
 }: CloudinaryUploadWidgetProps) {
   const handleUploadSuccess = useCallback((result: CloudinaryUploadResult) => {
     if (result.event !== "success" || !result.info) return;
@@ -36,7 +41,8 @@ export function CloudinaryUploadWidget({
       uploadPreset={cloudinaryConfig.uploadPreset}
       options={{
         ...defaultUploadOptions,
-        sources: ['local', 'url', 'camera'] // Explicitly set as mutable array
+        ...options,                           // Add this
+        sources: ['local', 'url', 'camera']
       }}
       onSuccess={handleUploadSuccess}
       onError={handleUploadError}
@@ -49,7 +55,7 @@ export function CloudinaryUploadWidget({
           disabled={disabled}
         >
           <ImagePlus className="h-4 w-4 mr-2" />
-          Upload Image
+          {buttonText}
         </Button>
       )}
     </CldUploadWidget>

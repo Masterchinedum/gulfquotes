@@ -24,6 +24,7 @@ export const cloudinaryConfig: CloudinaryConfig = {
   folders: {
     profiles: 'user-profiles',
     authors: 'author-profiles',
+    quotes: 'quote-images',    // Add quotes folder
   },
   limits: {
     maxFileSize: 7 * 1024 * 1024, // 7MB
@@ -34,17 +35,21 @@ export const cloudinaryConfig: CloudinaryConfig = {
     authors: {
       maxFiles: 5,
       allowedFormats: ['jpg', 'jpeg', 'png', 'webp'] as const,
+    },
+    quotes: {              // Add quotes limits
+      maxFiles: 30,         // Increase to 30 images
+      allowedFormats: ['jpg', 'jpeg', 'png', 'webp'] as const,
     }
   }
 } as const;
 
 // Helper function to get max files based on type
-export function getMaxFiles(type: 'profiles' | 'authors'): number {
+export function getMaxFiles(type: 'profiles' | 'authors' | 'quotes'): number {
   return cloudinaryConfig.limits[type].maxFiles;
 }
 
 // Helper function to get folder based on type
-export function getFolder(type: 'profiles' | 'authors'): string {
+export function getFolder(type: 'profiles' | 'authors' | 'quotes'): string {
   return cloudinaryConfig.folders[type];
 }
 
@@ -87,6 +92,18 @@ export const authorUploadOptions: CloudinaryUploadOptions = {
   maxFiles: getMaxFiles('authors'),
   folder: getFolder('authors'),
   clientAllowedFormats: [...cloudinaryConfig.limits.authors.allowedFormats],
+} as const;
+
+// Add quote-specific upload options
+export const quoteUploadOptions: CloudinaryUploadOptions = {
+  ...defaultUploadOptions,
+  maxFiles: getMaxFiles('quotes'),
+  folder: getFolder('quotes'),
+  clientAllowedFormats: [...cloudinaryConfig.limits.quotes.allowedFormats],
+  cropping: true,
+  croppingAspectRatio: 1.91, // 1200:630 optimal for social sharing
+  croppingShowDimensions: true,
+  showAdvancedOptions: false,
 } as const;
 
 export function buildImageUrl(publicId: string, transforms = imageTransforms.full) {
@@ -185,6 +202,29 @@ export const imageTransforms = {
       gravity: 'face',
       format: 'webp',
       quality: 'auto',
+    }
+  },
+  quote: {
+    thumbnail: {
+      width: 150,
+      height: 150,
+      crop: 'fill',
+      quality: 'auto',
+      format: 'webp',
+    },
+    preview: {
+      width: 400,
+      height: 400,
+      crop: 'fill',
+      quality: 'auto',
+      format: 'webp',
+    },
+    social: {
+      width: 1200,
+      height: 630,
+      crop: 'fill',
+      quality: 'auto',
+      format: 'webp',
     }
   }
 } as const;
