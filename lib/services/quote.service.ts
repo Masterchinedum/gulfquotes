@@ -459,51 +459,9 @@ class QuoteServiceImpl implements QuoteService {
   // Update the addImages method
   async addImages(quoteId: string, images: QuoteImageData[]): Promise<Quote> {
     try {
-      // Use the class's own validateImages method instead
+      // Use the class's own validateImages method
       await this.validateImages(images);
-
-      return await db.$transaction(async (tx) => {
-        // Check current count
-        const currentCount = await tx.quoteImage.count({
-          where: { quoteId }
-        });
-
-        if (currentCount + images.length > cloudinaryConfig.limits.quotes.maxFiles) {
-          throw new AppError(
-            `Adding these images would exceed the maximum limit of ${cloudinaryConfig.limits.quotes.maxFiles} images`,
-            "MAX_IMAGES_EXCEEDED",
-            400
-          );
-        }
-
-        // Create the new images
-        await tx.quoteImage.createMany({
-          data: images.map(img => ({
-            quoteId,
-            url: img.url,
-            publicId: img.publicId,
-            isActive: img.isActive
-          }))
-        });
-
-        return tx.quote.findUniqueOrThrow({
-          where: { id: quoteId },
-          include: {
-            images: true,
-            category: true,
-            authorProfile: true
-          }
-        });
-      });
-    } catch (error) {
-      handleUploadError(error);
-    }
-  }
-
-  // Add method to associate images with a quote
-  async addImages(quoteId: string, images: QuoteImageData[]): Promise<Quote> {
-    try {
-      // Validate images before proceeding
+      // Also validate using the utility function
       validateQuoteImages(images);
 
       return await db.$transaction(async (tx) => {
