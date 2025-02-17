@@ -109,7 +109,7 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
   const handleImageUpload = async (result: CloudinaryUploadResult) => {
     setIsUploading(true);
     try {
-      if (result.event !== "success" || !result.info) {
+      if (result.event !== "success" || !result.info || typeof result.info === 'string') {
         throw new Error("Upload failed");
       }
 

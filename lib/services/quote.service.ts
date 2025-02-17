@@ -7,6 +7,7 @@ import { AppError } from "@/lib/api-error";
 import { validateQuoteOwnership, QuoteAccessError } from "@/lib/auth/ownership";
 import { ListQuotesParams } from "@/types/api/quotes";
 import { validateQuoteImages, handleUploadError, handleDeleteError } from "@/lib/utils/image-management";
+import { cloudinaryConfig } from "@/lib/cloudinary"; // Add this import
 
 interface ListQuotesResult {
   items: Array<Quote & {
