@@ -1,7 +1,8 @@
 import type { 
   CloudinaryUploadWidgetResults,
   CloudinaryUploadWidgetError as NextCloudinaryError,
-  CloudinaryUploadWidgetInfo 
+  CloudinaryUploadWidgetInfo,
+  CloudinaryUploadWidgetOptions 
 } from 'next-cloudinary';
 
 // Base resource interface
@@ -34,13 +35,13 @@ export interface CloudinaryUploadSuccess {
 export type CloudinaryUploadResult = CloudinaryUploadWidgetResults;
 
 // Enhanced upload options
-export interface CloudinaryUploadOptions {
+export interface CloudinaryUploadOptions extends Omit<CloudinaryUploadWidgetOptions, 'sources'> {
   maxFiles?: number;
   maxFileSize?: number;
   folder?: string;
   uploadPreset?: string;
-  sources?: readonly ("local" | "url" | "camera")[];
-  clientAllowedFormats?: readonly string[];
+  sources?: ("local" | "url" | "camera")[];
+  clientAllowedFormats?: string[];
   styles?: {
     palette?: {
       window?: string;

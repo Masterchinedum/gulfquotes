@@ -61,22 +61,24 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       }
 
       if (session.user) {
-        // Convert token.isTwoFactorEnabled to a boolean using the double bang operator.
         session.user.isTwoFactorEnabled = !!token.isTwoFactorEnabled;
         session.user.name = token.name;
         session.user.email = token.email!;
         session.user.isOAuth = !!token.isOAuth;
-        session.user.image = token.picture || token.image || null;
+        // Fix: Ensure picture and image are treated as strings
+        session.user.image = (token.picture as string | undefined) || 
+                           (token.image as string | undefined) || 
+                           null;
       }
 
       return session;
     },
     async jwt({ token, user, trigger, session }) {
       if (trigger === "update" && session?.image) {
-        token.picture = session.image;
+        token.picture = session.image as string;
       }
       if (user) {
-        token.image = user.image;
+        token.image = user.image as string | null;
       }
       if (!token.sub) return token
       const existingUser = await getUserById(token.sub)

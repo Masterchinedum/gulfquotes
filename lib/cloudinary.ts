@@ -5,16 +5,22 @@ import type {
   CloudinaryConfig 
 } from '@/types/cloudinary';
 
+// Check both required environment variables
 if (!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
   throw new Error('NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME is not defined');
+}
+
+if (!process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET) {
+  throw new Error('NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET is not defined');
 }
 
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
+// Now we can safely assert that these values are strings
 export const cloudinaryConfig: CloudinaryConfig = {
-  cloudName: CLOUD_NAME,
-  uploadPreset: UPLOAD_PRESET,
+  cloudName: CLOUD_NAME!,
+  uploadPreset: UPLOAD_PRESET!,
   folders: {
     profiles: 'user-profiles',
     authors: 'author-profiles',
@@ -46,8 +52,9 @@ export function getFolder(type: 'profiles' | 'authors'): string {
 export const defaultUploadOptions: Partial<CloudinaryUploadOptions> = {
   maxFileSize: cloudinaryConfig.limits.maxFileSize,
   uploadPreset: UPLOAD_PRESET,
-  sources: ['local', 'url', 'camera'] as const,
-} as const;
+  sources: ['local', 'url', 'camera'], // Remove 'as const'
+  clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp']
+};
 
 // Profile-specific upload options
 export const profileUploadOptions: CloudinaryUploadOptions = {
@@ -72,7 +79,7 @@ export const profileUploadOptions: CloudinaryUploadOptions = {
       textLight: "#fcfffd"
     }
   }
-} as const;
+};
 
 // Author-specific upload options
 export const authorUploadOptions: CloudinaryUploadOptions = {

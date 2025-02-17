@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { cloudinaryConfig, defaultUploadOptions } from "@/lib/cloudinary";
 import type { 
   CloudinaryUploadResult, 
-  // CloudinaryResource,
   CloudinaryUploadWidgetError 
 } from "@/types/cloudinary";
 import { ImagePlus } from "lucide-react";
@@ -24,8 +23,6 @@ export function CloudinaryUploadWidget({
 }: CloudinaryUploadWidgetProps) {
   const handleUploadSuccess = useCallback((result: CloudinaryUploadResult) => {
     if (result.event !== "success" || !result.info) return;
-    
-    // Pass the original result object since that's what the type expects
     onUploadSuccess(result);
   }, [onUploadSuccess]);
 
@@ -37,7 +34,10 @@ export function CloudinaryUploadWidget({
   return (
     <CldUploadWidget
       uploadPreset={cloudinaryConfig.uploadPreset}
-      options={defaultUploadOptions}
+      options={{
+        ...defaultUploadOptions,
+        sources: ['local', 'url', 'camera'] // Explicitly set as mutable array
+      }}
       onSuccess={handleUploadSuccess}
       onError={handleUploadError}
     >
