@@ -1,6 +1,8 @@
 import { AuthorHeader } from "@/components/authors/AuthorHeader"
 import { AuthorSearchBar } from "@/components/authors/AuthorSearchBar"
 import { AlphabetNav } from "@/components/authors/AlphabetNav"
+import { AuthorGrid } from "@/components/authors/AuthorGrid"
+import { AuthorPagination } from "@/components/authors/Pagination"
 
 export default function AuthorsPage() {
   return (
@@ -9,6 +11,8 @@ export default function AuthorsPage() {
       <div className="flex flex-col gap-6">
         <AuthorSearchBar />
         <AlphabetNav />
+        <AuthorGrid authors={[]} isLoading />
+        <AuthorPagination currentPage={1} totalPages={10} />
       </div>
     </div>
   )
