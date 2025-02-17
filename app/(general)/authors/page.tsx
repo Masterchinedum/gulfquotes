@@ -9,13 +9,15 @@ import { AuthorSkeleton } from "./loading"
 import { fetchAuthors } from "@/lib/authors"
 import type { AuthorsResponse } from "@/types/author"
 
+interface SearchParams {
+  page?: string
+  limit?: string
+  search?: string
+  letter?: string
+}
+
 interface PageProps {
-  searchParams?: {
-    page?: string
-    limit?: string
-    search?: string
-    letter?: string
-  }
+  searchParams?: Promise<SearchParams>
 }
 
 export const metadata = {
@@ -23,9 +25,10 @@ export const metadata = {
   description: "Browse through our collection of authors and their timeless quotes.",
 }
 
-export default async function AuthorsPage({ searchParams = {} }: PageProps) {
-  // Await searchParams before using them
-  const params = await Promise.resolve(searchParams)
+export default async function AuthorsPage({ 
+  searchParams = Promise.resolve({}) 
+}: PageProps) {
+  const params = await searchParams
   
   const page = Math.max(1, Number(params.page) || 1)
   const limit = Math.min(50, Math.max(1, Number(params.limit) || 10))
