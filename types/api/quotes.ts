@@ -75,7 +75,8 @@ export type BaseErrorCode =
   | "VALIDATION_ERROR"
   | "INTERNAL_ERROR"
   | "BAD_REQUEST"
-  | "DATABASE_ERROR";  // Add this to base error codes
+  | "DATABASE_ERROR"
+  | "INVALID_REFERENCE";  // Add this error code
 
 // Category specific error codes
 export type CategoryErrorCode =
@@ -102,7 +103,9 @@ export type QuoteErrorCode =
   | "CONTENT_TOO_LONG"
   | "CONCURRENT_MODIFICATION"
   | "QUOTE_ACCESS_DENIED"
-  | "NO_CHANGES";
+  | "NO_CHANGES"
+  | "CATEGORY_NOT_FOUND"
+  | "AUTHOR_PROFILE_NOT_FOUND";
 
 // Author Profile specific error codes
 export type AuthorProfileErrorCode =

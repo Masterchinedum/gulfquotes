@@ -136,47 +136,44 @@ class QuoteServiceImpl implements QuoteService {
         throw new AppError("Quote content exceeds 500 characters", "CONTENT_TOO_LONG", 400);
       }
 
-      // Validate author profile exists
       await this.validateAuthorProfile(data.authorProfileId);
-      
-      // Validate category.
       await this.validateCategory(data.categoryId);
-
-      const sanitizedContent = this.sanitizeContent(data.content);
       
-      // Use provided slug if available, otherwise auto-generate.
-      const slug = data.slug && data.slug.trim().length > 0
-        ? data.slug.trim()
-        : slugify(sanitizedContent.substring(0, 50));
-        
-      // Validate that slug is unique.
+      const sanitizedContent = this.sanitizeContent(data.content);
+      const slug = data.slug?.trim() || slugify(sanitizedContent.substring(0, 50));
       await this.validateSlug(slug);
 
       if (data.images) {
         await this.validateImages(data.images);
       }
 
-      // Create quote using transaction.
+      // Create quote using transaction with proper nested create
       return await db.$transaction(async (tx) => {
         const quote = await tx.quote.create({
           data: {
-            ...data,
             content: sanitizedContent,
             slug,
-            backgroundImage: data.images?.find(img => img.isActive)?.url || null
+            authorId: data.authorId,
+            categoryId: data.categoryId,
+            authorProfileId: data.authorProfileId,
+            backgroundImage: data.images?.find(img => img.isActive)?.url || null,
+            // Use proper nested create syntax for images
+            images: data.images ? {
+              createMany: {
+                data: data.images.map(img => ({
+                  url: img.url,
+                  publicId: img.publicId,
+                  isActive: img.isActive
+                }))
+              }
+            } : undefined
+          },
+          include: {
+            images: true,
+            category: true,
+            authorProfile: true
           }
         });
-
-        if (data.images?.length) {
-          await tx.quoteImage.createMany({
-            data: data.images.map(img => ({
-              quoteId: quote.id,
-              url: img.url,
-              publicId: img.publicId,
-              isActive: img.isActive
-            }))
-          });
-        }
 
         return quote;
       });
