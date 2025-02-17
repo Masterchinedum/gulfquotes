@@ -9,10 +9,6 @@ if (!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
   throw new Error('NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME is not defined');
 }
 
-if (!process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET) {
-  throw new Error('NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET is not defined');
-}
-
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 

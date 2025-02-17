@@ -71,21 +71,21 @@ export interface CloudinaryUploadOptions {
 
 // Enhanced config type
 export interface CloudinaryConfig {
-  cloudName: string | undefined;
-  uploadPreset: string | undefined;
+  cloudName: string;
+  uploadPreset: string;
   folders: {
-    readonly profiles: string;
-    readonly authors: string;
+    profiles: string;
+    authors: string;
   };
   limits: {
-    readonly maxFileSize: number;
-    readonly profiles: {
-      readonly maxFiles: number;
-      readonly allowedFormats: readonly string[];
+    maxFileSize: number;
+    profiles: {
+      maxFiles: number;
+      allowedFormats: readonly string[];
     };
-    readonly authors: {
-      readonly maxFiles: number;
-      readonly allowedFormats: readonly string[];
+    authors: {
+      maxFiles: number;
+      allowedFormats: readonly string[];
     };
   };
 }

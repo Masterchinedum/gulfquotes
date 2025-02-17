@@ -140,7 +140,7 @@ export async function POST(req: Request): Promise<NextResponse<AuthorProfileResp
         {
           error: {
             code: "MAX_IMAGES_EXCEEDED",
-            message: `Maximum ${cloudinaryConfig.maxFiles} images allowed`
+            message: `Maximum ${getMaxFiles('authors')} images allowed`
           }
         },
         { status: 400 }

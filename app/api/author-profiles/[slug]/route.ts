@@ -88,6 +88,16 @@ export async function PATCH(req: Request): Promise<NextResponse<AuthorProfileRes
 
       // Validate each image URL
       for (const image of validatedData.data.images) {
+        // Check if cloudinaryConfig.cloudName exists
+        if (!cloudinaryConfig.cloudName) {
+          return NextResponse.json({
+            error: {
+              code: "CONFIGURATION_ERROR",
+              message: "Cloudinary configuration is missing"
+            }
+          }, { status: 500 });
+        }
+
         if (!image.url.includes(cloudinaryConfig.cloudName)) {
           return NextResponse.json({
             error: {

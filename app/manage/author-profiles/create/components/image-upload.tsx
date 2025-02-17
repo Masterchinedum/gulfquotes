@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { CldUploadWidget } from "next-cloudinary";
-import type { CloudinaryUploadWidgetInfo } from "next-cloudinary"; // Add this import
+import type { CloudinaryUploadWidgetInfo } from "next-cloudinary";
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ImagePlus, X } from "lucide-react";
-import { cloudinaryConfig } from "@/lib/cloudinary";
+import { cloudinaryConfig, getMaxFiles, getFolder } from "@/lib/cloudinary";
 import { CldImage } from "next-cloudinary";
 import { UseFormReturn } from "react-hook-form";
 import type { CloudinaryUploadResult } from "@/types/cloudinary";
@@ -25,7 +25,7 @@ export function CreateImageUpload({ form, disabled }: CreateImageUploadProps) {
     if (result.event !== "success" || !result.info) return;
 
     const currentImages = form.getValues("images") || [];
-    if (currentImages.length >= cloudinaryConfig.maxFiles) {
+    if (currentImages.length >= getMaxFiles('authors')) {
       return;
     }
 
@@ -56,7 +56,6 @@ export function CreateImageUpload({ form, disabled }: CreateImageUploadProps) {
           <FormItem>
             <FormLabel>Images</FormLabel>
             <div className="space-y-4">
-              {/* Image Grid */}
               {currentImages.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {currentImages.map((image, index) => (
@@ -86,15 +85,14 @@ export function CreateImageUpload({ form, disabled }: CreateImageUploadProps) {
                 </div>
               )}
 
-              {/* Upload Button */}
-              {currentImages.length < cloudinaryConfig.maxFiles && (
+              {currentImages.length < getMaxFiles('authors') && (
                 <CldUploadWidget
                   uploadPreset={cloudinaryConfig.uploadPreset}
                   options={{
-                    maxFiles: cloudinaryConfig.maxFiles - currentImages.length,
-                    folder: cloudinaryConfig.folder,
-                    clientAllowedFormats: ["jpg", "jpeg", "png", "webp"],
-                    maxFileSize: 7000000, // 7MB
+                    maxFiles: getMaxFiles('authors') - currentImages.length,
+                    folder: getFolder('authors'),
+                    clientAllowedFormats: [...cloudinaryConfig.limits.authors.allowedFormats],
+                    maxFileSize: cloudinaryConfig.limits.maxFileSize,
                   }}
                   onSuccess={handleUploadSuccess}
                   onOpen={() => setUploading(true)}

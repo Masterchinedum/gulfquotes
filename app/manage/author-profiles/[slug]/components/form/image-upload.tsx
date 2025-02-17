@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { CldUploadWidget } from "next-cloudinary";
-import type { CloudinaryUploadWidgetResults } from "next-cloudinary"; // Fixed import
+import type { CloudinaryUploadWidgetResults } from "next-cloudinary";
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ImagePlus, X } from "lucide-react";
-import { cloudinaryConfig } from "@/lib/cloudinary";
+import { cloudinaryConfig, getMaxFiles, getFolder } from "@/lib/cloudinary"; // Add getMaxFiles import
 import { CldImage } from "next-cloudinary";
 import { UseFormReturn } from "react-hook-form";
-import type { CloudinaryResource } from "@/types/cloudinary"; // Updated import
+import type { CloudinaryResource } from "@/types/cloudinary";
 import { UpdateAuthorProfileInput } from "@/schemas/author-profile";
 
 interface EditImageUploadProps {
