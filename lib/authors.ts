@@ -1,10 +1,30 @@
 import { type Author } from "@/types/author"
+import { Prisma } from "@prisma/client"
 import db from "@/lib/prisma"
 import { PaginationParams } from "@/lib/pagination"
 
 interface FetchAuthorsParams extends PaginationParams {
   search?: string
   letter?: string
+}
+
+// Type for where conditions
+type WhereConditions = Prisma.AuthorProfileWhereInput
+
+// Type for the author items from DB
+type AuthorItem = {
+  id: string
+  name: string
+  slug: string
+  bio: string | null
+  born: string | null
+  died: string | null
+  images: {
+    url: string
+  }[]
+  _count: {
+    quotes: number
+  }
 }
 
 export async function fetchAuthors({
@@ -35,8 +55,8 @@ export async function fetchAuthors({
 }
 
 // Helper function to build where conditions
-function buildWhereConditions(search?: string, letter?: string) {
-  const conditions: any = {}
+function buildWhereConditions(search?: string, letter?: string): WhereConditions {
+  const conditions: WhereConditions = {}
 
   if (search) {
     conditions.OR = [
@@ -65,7 +85,11 @@ function buildWhereConditions(search?: string, letter?: string) {
 }
 
 // Helper function to fetch author items
-async function fetchAuthorItems(whereConditions: any, skip: number, limit: number) {
+async function fetchAuthorItems(
+  whereConditions: WhereConditions, 
+  skip: number, 
+  limit: number
+): Promise<AuthorItem[]> {
   return await db.authorProfile.findMany({
     where: whereConditions,
     select: {
@@ -94,12 +118,12 @@ async function fetchAuthorItems(whereConditions: any, skip: number, limit: numbe
 }
 
 // Helper function to count authors
-async function countAuthors(whereConditions: any) {
+async function countAuthors(whereConditions: WhereConditions): Promise<number> {
   return await db.authorProfile.count({ where: whereConditions })
 }
 
 // Helper function to format authors
-function formatAuthors(items: any[]): Author[] {
+function formatAuthors(items: AuthorItem[]): Author[] {
   return items.map(author => ({
     id: author.id,
     name: author.name,
