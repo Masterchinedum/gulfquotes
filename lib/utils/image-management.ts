@@ -1,5 +1,6 @@
 // lib/utils/image-management.ts
 
+import { AppError } from "@/lib/api-error";
 import { cloudinaryConfig, imageTransforms } from "@/lib/cloudinary";
 import type { CloudinaryResource, QuoteImageResource } from "@/types/cloudinary";
 
@@ -121,4 +122,80 @@ export function getImageSizeCategory(fileSize: number): 'small' | 'medium' | 'la
   if (fileSize <= MB) return 'small';
   if (fileSize <= 5 * MB) return 'medium';
   return 'large';
+}
+
+// Add new validation functions
+export function validateImageFormat(format: string): boolean {
+  return cloudinaryConfig.limits.quotes.allowedFormats.includes(format.toLowerCase());
+}
+
+export function validateImageSize(bytes: number): boolean {
+  return bytes <= cloudinaryConfig.limits.maxFileSize;
+}
+
+export function validateQuoteImage(image: CloudinaryResource): void {
+  // Validate format
+  if (!validateImageFormat(image.format)) {
+    throw new AppError(
+      `Invalid image format. Allowed formats: ${cloudinaryConfig.limits.quotes.allowedFormats.join(', ')}`,
+      "INVALID_IMAGE_FORMAT",
+      400
+    );
+  }
+
+  // Validate file size
+  if (!validateImageSize(image.bytes)) {
+    throw new AppError(
+      `Image size exceeds maximum allowed size of ${cloudinaryConfig.limits.maxFileSize / (1024 * 1024)}MB`,
+      "INVALID_IMAGE_SIZE",
+      400
+    );
+  }
+
+  // Validate dimensions for social sharing
+  const minDimensions = {
+    width: 1200,
+    height: 630
+  };
+
+  if (!validateImageDimensions(image, minDimensions)) {
+    throw new AppError(
+      `Image dimensions must be at least ${minDimensions.width}x${minDimensions.height} pixels`,
+      "INVALID_IMAGE_DIMENSIONS",
+      400
+    );
+  }
+}
+
+// Add batch validation function
+export function validateQuoteImages(images: QuoteImageResource[]): void {
+  // Check maximum limit
+  if (images.length > cloudinaryConfig.limits.quotes.maxFiles) {
+    throw new AppError(
+      `Maximum ${cloudinaryConfig.limits.quotes.maxFiles} images allowed`,
+      "MAX_IMAGES_EXCEEDED",
+      400
+    );
+  }
+
+  // Validate each image
+  images.forEach(image => {
+    validateQuoteImage(image);
+  });
+}
+
+// Add function to handle failed uploads
+export function handleUploadError(error: unknown): never {
+  if (error instanceof AppError) throw error;
+
+  const message = error instanceof Error ? error.message : "Failed to upload image";
+  throw new AppError(message, "IMAGE_UPLOAD_FAILED", 500);
+}
+
+// Add function to handle failed deletions
+export function handleDeleteError(error: unknown): never {
+  if (error instanceof AppError) throw error;
+
+  const message = error instanceof Error ? error.message : "Failed to delete image";
+  throw new AppError(message, "IMAGE_DELETE_FAILED", 500);
 }

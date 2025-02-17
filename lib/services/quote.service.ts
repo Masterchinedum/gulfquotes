@@ -6,6 +6,7 @@ import { slugify } from "@/lib/utils";
 import { AppError } from "@/lib/api-error";
 import { validateQuoteOwnership, QuoteAccessError } from "@/lib/auth/ownership";
 import { ListQuotesParams } from "@/types/api/quotes";
+import { validateQuoteImages, handleUploadError, handleDeleteError } from "@/lib/utils/image-management";
 
 interface ListQuotesResult {
   items: Array<Quote & {
@@ -462,17 +463,18 @@ class QuoteServiceImpl implements QuoteService {
   // Add method to associate images with a quote
   async addImages(quoteId: string, images: QuoteImageData[]): Promise<Quote> {
     try {
-      await this.validateImages(images);
+      // Validate images before proceeding
+      validateQuoteImages(images);
 
       return await db.$transaction(async (tx) => {
-        // First, get current images count
+        // Check current count
         const currentCount = await tx.quoteImage.count({
           where: { quoteId }
         });
 
-        if (currentCount + images.length > 30) {
+        if (currentCount + images.length > cloudinaryConfig.limits.quotes.maxFiles) {
           throw new AppError(
-            "Adding these images would exceed the maximum limit of 30 images",
+            `Adding these images would exceed the maximum limit of ${cloudinaryConfig.limits.quotes.maxFiles} images`,
             "MAX_IMAGES_EXCEEDED",
             400
           );
@@ -488,7 +490,6 @@ class QuoteServiceImpl implements QuoteService {
           }))
         });
 
-        // Return updated quote with images
         return tx.quote.findUniqueOrThrow({
           where: { id: quoteId },
           include: {
@@ -499,8 +500,7 @@ class QuoteServiceImpl implements QuoteService {
         });
       });
     } catch (error) {
-      if (error instanceof AppError) throw error;
-      throw new AppError("Failed to add images", "INTERNAL_ERROR", 500);
+      handleUploadError(error);
     }
   }
 
@@ -508,27 +508,25 @@ class QuoteServiceImpl implements QuoteService {
   async removeImage(quoteId: string, publicId: string): Promise<Quote> {
     try {
       return await db.$transaction(async (tx) => {
-        // Check if image exists and belongs to the quote
         const image = await tx.quoteImage.findFirst({
           where: { quoteId, publicId }
         });
 
         if (!image) {
-          throw new AppError("Image not found", "NOT_FOUND", 404);
+          throw new AppError("Image not found", "IMAGE_NOT_FOUND", 404);
         }
 
-        // Delete from Cloudinary
+        // Delete from storage and database
         const deleted = await deleteImage(publicId);
         if (!deleted) {
-          throw new AppError("Failed to delete image from storage", "INTERNAL_ERROR", 500);
+          throw new AppError("Failed to delete image from storage", "IMAGE_DELETE_FAILED", 500);
         }
 
-        // Delete from database
         await tx.quoteImage.delete({
           where: { id: image.id }
         });
 
-        // If this was the background image, clear it
+        // Update quote if needed
         if (image.isActive) {
           await tx.quote.update({
             where: { id: quoteId },
@@ -536,7 +534,6 @@ class QuoteServiceImpl implements QuoteService {
           });
         }
 
-        // Return updated quote
         return tx.quote.findUniqueOrThrow({
           where: { id: quoteId },
           include: {
@@ -547,8 +544,7 @@ class QuoteServiceImpl implements QuoteService {
         });
       });
     } catch (error) {
-      if (error instanceof AppError) throw error;
-      throw new AppError("Failed to remove image", "INTERNAL_ERROR", 500);
+      handleDeleteError(error);
     }
   }
 

@@ -84,17 +84,25 @@ export type CategoryErrorCode =
   | "DUPLICATE_CATEGORY"
   | "INVALID_CATEGORY_DATA";
 
+// Add new image-specific error codes
+export type ImageErrorCode =
+  | "MAX_IMAGES_EXCEEDED"
+  | "INVALID_IMAGE_FORMAT"
+  | "INVALID_IMAGE_SIZE"
+  | "INVALID_IMAGE_DIMENSIONS"
+  | "IMAGE_UPLOAD_FAILED"
+  | "IMAGE_DELETE_FAILED"
+  | "IMAGE_NOT_FOUND";
+
 // Quote specific error codes
 export type QuoteErrorCode = 
   | BaseErrorCode
+  | ImageErrorCode
   | "DUPLICATE_SLUG"
   | "CONTENT_TOO_LONG"
   | "CONCURRENT_MODIFICATION"
-  | "CONCURRENT_DELETE"
   | "QUOTE_ACCESS_DENIED"
-  | "NO_CHANGES"
-  | "CATEGORY_NOT_FOUND"
-  | "INVALID_REFERENCE";  // Add this error code
+  | "NO_CHANGES";
 
 // Author Profile specific error codes
 export type AuthorProfileErrorCode =
