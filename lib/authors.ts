@@ -8,11 +8,7 @@ interface FetchAuthorsParams extends PaginationParams {
   letter?: string
 }
 
-// Type for where conditions
-type WhereConditions = Prisma.AuthorProfileWhereInput
-
-// Type for the author items from DB
-type AuthorItem = {
+type AuthorWithCounts = {
   id: string
   name: string
   slug: string
@@ -25,6 +21,35 @@ type AuthorItem = {
   _count: {
     quotes: number
   }
+}
+
+// Helper function to build where conditions
+function buildWhereConditions(search?: string, letter?: string): Prisma.AuthorProfileWhereInput {
+  const conditions: Prisma.AuthorProfileWhereInput = {}
+
+  if (search) {
+    conditions.OR = [
+      { name: { contains: search, mode: 'insensitive' } },
+      { bio: { contains: search, mode: 'insensitive' } }
+    ]
+  }
+
+  if (letter) {
+    if (letter === '#') {
+      conditions.name = {
+        not: {
+          startsWith: /^[A-Za-z]/.source,
+        }
+      }
+    } else {
+      conditions.name = {
+        startsWith: letter,
+        mode: 'insensitive'
+      }
+    }
+  }
+
+  return conditions
 }
 
 export async function fetchAuthors({
@@ -54,42 +79,12 @@ export async function fetchAuthors({
   }
 }
 
-// Helper function to build where conditions
-function buildWhereConditions(search?: string, letter?: string): WhereConditions {
-  const conditions: WhereConditions = {}
-
-  if (search) {
-    conditions.OR = [
-      { name: { contains: search, mode: 'insensitive' } },
-      { bio: { contains: search, mode: 'insensitive' } }
-    ]
-  }
-
-  if (letter) {
-    if (letter === '#') {
-      conditions.name = {
-        not: {
-          startsWith: /^[A-Za-z]/.source,
-          mode: 'insensitive'
-        }
-      }
-    } else {
-      conditions.name = {
-        startsWith: letter,
-        mode: 'insensitive'
-      }
-    }
-  }
-
-  return conditions
-}
-
 // Helper function to fetch author items
 async function fetchAuthorItems(
-  whereConditions: WhereConditions, 
-  skip: number, 
+  whereConditions: Prisma.AuthorProfileWhereInput,
+  skip: number,
   limit: number
-): Promise<AuthorItem[]> {
+) {
   return await db.authorProfile.findMany({
     where: whereConditions,
     select: {
@@ -118,12 +113,12 @@ async function fetchAuthorItems(
 }
 
 // Helper function to count authors
-async function countAuthors(whereConditions: WhereConditions): Promise<number> {
+async function countAuthors(whereConditions: Prisma.AuthorProfileWhereInput) {
   return await db.authorProfile.count({ where: whereConditions })
 }
 
 // Helper function to format authors
-function formatAuthors(items: AuthorItem[]): Author[] {
+function formatAuthors(items: AuthorWithCounts[]): Author[] {
   return items.map(author => ({
     id: author.id,
     name: author.name,
