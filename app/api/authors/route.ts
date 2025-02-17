@@ -6,7 +6,7 @@ import { getPaginationParams } from "@/lib/pagination"
 export async function GET(req: Request): Promise<NextResponse<AuthorsResponse>> {
   try {
     // Extract query parameters
-    const { searchParams } = new URL(req.url)
+    const searchParams = new URL(req.url).searchParams
     const { page, limit } = getPaginationParams(searchParams)
     const search = searchParams.get("search")?.trim()
     const letter = searchParams.get("letter")?.toUpperCase()

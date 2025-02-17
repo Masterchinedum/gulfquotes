@@ -11,13 +11,13 @@ export interface PaginatedResult<T> {
   limit: number
 }
 
-export function getPaginationParams(params: {
-  page?: string | number | null
-  limit?: string | number | null
-}) {
+export function getPaginationParams(searchParams: URLSearchParams) {
+  const page = Math.max(1, Number(searchParams.get("page")) || 1)
+  const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit")) || 10))
+  
   return {
-    page: Math.max(1, Number(params.page) || 1),
-    limit: Math.min(50, Math.max(1, Number(params.limit) || 10))
+    page,
+    limit
   }
 }
 
