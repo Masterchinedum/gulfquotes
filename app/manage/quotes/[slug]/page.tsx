@@ -50,7 +50,29 @@ export default async function EditQuotePage({
         include: {
           category: true,
           authorProfile: true,
-          images: true, // Include images
+          images: {
+            select: {
+              id: true,
+              url: true,
+              publicId: true,
+              isActive: true,
+              isGlobal: true,
+              title: true,
+              description: true,
+              altText: true,
+              format: true,
+              width: true,
+              height: true,
+              bytes: true,
+              folder: true,
+              created_at: true,
+              secure_url: true,
+              resource_type: true,
+              updatedAt: true,
+              createdAt: true,
+              quoteId: true
+            }
+          }
         }
       }),
       // Fetch categories
@@ -86,7 +108,7 @@ export default async function EditQuotePage({
       images: quote.images?.map(img => ({
         ...img,
         context: {
-          alt: img.alt || undefined,
+          alt: img.altText || undefined,
           isGlobal: img.isGlobal || false
         }
       }))
