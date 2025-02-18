@@ -50,6 +50,7 @@ export default async function EditQuotePage({
         include: {
           category: true,
           authorProfile: true,
+          images: true, // Include images
         }
       }),
       // Fetch categories
@@ -78,6 +79,19 @@ export default async function EditQuotePage({
       notFound();
     }
 
+    // Transform the quote data to match the expected types
+    const transformedQuote = {
+      ...quote,
+      backgroundImage: quote.backgroundImage || null, // Handle null case explicitly
+      images: quote.images?.map(img => ({
+        ...img,
+        context: {
+          alt: img.alt || undefined,
+          isGlobal: img.isGlobal || false
+        }
+      }))
+    };
+
     return (
       <Shell>
         <div className="flex flex-col gap-8 p-8">
@@ -99,7 +113,7 @@ export default async function EditQuotePage({
               </div>
             }>
               <EditQuoteForm 
-                quote={quote}
+                quote={transformedQuote}
                 categories={categories}
                 authorProfiles={authorProfiles}
               />
