@@ -144,3 +144,73 @@ export async function POST(
     );
   }
 }
+
+// DELETE endpoint to delete a tag
+export async function DELETE(
+  req: Request
+): Promise<NextResponse<TagResponse>> {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
+        { status: 401 }
+      );
+    }
+
+    // Only ADMIN can delete tags
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: { code: "FORBIDDEN", message: "Permission denied" } },
+        { status: 403 }
+      );
+    }
+
+    // Extract tag ID from the URL
+    const tagId = req.url.split('/tags/')[1];
+    if (!tagId) {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "Tag ID is required" } },
+        { status: 400 }
+      );
+    }
+
+    // Check if tag exists and can be deleted
+    const tagWithCount = await db.tag.findUnique({
+      where: { id: tagId },
+      include: {
+        _count: {
+          select: { quotes: true }
+        }
+      }
+    });
+
+    if (!tagWithCount) {
+      return NextResponse.json(
+        { error: { code: "NOT_FOUND", message: "Tag not found" } },
+        { status: 404 }
+      );
+    }
+
+    if (tagWithCount._count.quotes > 0) {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "Cannot delete tag that is still in use" } },
+        { status: 400 }
+      );
+    }
+
+    // Delete the tag
+    const deletedTag = await db.tag.delete({
+      where: { id: tagId }
+    });
+
+    return NextResponse.json({ data: deletedTag });
+
+  } catch (error) {
+    console.error("[TAGS_DELETE]", error);
+    return NextResponse.json(
+      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
+      { status: 500 }
+    );
+  }
+}
