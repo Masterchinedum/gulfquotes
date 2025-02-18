@@ -6,6 +6,7 @@ import db from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
 import { createTagSchema } from "@/schemas/tag"; // We'll create this next
 import type { TagsResponse, TagResponse } from "@/types/api/tags"; // We'll create this next
+import { Prisma } from "@prisma/client";
 
 // GET endpoint to fetch all tags with optional search
 export async function GET(
@@ -19,10 +20,10 @@ export async function GET(
     const skip = (page - 1) * limit;
 
     // Build where condition for search
-    const where = search ? {
+    const where: Prisma.TagWhereInput = search ? {
       OR: [
-        { name: { contains: search, mode: 'insensitive' } },
-        { slug: { contains: search, mode: 'insensitive' } }
+        { name: { contains: search, mode: 'insensitive' as Prisma.QueryMode } },
+        { slug: { contains: search, mode: 'insensitive' as Prisma.QueryMode } }
       ]
     } : {};
 
