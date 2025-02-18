@@ -93,7 +93,8 @@ export type ImageErrorCode =
   | "INVALID_IMAGE_DIMENSIONS"
   | "IMAGE_UPLOAD_FAILED"
   | "IMAGE_DELETE_FAILED"
-  | "IMAGE_NOT_FOUND";
+  | "IMAGE_NOT_FOUND"
+  | "IMAGE_ASSOCIATION_REMOVE_FAILED"; // Add this
 
 // Quote specific error codes
 export type QuoteErrorCode = 

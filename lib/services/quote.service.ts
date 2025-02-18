@@ -41,6 +41,7 @@ export interface QuoteService {
   addImages(quoteId: string, images: QuoteImageData[]): Promise<Quote>;
   removeImage(quoteId: string, publicId: string): Promise<Quote>;
   setBackgroundImage(quoteId: string, imageUrl: string | null): Promise<Quote>;
+  removeImageAssociation(quoteId: string, imageId: string): Promise<Quote>;
 }
 
 class QuoteServiceImpl implements QuoteService {
@@ -598,6 +599,58 @@ class QuoteServiceImpl implements QuoteService {
     } catch (error) {
       if (error instanceof AppError) throw error;
       throw new AppError("Failed to set background image", "INTERNAL_ERROR", 500);
+    }
+  }
+
+  // Add the new method implementation in QuoteServiceImpl
+  async removeImageAssociation(quoteId: string, imageId: string): Promise<Quote> {
+    try {
+      return await db.$transaction(async (tx) => {
+        const image = await tx.quoteImage.findFirst({
+          where: { id: imageId, quoteId }
+        });
+
+        if (!image) {
+          throw new AppError("Image not found", "IMAGE_NOT_FOUND", 404);
+        }
+
+        // If this is the active background, reset it
+        if (image.isActive) {
+          await tx.quote.update({
+            where: { id: quoteId },
+            data: { backgroundImage: null }
+          });
+        }
+
+        // Remove the association by deleting the record but keeping the image if it's global
+        if (image.isGlobal) {
+          await tx.quoteImage.delete({
+            where: { id: imageId }
+          });
+
+          // Update usage count
+          await tx.quoteImage.updateMany({
+            where: { publicId: image.publicId },
+            data: { usageCount: { decrement: 1 } }
+          });
+        }
+
+        return tx.quote.findUniqueOrThrow({
+          where: { id: quoteId },
+          include: {
+            images: true,
+            category: true,
+            authorProfile: true
+          }
+        });
+      });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(
+        "Failed to remove image association",
+        "IMAGE_ASSOCIATION_REMOVE_FAILED",
+        500
+      );
     }
   }
 }
