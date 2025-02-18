@@ -22,6 +22,7 @@ import { CldImage } from "next-cloudinary";
 import type { MediaLibraryItem } from "@/types/cloudinary";
 import { MediaLibraryModal } from "@/components/media/media-library-modal";
 import { TagInput } from "@/components/forms/TagInput";
+import { TagManagementModal } from "@/components/forms/TagManagementModal";
 
 interface EditQuoteFormProps {
   quote: Quote & {
@@ -45,6 +46,7 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
   const [isUploading, setIsUploading] = useState(false);
   const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
   const [selectedTags, setSelectedTags] = useState<Tag[]>(quote.tags || []);
+  const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
   
   const form = useForm<UpdateQuoteInput>({
     resolver: zodResolver(updateQuoteSchema),
@@ -365,18 +367,38 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
 
         <FormItem>
           <FormLabel>Tags</FormLabel>
-          <FormControl>
-            <TagInput
-              selectedTags={selectedTags}
-              onTagsChange={setSelectedTags}
-              disabled={isSubmitting}
-              maxTags={10}
-            />
-          </FormControl>
-          <p className="text-sm text-muted-foreground">
-            Add up to 10 tags to categorize your quote
-          </p>
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <FormControl className="flex-1">
+                <TagInput
+                  selectedTags={selectedTags}
+                  onTagsChange={setSelectedTags}
+                  disabled={isSubmitting}
+                  maxTags={10}
+                />
+              </FormControl>
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={() => setIsTagManagementOpen(true)}
+                disabled={isSubmitting}
+              >
+                Manage Tags
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Add up to 10 tags to categorize your quote
+            </p>
+          </div>
         </FormItem>
+
+        <TagManagementModal
+          open={isTagManagementOpen}
+          onOpenChange={setIsTagManagementOpen}
+          onSuccess={() => {
+            // Refresh tag suggestions in TagInput
+          }}
+        />
 
         <div className="space-y-4">
           <FormLabel>Quote Background</FormLabel>

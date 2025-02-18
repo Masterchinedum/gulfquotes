@@ -21,6 +21,7 @@ import { CldImage } from "next-cloudinary";
 import type { MediaLibraryItem } from "@/types/cloudinary";
 import { MediaLibraryModal } from "@/components/media/media-library-modal";
 import { TagInput } from "@/components/forms/TagInput";
+import { TagManagementModal } from "@/components/forms/TagManagementModal";
 
 // Update interface to include tags
 interface QuoteFormProps {
@@ -45,6 +46,7 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
   const [selectedImage, setSelectedImage] = useState<string | null>(initialData?.backgroundImage || null);
   const [isUploading, setIsUploading] = useState(false);
   const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
+  const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
 
   const form = useForm<CreateQuoteInput>({
     resolver: zodResolver(createQuoteSchema),
@@ -411,17 +413,29 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
         {/* Add TagInput after the category field */}
         <FormItem>
           <FormLabel>Tags</FormLabel>
-          <FormControl>
-            <TagInput
-              selectedTags={selectedTags}
-              onTagsChange={setSelectedTags}
-              disabled={isSubmitting}
-              maxTags={10}
-            />
-          </FormControl>
-          <p className="text-sm text-muted-foreground">
-            Add up to 10 tags to categorize your quote
-          </p>
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <FormControl className="flex-1">
+                <TagInput
+                  selectedTags={selectedTags}
+                  onTagsChange={setSelectedTags}
+                  disabled={isSubmitting}
+                  maxTags={10}
+                />
+              </FormControl>
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={() => setIsTagManagementOpen(true)}
+                disabled={isSubmitting}
+              >
+                Manage Tags
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Add up to 10 tags to categorize your quote
+            </p>
+          </div>
         </FormItem>
 
         {/* Add Image Gallery */}
@@ -473,6 +487,13 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
           </Button>
         </div>
       </form>
+      <TagManagementModal
+        open={isTagManagementOpen}
+        onOpenChange={setIsTagManagementOpen}
+        onSuccess={() => {
+          // Refresh tag suggestions in TagInput
+        }}
+      />
     </Form>
   );
 }
