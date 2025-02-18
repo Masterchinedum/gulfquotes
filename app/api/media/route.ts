@@ -30,21 +30,21 @@ function transformToMediaLibraryItem(item: QuoteImageWithRelations): MediaLibrar
   return {
     public_id: item.publicId,
     secure_url: item.url,
-    format: item.format || 'webp',
-    width: item.width || 1200,
-    height: item.height || 630,
+    format: item.format ?? 'webp',
+    width: item.width ?? 1200,
+    height: item.height ?? 630,
     resource_type: 'image' as const,
     created_at: item.createdAt.toISOString(),
-    bytes: item.bytes || 0,
+    bytes: item.bytes ?? 0,
     folder: 'quote-images',
     isGlobal: item.isGlobal,
-    title: item.title || undefined,
-    description: item.description || undefined,
-    altText: item.altText || undefined,
+    title: item.title ?? undefined,
+    description: item.description ?? undefined,
+    altText: item.altText ?? undefined,
     usageCount: item.usageCount,
     context: {
       quoteId: item.quoteId,
-      alt: item.altText || undefined
+      alt: item.altText ?? undefined
     }
   };
 }
@@ -55,8 +55,13 @@ export async function GET(req: Request): Promise<NextResponse<MediaLibraryRespon
     // Auth check
     const session = await auth();
     if (!session?.user) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED" as QuoteErrorCode, message: "Not authenticated" } },
+      return NextResponse.json<MediaLibraryResponse>(
+        { 
+          error: { 
+            code: "UNAUTHORIZED" as QuoteErrorCode, 
+            message: "Not authenticated" 
+          } 
+        },
         { status: 401 }
       );
     }
@@ -127,7 +132,7 @@ export async function GET(req: Request): Promise<NextResponse<MediaLibraryRespon
     // Transform items to match MediaLibraryItem interface
     const transformedItems = items.map(transformToMediaLibraryItem);
 
-    return NextResponse.json({
+    return NextResponse.json<MediaLibraryResponse>({
       items: transformedItems,
       total,
       hasMore: total > skip + items.length,
@@ -137,8 +142,13 @@ export async function GET(req: Request): Promise<NextResponse<MediaLibraryRespon
 
   } catch (error) {
     console.error("[MEDIA_LIBRARY_GET]", error);
-    return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR" as QuoteErrorCode, message: "Internal server error" } },
+    return NextResponse.json<MediaLibraryResponse>(
+      { 
+        error: { 
+          code: "INTERNAL_ERROR" as QuoteErrorCode, 
+          message: "Internal server error" 
+        } 
+      },
       { status: 500 }
     );
   }

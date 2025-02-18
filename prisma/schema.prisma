@@ -160,6 +160,10 @@ model QuoteImage {
   description String?  @db.Text  // Optional description
   altText     String?  // Alternative text for accessibility
   usageCount  Int      @default(0)  // Track number of quotes using this image
+  format      String?  // Add format field
+  width       Int?     // Add width field
+  height      Int?     // Add height field
+  bytes       Int?     // Add bytes field
   
   // Existing fields
   quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)

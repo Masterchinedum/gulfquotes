@@ -160,13 +160,22 @@ export interface MediaLibraryItem extends QuoteImageResource {
   usageCount: number;
 }
 
-export interface MediaLibraryResponse {
+export interface MediaLibrarySuccessResponse {
   items: MediaLibraryItem[];
   total: number;
   hasMore: boolean;
   page: number;
   limit: number;
 }
+
+export interface MediaLibraryErrorResponse {
+  error: {
+    code: QuoteErrorCode;
+    message: string;
+  };
+}
+
+export type MediaLibraryResponse = MediaLibrarySuccessResponse | MediaLibraryErrorResponse;
 
 // Sorting options
 export type MediaLibrarySortField = 
