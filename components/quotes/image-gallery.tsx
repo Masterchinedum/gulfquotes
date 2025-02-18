@@ -21,6 +21,7 @@ interface ImageGalleryProps {
   onUpload: (result: CloudinaryUploadResult) => void;
   onDelete?: (imageId: string) => void;
   disabled?: boolean;
+  onMediaLibraryOpen: () => void;
 }
 
 export function ImageGallery({
@@ -168,7 +169,7 @@ export function ImageGallery({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSelect={handleMediaLibrarySelect}
-        maxSelectable={30 - images.length} // Adjust based on remaining slots
+        maxSelectable={30 - images.length}
         currentlySelected={images.map(img => img.public_id)}
         title="Quote Background Library"
         description="Select images from your library or upload new ones to use as quote backgrounds"
