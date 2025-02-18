@@ -1,5 +1,7 @@
 "use client";
 
+// Add TagInput to imports
+import { TagInput } from "@/components/forms/TagInput";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,18 +22,24 @@ import { CldImage } from "next-cloudinary";
 import type { MediaLibraryItem } from "@/types/cloudinary";
 import { MediaLibraryModal } from "@/components/media/media-library-modal"; // Import MediaLibraryModal
 
+// Update interface to include tags
 interface QuoteFormProps {
   categories: Category[];
-  authorProfiles: AuthorProfile[];  // Add this
+  authorProfiles: AuthorProfile[];
   initialData?: CreateQuoteInput & {
     images?: QuoteImageResource[];
     backgroundImage?: string;
+    tags?: Tag[]; // Add this
   };
 }
 
 export function QuoteForm({ categories, authorProfiles, initialData }: QuoteFormProps) {
   const router = useRouter();
   const { toast } = useToast();
+  
+  // Add state for tags
+  const [selectedTags, setSelectedTags] = useState<Tag[]>(initialData?.tags || []);
+  
   const [charCount, setCharCount] = useState(initialData?.content?.length || 0);
   const [images, setImages] = useState<QuoteImageResource[]>(initialData?.images || []);
   const [selectedImage, setSelectedImage] = useState<string | null>(initialData?.backgroundImage || null);
@@ -64,7 +72,8 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
             url: img.secure_url,
             publicId: img.public_id,
             isActive: img.secure_url === selectedImage
-          }))
+          })),
+          tagIds: selectedTags.map(tag => tag.id) // Add tags to submission
         }),
       });
 
@@ -398,6 +407,22 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
             </FormItem>
           )}
         />
+
+        {/* Add TagInput after the category field */}
+        <FormItem>
+          <FormLabel>Tags</FormLabel>
+          <FormControl>
+            <TagInput
+              selectedTags={selectedTags}
+              onTagsChange={setSelectedTags}
+              disabled={isSubmitting}
+              maxTags={10}
+            />
+          </FormControl>
+          <p className="text-sm text-muted-foreground">
+            Add up to 10 tags to categorize your quote
+          </p>
+        </FormItem>
 
         {/* Add Image Gallery */}
         <div className="space-y-4">

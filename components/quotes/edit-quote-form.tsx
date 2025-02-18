@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
-import { Quote, Category, AuthorProfile } from "@prisma/client";
+import { Quote, Category, AuthorProfile, Tag } from "@prisma/client";
 import { useToast } from "@/hooks/use-toast";
 import { Icons } from "@/components/ui/icons";
 import { slugify } from "@/lib/utils";
@@ -21,13 +21,15 @@ import type { CloudinaryUploadResult, QuoteImageResource } from "@/types/cloudin
 import { CldImage } from "next-cloudinary";
 import type { MediaLibraryItem } from "@/types/cloudinary";
 import { MediaLibraryModal } from "@/components/media/media-library-modal";
+import { TagInput } from "@/components/forms/TagInput";
 
 interface EditQuoteFormProps {
   quote: Quote & {
     category: Category;
     authorProfile: AuthorProfile;
     images?: QuoteImageResource[];
-    backgroundImage: string | null;  // Change this to accept null
+    backgroundImage: string | null;
+    tags: Tag[];
   };
   categories: Category[];
   authorProfiles: AuthorProfile[];
@@ -42,6 +44,7 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
   const [selectedImage, setSelectedImage] = useState<string | null>(quote.backgroundImage || null);
   const [isUploading, setIsUploading] = useState(false);
   const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<Tag[]>(quote.tags || []);
   
   const form = useForm<UpdateQuoteInput>({
     resolver: zodResolver(updateQuoteSchema),
@@ -69,7 +72,8 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
             url: img.secure_url,
             publicId: img.public_id,
             isActive: img.secure_url === selectedImage
-          }))
+          })),
+          tagIds: selectedTags.map(tag => tag.id)
         }),
       });
 
@@ -358,6 +362,21 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
             </FormItem>
           )}
         />
+
+        <FormItem>
+          <FormLabel>Tags</FormLabel>
+          <FormControl>
+            <TagInput
+              selectedTags={selectedTags}
+              onTagsChange={setSelectedTags}
+              disabled={isSubmitting}
+              maxTags={10}
+            />
+          </FormControl>
+          <p className="text-sm text-muted-foreground">
+            Add up to 10 tags to categorize your quote
+          </p>
+        </FormItem>
 
         <div className="space-y-4">
           <FormLabel>Quote Background</FormLabel>
