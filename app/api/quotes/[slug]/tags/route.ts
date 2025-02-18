@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import db from "@/lib/prisma";
 import type { QuoteResponse } from "@/types/api/quotes";
-import type { TagsResponse } from "@/types/api/tags";
+import type { TagsResponse, TagErrorCode } from "@/types/api/tags";
 import { z } from "zod";
 
 // Validation schema for adding/removing tags
@@ -14,20 +14,28 @@ const tagOperationSchema = z.object({
 
 // GET - Fetch all tags for a specific quote
 export async function GET(
-  req: NextRequest,
-  context: { params: { slug: string } }
+  req: NextRequest
 ): Promise<NextResponse<TagsResponse>> {
   try {
     const session = await auth();
     if (!session?.user) {
       return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
+        { error: { code: "UNAUTHORIZED" as TagErrorCode, message: "Not authenticated" } },
         { status: 401 }
       );
     }
 
+    // Extract slug from URL
+    const slug = req.url.split('/quotes/')[1]?.split('/')[0];
+    if (!slug) {
+      return NextResponse.json(
+        { error: { code: "VALIDATION_ERROR" as TagErrorCode, message: "Invalid quote slug" } },
+        { status: 400 }
+      );
+    }
+
     const quote = await db.quote.findUnique({
-      where: { slug: context.params.slug },
+      where: { slug },
       include: {
         tags: {
           select: {
@@ -46,7 +54,7 @@ export async function GET(
 
     if (!quote) {
       return NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "Quote not found" } },
+        { error: { code: "NOT_FOUND" as TagErrorCode, message: "Quote not found" } },
         { status: 404 }
       );
     }
@@ -67,7 +75,7 @@ export async function GET(
   } catch (error) {
     console.error("[QUOTE_TAGS_GET]", error);
     return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
+      { error: { code: "INTERNAL_ERROR" as TagErrorCode, message: "Internal server error" } },
       { status: 500 }
     );
   }
@@ -75,8 +83,7 @@ export async function GET(
 
 // POST - Add tags to a quote
 export async function POST(
-  req: NextRequest,
-  context: { params: { slug: string } }
+  req: NextRequest
 ): Promise<NextResponse<QuoteResponse>> {
   try {
     const session = await auth();
@@ -87,8 +94,17 @@ export async function POST(
       );
     }
 
+    // Extract slug from URL
+    const slug = req.url.split('/quotes/')[1]?.split('/')[0];
+    if (!slug) {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "Invalid quote slug" } },
+        { status: 400 }
+      );
+    }
+
     const quote = await db.quote.findUnique({
-      where: { slug: context.params.slug },
+      where: { slug },
       include: { author: true }
     });
 
@@ -123,7 +139,7 @@ export async function POST(
     }
 
     const updatedQuote = await db.quote.update({
-      where: { slug: context.params.slug },
+      where: { slug },
       data: {
         tags: {
           connect: validatedData.data.tagIds.map(id => ({ id }))
@@ -149,8 +165,7 @@ export async function POST(
 
 // DELETE - Remove tags from a quote
 export async function DELETE(
-  req: NextRequest,
-  context: { params: { slug: string } }
+  req: NextRequest
 ): Promise<NextResponse<QuoteResponse>> {
   try {
     const session = await auth();
@@ -161,8 +176,17 @@ export async function DELETE(
       );
     }
 
+    // Extract slug from URL
+    const slug = req.url.split('/quotes/')[1]?.split('/')[0];
+    if (!slug) {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "Invalid quote slug" } },
+        { status: 400 }
+      );
+    }
+
     const quote = await db.quote.findUnique({
-      where: { slug: context.params.slug },
+      where: { slug },
       include: { author: true }
     });
 
@@ -197,7 +221,7 @@ export async function DELETE(
     }
 
     const updatedQuote = await db.quote.update({
-      where: { slug: context.params.slug },
+      where: { slug },
       data: {
         tags: {
           disconnect: validatedData.data.tagIds.map(id => ({ id }))
