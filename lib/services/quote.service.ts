@@ -29,6 +29,19 @@ interface QuoteImageData extends Omit<QuoteImageResource, 'context'> {
   url: string;
   publicId: string;
   isActive: boolean;
+  isGlobal?: boolean; 
+  title?: string;  
+  description?: string;
+  altText?: string;
+  format: string;          // Required
+  width: number;           // Required
+  height: number;          // Required
+  resource_type: 'image';  // Required
+  created_at: string;      // Required
+  bytes: number;           // Required
+  folder: string;          // Required
+  secure_url: string;      // Added for consistency
+  usageCount?: number;
 }
 
 export interface QuoteService {
@@ -490,7 +503,11 @@ class QuoteServiceImpl implements QuoteService {
             width: img.width,
             height: img.height,
             bytes: img.bytes,
-            usageCount: img.isGlobal ? 1 : 0 // Initialize usage count
+            usageCount: img.isGlobal ? 1 : 0, // Initialize usage count
+            resource_type: 'image',  // Required
+            created_at: img.created_at,  // Required
+            folder: img.folder,  // Required
+            secure_url: img.secure_url  // Added for consistency
           }))
         });
 
