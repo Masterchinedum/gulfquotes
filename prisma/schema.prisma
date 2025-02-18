@@ -102,6 +102,7 @@ model Quote {
   authorProfile    AuthorProfile  @relation(fields: [authorProfileId], references: [id])
   authorProfileId  String
   images           QuoteImage[] 
+  tags             Tag[]          @relation("QuoteToTag")
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
@@ -187,4 +188,15 @@ model UserProfile {
 
   @@index([slug])
   @@map("user_profiles")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  quotes    Quote[]  @relation("QuoteToTag")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tags")
 }

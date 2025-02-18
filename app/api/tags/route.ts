@@ -1,0 +1,145 @@
+// app/api/tags/route.ts
+
+import { NextResponse } from "next/server";
+import { auth } from "@/auth";
+import db from "@/lib/prisma";
+import { slugify } from "@/lib/utils";
+import { createTagSchema } from "@/schemas/tag"; // We'll create this next
+import type { TagsResponse, TagResponse } from "@/types/api/tags"; // We'll create this next
+
+// GET endpoint to fetch all tags with optional search
+export async function GET(
+  req: Request
+): Promise<NextResponse<TagsResponse>> {
+  try {
+    const { searchParams } = new URL(req.url);
+    const search = searchParams.get("search")?.trim();
+    const page = Math.max(1, Number(searchParams.get("page")) || 1);
+    const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit")) || 20));
+    const skip = (page - 1) * limit;
+
+    // Build where condition for search
+    const where = search ? {
+      OR: [
+        { name: { contains: search, mode: 'insensitive' } },
+        { slug: { contains: search, mode: 'insensitive' } }
+      ]
+    } : {};
+
+    // Execute queries in parallel
+    const [tags, total] = await Promise.all([
+      db.tag.findMany({
+        where,
+        orderBy: { name: 'asc' },
+        skip,
+        take: limit,
+        include: {
+          _count: {
+            select: { quotes: true }
+          }
+        }
+      }),
+      db.tag.count({ where })
+    ]);
+
+    return NextResponse.json({
+      data: {
+        items: tags.map(tag => ({
+          ...tag,
+          quoteCount: tag._count.quotes
+        })),
+        total,
+        page,
+        limit,
+        hasMore: total > skip + tags.length
+      }
+    });
+
+  } catch (error) {
+    console.error("[TAGS_GET]", error);
+    return NextResponse.json(
+      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
+      { status: 500 }
+    );
+  }
+}
+
+// POST endpoint to create a new tag
+export async function POST(
+  req: Request
+): Promise<NextResponse<TagResponse>> {
+  try {
+    // Check authentication
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
+        { status: 401 }
+      );
+    }
+
+    // Only ADMINs or AUTHORS can create tags
+    if (session.user.role !== "ADMIN" && session.user.role !== "AUTHOR") {
+      return NextResponse.json(
+        { error: { code: "FORBIDDEN", message: "Permission denied" } },
+        { status: 403 }
+      );
+    }
+
+    // Parse and validate request body
+    const body = await req.json();
+    const validatedData = createTagSchema.safeParse(body);
+
+    if (!validatedData.success) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Invalid input data",
+            details: validatedData.error.flatten().fieldErrors
+          }
+        },
+        { status: 400 }
+      );
+    }
+
+    // Normalize the tag name to prevent duplicates
+    const normalizedName = validatedData.data.name.trim();
+
+    // Check for existing tag with case-insensitive match
+    const existingTag = await db.tag.findFirst({
+      where: {
+        name: { equals: normalizedName, mode: 'insensitive' }
+      }
+    });
+
+    if (existingTag) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "DUPLICATE_TAG",
+            message: "Tag already exists"
+          }
+        },
+        { status: 400 }
+      );
+    }
+
+    // Create new tag
+    const tag = await db.tag.create({
+      data: {
+        name: normalizedName,
+        slug: slugify(normalizedName)
+      }
+    });
+
+    return NextResponse.json({ data: tag });
+
+  } catch (error) {
+    console.error("[TAGS_POST]", error);
+    return NextResponse.json(
+      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
+      { status: 500 }
+    );
+  }
+}
