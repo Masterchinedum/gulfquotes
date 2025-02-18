@@ -9,7 +9,7 @@ import type {
   MediaLibraryItem 
 } from "@/types/cloudinary";
 import type { QuoteErrorCode } from "@/types/api/quotes";
-import type { QuoteImage, Quote } from "@prisma/client";
+import type { QuoteImage, Quote, Prisma } from "@prisma/client";
 
 // Define the type for the database item including relations
 type QuoteImageWithRelations = QuoteImage & {
@@ -77,38 +77,58 @@ export async function GET(req: Request): Promise<NextResponse<MediaLibraryRespon
     const sortField = (searchParams.get("sortField") || "createdAt") as MediaLibrarySortField;
     const sortDirection = (searchParams.get("sortDirection") || "desc") as SortDirection;
 
-    // Enhanced filtering with type safety
-    const where = {
-      AND: [
-        // Basic filters
-        searchParams.get("isGlobal") === "true" ? { isGlobal: true } : {},
-        
-        // Search across multiple fields
-        searchParams.get("search")?.trim() ? {
-          OR: [
-            { title: { contains: searchParams.get("search"), mode: 'insensitive' } },
-            { description: { contains: searchParams.get("search"), mode: 'insensitive' } },
-            { altText: { contains: searchParams.get("search"), mode: 'insensitive' } },
-          ]
-        } : {},
+    // Build where conditions according to Prisma's types
+    const conditions: Prisma.QuoteImageWhereInput[] = [];
 
-        // Usage count range
-        Number(searchParams.get("minUsageCount")) ? 
-          { usageCount: { gte: Number(searchParams.get("minUsageCount")) } } : {},
-        Number(searchParams.get("maxUsageCount")) ? 
-          { usageCount: { lte: Number(searchParams.get("maxUsageCount")) } } : {},
+    // Add isGlobal filter
+    if (searchParams.get("isGlobal") === "true") {
+      conditions.push({ isGlobal: true });
+    }
 
-        // Format filtering
-        searchParams.get("formats") ? 
-          { format: { in: searchParams.get("formats")?.split(",") } } : {},
+    // Add search filter
+    const search = searchParams.get("search")?.trim();
+    if (search) {
+      conditions.push({
+        OR: [
+          { title: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+          { altText: { contains: search, mode: 'insensitive' } },
+        ],
+      });
+    }
 
-        // Date range filtering
-        searchParams.get("createdAfter") ? 
-          { createdAt: { gte: new Date(searchParams.get("createdAfter")!) } } : {},
-        searchParams.get("createdBefore") ? 
-          { createdAt: { lte: new Date(searchParams.get("createdBefore")!) } } : {},
-      ].filter(Boolean) // Remove empty conditions
-    };
+    // Add usage count filters
+    const minUsageCount = Number(searchParams.get("minUsageCount"));
+    if (!isNaN(minUsageCount)) {
+      conditions.push({ usageCount: { gte: minUsageCount } });
+    }
+
+    const maxUsageCount = Number(searchParams.get("maxUsageCount"));
+    if (!isNaN(maxUsageCount)) {
+      conditions.push({ usageCount: { lte: maxUsageCount } });
+    }
+
+    // Add format filter
+    const formats = searchParams.get("formats")?.split(",");
+    if (formats?.length) {
+      conditions.push({ format: { in: formats } });
+    }
+
+    // Add date range filters
+    const createdAfter = searchParams.get("createdAfter");
+    if (createdAfter) {
+      conditions.push({ createdAt: { gte: new Date(createdAfter) } });
+    }
+
+    const createdBefore = searchParams.get("createdBefore");
+    if (createdBefore) {
+      conditions.push({ createdAt: { lte: new Date(createdBefore) } });
+    }
+
+    // Create the where clause
+    const where: Prisma.QuoteImageWhereInput = conditions.length 
+      ? { AND: conditions }
+      : {};
 
     // Execute optimized queries
     const [items, total] = await Promise.all([
