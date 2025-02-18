@@ -126,10 +126,12 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
         created_at: new Date().toISOString(),
         bytes: result.info.bytes,
         folder: 'quote-images',
-        // Add metadata from upload result
+        // Updated context handling
         context: {
-          alt: result.info.context?.alt,
-          isGlobal: result.info.context?.isGlobal === 'true'
+          alt: typeof result.info.context?.alt === 'string' ? result.info.context.alt : undefined,
+          isGlobal: typeof result.info.context?.isGlobal === 'string' 
+            ? result.info.context.isGlobal === 'true'
+            : false
         }
       };
 

@@ -119,6 +119,7 @@ export interface QuoteImageResource extends CloudinaryResource {
   context?: {
     quoteId?: string;
     alt?: string;
+    isGlobal?: boolean; // Add this property
   };
 }
 

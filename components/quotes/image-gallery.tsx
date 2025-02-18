@@ -52,8 +52,8 @@ export function ImageGallery({
           secure_url: image.secure_url,
           original_filename: image.title || 'untitled',
           asset_id: image.public_id,
-          version: '1',
-          version_id: '1',
+          version: 1,  // Changed to number
+          version_id: 1, // Changed to number
           width: image.width,
           height: image.height,
           format: image.format,
@@ -67,7 +67,10 @@ export function ImageGallery({
             alt: image.altText,
             isGlobal: 'true'
           },
-          // Additional required fields with default values
+          // Add required fields from CloudinaryUploadWidgetInfo
+          hook_execution: { data: {} },  // Changed to match expected type
+          id: image.public_id,
+          type: 'upload',
           api_key: '',
           delete_token: '',
           etag: '',
@@ -77,11 +80,13 @@ export function ImageGallery({
           thumbnail_url: image.secure_url,
           signature: '',
           metadata: {},
-          batchId: '',
-          hook_execution: false
+          batchId: ''
         }
       });
     });
+    
+    // Close modal after selection
+    setIsModalOpen(false);
   };
 
   return (
