@@ -4,10 +4,11 @@ import { useState } from "react";
 import { CldImage } from "next-cloudinary";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { X, Check} from "lucide-react";
+import { X, Check, ImagePlus } from "lucide-react";
 import { CloudinaryUploadWidget } from "@/components/ui/cloudinary-upload-widget";
 import { quoteUploadOptions } from "@/lib/cloudinary";
 import type { CloudinaryUploadResult, QuoteImageResource } from "@/types/cloudinary";
+import { MediaLibraryModal } from "@/components/media/media-library-modal";
 
 interface ImageGalleryProps {
   images: QuoteImageResource[];
@@ -26,11 +27,30 @@ export function ImageGallery({
   onDelete,
   disabled = false
 }: ImageGalleryProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   const handleUpload = (result: CloudinaryUploadResult) => {
     setUploading(false);
     onUpload(result);
+  };
+
+  // Handle media library selection
+  const handleMediaLibrarySelect = (selectedImages: MediaLibraryItem[]) => {
+    // Process each selected image
+    selectedImages.forEach(image => {
+      onUpload({
+        event: "success",
+        info: {
+          public_id: image.public_id,
+          secure_url: image.secure_url,
+          format: image.format,
+          width: image.width,
+          height: image.height,
+          bytes: image.bytes,
+        }
+      });
+    });
   };
 
   return (
@@ -42,12 +62,23 @@ export function ImageGallery({
             Select or upload images for your quote background
           </p>
         </div>
-        <CloudinaryUploadWidget
-          onUploadSuccess={handleUpload}
-          options={quoteUploadOptions}
-          buttonText={uploading ? "Uploading..." : "Add Images"}
-          disabled={disabled || uploading}
-        />
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsModalOpen(true)}
+            disabled={disabled}
+          >
+            <ImagePlus className="h-4 w-4 mr-2" />
+            Browse Library
+          </Button>
+          <CloudinaryUploadWidget
+            onUploadSuccess={handleUpload}
+            options={quoteUploadOptions}
+            buttonText={uploading ? "Uploading..." : "Upload New"}
+            disabled={disabled || uploading}
+          />
+        </div>
       </div>
 
       {/* Image Grid */}
@@ -112,6 +143,17 @@ export function ImageGallery({
           </p>
         </div>
       )}
+
+      {/* Add the MediaLibraryModal */}
+      <MediaLibraryModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSelect={handleMediaLibrarySelect}
+        maxSelectable={30 - images.length} // Adjust based on remaining slots
+        currentlySelected={images.map(img => img.public_id)}
+        title="Quote Background Library"
+        description="Select images from your library or upload new ones to use as quote backgrounds"
+      />
     </div>
   );
 }
