@@ -202,6 +202,7 @@ export async function PATCH(
       );
     }
 
+    // Update the query to include the quote relation
     const updatedImage = await db.quoteImage.update({
       where: { id },
       data: {
@@ -209,6 +210,14 @@ export async function PATCH(
         description,
         altText,
         isGlobal,
+      },
+      include: {
+        quote: {
+          select: {
+            id: true,
+            slug: true,
+          }
+        }
       }
     });
 
