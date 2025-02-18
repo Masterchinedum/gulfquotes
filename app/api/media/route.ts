@@ -155,12 +155,19 @@ export async function GET(req: Request): Promise<NextResponse<MediaLibraryRespon
 }
 
 // PATCH endpoint for updating image metadata
-export async function PATCH(req: Request) {
+export async function PATCH(
+  req: Request
+): Promise<NextResponse<MediaLibraryResponse>> {
   try {
     const session = await auth();
     if (!session?.user) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED" as QuoteErrorCode, message: "Not authenticated" } },
+      return NextResponse.json<MediaLibraryResponse>(
+        { 
+          error: { 
+            code: "UNAUTHORIZED" as QuoteErrorCode, 
+            message: "Not authenticated" 
+          } 
+        },
         { status: 401 }
       );
     }
@@ -185,12 +192,23 @@ export async function PATCH(req: Request) {
       }
     });
 
-    return NextResponse.json({ data: updatedImage });
+    return NextResponse.json<MediaLibraryResponse>({
+      items: [transformToMediaLibraryItem(updatedImage)],
+      total: 1,
+      hasMore: false,
+      page: 1,
+      limit: 1
+    });
 
   } catch (error) {
     console.error("[MEDIA_LIBRARY_PATCH]", error);
-    return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR" as QuoteErrorCode, message: "Internal server error" } },
+    return NextResponse.json<MediaLibraryResponse>(
+      { 
+        error: { 
+          code: "INTERNAL_ERROR" as QuoteErrorCode, 
+          message: "Internal server error" 
+        } 
+      },
       { status: 500 }
     );
   }
