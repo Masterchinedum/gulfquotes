@@ -47,19 +47,38 @@ export function ImageGallery({
       onUpload({
         event: "success",
         info: {
+          // Required CloudinaryUploadWidgetInfo fields
           public_id: image.public_id,
           secure_url: image.secure_url,
-          format: image.format,
+          original_filename: image.title || 'untitled',
+          asset_id: image.public_id,
+          version: '1',
+          version_id: '1',
           width: image.width,
           height: image.height,
+          format: image.format,
+          resource_type: 'image',
+          created_at: image.created_at,
           bytes: image.bytes,
-          // Add metadata for global library
-          folder: "quote-images",
-          isGlobal: true,
-          title: image.title,
-          description: image.description,
-          altText: image.altText,
-          usageCount: image.usageCount
+          folder: 'quote-images',
+          access_mode: 'public',
+          url: image.secure_url,
+          context: {
+            alt: image.altText,
+            isGlobal: 'true'
+          },
+          // Additional required fields with default values
+          api_key: '',
+          delete_token: '',
+          etag: '',
+          placeholder: false,
+          tags: ['quote-background'],
+          path: image.secure_url,
+          thumbnail_url: image.secure_url,
+          signature: '',
+          metadata: {},
+          batchId: '',
+          hook_execution: false
         }
       });
     });

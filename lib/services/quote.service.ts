@@ -10,6 +10,8 @@ import { ListQuotesParams } from "@/types/api/quotes";
 import { validateQuoteImages, handleUploadError, handleDeleteError } from "@/lib/utils/image-management";
 import { cloudinaryConfig } from "@/lib/cloudinary";
 import type { QuoteImageResource } from "@/types/cloudinary"; // Add this import
+import { mediaService } from "@/lib/services/media.service";
+import type { MediaLibraryItem } from "@/types/cloudinary";
 
 interface ListQuotesResult {
   items: Array<Quote & {
@@ -39,6 +41,7 @@ export interface QuoteService {
   delete(id: string): Promise<Quote>;
   search(query: string): Promise<Quote[]>;
   addImages(quoteId: string, images: QuoteImageData[]): Promise<Quote>;
+  addFromMediaLibrary(quoteId: string, images: MediaLibraryItem[]): Promise<Quote>;
   removeImage(quoteId: string, publicId: string): Promise<Quote>;
   setBackgroundImage(quoteId: string, imageUrl: string | null): Promise<Quote>;
   removeImageAssociation(quoteId: string, imageId: string): Promise<Quote>;
@@ -113,15 +116,10 @@ class QuoteServiceImpl implements QuoteService {
 
   // Then update the validateImages method to handle QuoteImageData
   private async validateImages(images: QuoteImageData[]): Promise<void> {
-    if (images.length > cloudinaryConfig.limits.quotes.maxFiles) {
-      throw new AppError(
-        `Maximum ${cloudinaryConfig.limits.quotes.maxFiles} images allowed per quote`,
-        "MAX_IMAGES_EXCEEDED",
-        400
-      );
-    }
+    // Use the imported validateQuoteImages utility
+    validateQuoteImages(images);
 
-    // Validate each image URL is from Cloudinary
+    // Additional validation specific to associations
     for (const image of images) {
       if (!image.url.includes(cloudinaryConfig.cloudName)) {
         throw new AppError(
@@ -462,29 +460,57 @@ class QuoteServiceImpl implements QuoteService {
   // Update the addImages method
   async addImages(quoteId: string, images: QuoteImageData[]): Promise<Quote> {
     try {
-      // Use the class's own validateImages method
       await this.validateImages(images);
 
-      // Transform QuoteImageData to QuoteImageResource for validation
-      const imageResources: QuoteImageResource[] = images.map(img => ({
-        public_id: img.publicId,
-        secure_url: img.url,
-        format: 'webp', // Default format
-        width: 1200, // Default width for social sharing
-        height: 630, // Default height for social sharing
-        resource_type: 'image',
-        created_at: new Date().toISOString(),
-        bytes: 0, // This will be updated by Cloudinary
-        folder: 'quote-images',
-        context: {
-          quoteId,
-          alt: 'Quote background'
+      return await db.$transaction(async (tx) => {
+        const currentCount = await tx.quoteImage.count({
+          where: { quoteId }
+        });
+
+        if (currentCount + images.length > cloudinaryConfig.limits.quotes.maxFiles) {
+          throw new AppError(
+            `Adding these images would exceed the maximum limit of ${cloudinaryConfig.limits.quotes.maxFiles} images`,
+            "MAX_IMAGES_EXCEEDED",
+            400
+          );
         }
-      }));
 
-      // Now validate the transformed images
-      validateQuoteImages(imageResources);
+        // Create the new images with global flag and metadata
+        await tx.quoteImage.createMany({
+          data: images.map(img => ({
+            quoteId,
+            url: img.url,
+            publicId: img.publicId,
+            isActive: img.isActive,
+            isGlobal: img.isGlobal ?? false,
+            title: img.title,
+            description: img.description,
+            altText: img.altText,
+            format: img.format,
+            width: img.width,
+            height: img.height,
+            bytes: img.bytes,
+            usageCount: img.isGlobal ? 1 : 0 // Initialize usage count
+          }))
+        });
 
+        return tx.quote.findUniqueOrThrow({
+          where: { id: quoteId },
+          include: {
+            images: true,
+            category: true,
+            authorProfile: true
+          }
+        });
+      });
+    } catch (error) {
+      handleUploadError(error);
+    }
+  }
+
+  // Add new method to handle media library images
+  async addFromMediaLibrary(quoteId: string, images: MediaLibraryItem[]): Promise<Quote> {
+    try {
       return await db.$transaction(async (tx) => {
         // Check current count
         const currentCount = await tx.quoteImage.count({
@@ -499,15 +525,10 @@ class QuoteServiceImpl implements QuoteService {
           );
         }
 
-        // Create the new images
-        await tx.quoteImage.createMany({
-          data: images.map(img => ({
-            quoteId,
-            url: img.url,
-            publicId: img.publicId,
-            isActive: img.isActive
-          }))
-        });
+        // Associate each image with the quote
+        for (const image of images) {
+          await mediaService.associateWithQuote(image.public_id, quoteId);
+        }
 
         return tx.quote.findUniqueOrThrow({
           where: { id: quoteId },
@@ -535,15 +556,20 @@ class QuoteServiceImpl implements QuoteService {
           throw new AppError("Image not found", "IMAGE_NOT_FOUND", 404);
         }
 
-        // Delete from storage and database
-        const deleted = await deleteImage(publicId);
-        if (!deleted) {
-          throw new AppError("Failed to delete image from storage", "IMAGE_DELETE_FAILED", 500);
-        }
+        if (image.isGlobal) {
+          // For global images, just remove the association
+          await mediaService.dissociateFromQuote(image.id, quoteId);
+        } else {
+          // For non-global images, delete completely
+          const deleted = await deleteImage(publicId);
+          if (!deleted) {
+            throw new AppError("Failed to delete image from storage", "IMAGE_DELETE_FAILED", 500);
+          }
 
-        await tx.quoteImage.delete({
-          where: { id: image.id }
-        });
+          await tx.quoteImage.delete({
+            where: { id: image.id }
+          });
+        }
 
         // Update quote if needed
         if (image.isActive) {
@@ -578,9 +604,17 @@ class QuoteServiceImpl implements QuoteService {
         });
 
         if (imageUrl) {
+          const image = await tx.quoteImage.findFirst({
+            where: { quoteId, url: imageUrl }
+          });
+
+          if (!image) {
+            throw new AppError("Image not found", "IMAGE_NOT_FOUND", 404);
+          }
+
           // Set the selected image as active
-          await tx.quoteImage.updateMany({
-            where: { quoteId, url: imageUrl },
+          await tx.quoteImage.update({
+            where: { id: image.id },
             data: { isActive: true }
           });
         }
@@ -622,13 +656,13 @@ class QuoteServiceImpl implements QuoteService {
           });
         }
 
-        // Remove the association by deleting the record but keeping the image if it's global
-        if (image.isGlobal) {
-          await tx.quoteImage.delete({
-            where: { id: imageId }
-          });
+        // Remove the association
+        await tx.quoteImage.delete({
+          where: { id: imageId }
+        });
 
-          // Update usage count
+        // Update usage count for global images
+        if (image.isGlobal) {
           await tx.quoteImage.updateMany({
             where: { publicId: image.publicId },
             data: { usageCount: { decrement: 1 } }
