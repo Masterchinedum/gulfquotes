@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Add useEffect import
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,8 +83,8 @@ export function TagManagement({ onSuccess }: TagManagementProps) {
     }
   };
 
-  // Load tags on mount
-  useState(() => {
+  // Load tags on mount - Change useState to useEffect
+  useEffect(() => {
     fetchTags();
   }, []);
 
