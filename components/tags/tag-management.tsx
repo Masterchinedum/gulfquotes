@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,8 +26,10 @@ export function TagManagement({ onSuccess }: TagManagementProps) {
       if (!response.ok) throw new Error("Failed to fetch tags");
       const data = await response.json();
       setTags(data.data.items);
-    } catch (error) {
-      toast.error("Failed to load tags");
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to load tags"
+      );
     }
   };
 
