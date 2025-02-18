@@ -122,7 +122,15 @@ export type AuthorProfileErrorCode =
   | "INVALID_IMAGE";  
 
 // Combined error code type for the AppError class
-export type AppErrorCode = QuoteErrorCode | AuthorProfileErrorCode | CategoryErrorCode;
+export type AppErrorCode = 
+  | "FETCH_IMAGES_FAILED"
+  | "UPDATE_METADATA_FAILED"
+  | "DELETE_IMAGE_FAILED"
+  | "IMAGE_ASSOCIATION_FAILED"
+  | "IMAGE_DISSOCIATION_FAILED"
+  | QuoteErrorCode 
+  | AuthorProfileErrorCode 
+  | CategoryErrorCode;
 
 export interface QuoteApiError extends ApiError {
   code: QuoteErrorCode;

@@ -18,7 +18,7 @@ import { ImageGallery } from "@/components/quotes/image-gallery";
 import type { CloudinaryUploadResult, QuoteImageResource } from "@/types/cloudinary";
 import { CldImage } from "next-cloudinary";
 import type { MediaLibraryItem } from "@/types/cloudinary";
-import { MediaLibraryModal } from "@/components/quotes/media-library-modal"; // Import MediaLibraryModal
+import { MediaLibraryModal } from "@/components/media/media-library-modal"; // Import MediaLibraryModal
 
 interface QuoteFormProps {
   categories: Category[];
