@@ -52,7 +52,13 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
         resource_type: 'image' as const, // Ensure this is a literal type
         created_at: new Date().toISOString(),
         bytes: 0, // This will be updated by Cloudinary
-        folder: 'quote-images'
+        folder: 'quote-images',
+        // Add the new required fields
+        isGlobal: false, // New quotes start as non-global
+        usageCount: 0, // New images start with 0 usage count
+        title: undefined,
+        description: undefined,
+        altText: undefined
       })) || [];
 
       const quote = await quoteService.create({

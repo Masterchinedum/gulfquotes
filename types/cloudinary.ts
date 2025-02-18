@@ -4,6 +4,7 @@ import type {
   CloudinaryUploadWidgetInfo,
   CloudinaryUploadWidgetOptions 
 } from 'next-cloudinary';
+import type { QuoteErrorCode } from '@/types/api/quotes'; // Add this import
 
 // Base resource interface
 export interface CloudinaryResource {
