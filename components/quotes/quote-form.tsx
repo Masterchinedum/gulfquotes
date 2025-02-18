@@ -1,7 +1,7 @@
 "use client";
 
-// Add TagInput to imports
-import { TagInput } from "@/components/forms/TagInput";
+// Add Tag to the imports from @prisma/client
+import { Category, AuthorProfile, Tag } from "@prisma/client";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,15 +12,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
-import { Category, AuthorProfile } from "@prisma/client"; // Update existing import
 import { useToast } from "@/hooks/use-toast";
 import { Icons } from "@/components/ui/icons";
-import { slugify } from "@/lib/utils"; // Import slugify utility
+import { slugify } from "@/lib/utils";
 import { ImageGallery } from "@/components/quotes/image-gallery";
 import type { CloudinaryUploadResult, QuoteImageResource } from "@/types/cloudinary";
 import { CldImage } from "next-cloudinary";
 import type { MediaLibraryItem } from "@/types/cloudinary";
-import { MediaLibraryModal } from "@/components/media/media-library-modal"; // Import MediaLibraryModal
+import { MediaLibraryModal } from "@/components/media/media-library-modal";
+import { TagInput } from "@/components/forms/TagInput";
 
 // Update interface to include tags
 interface QuoteFormProps {
