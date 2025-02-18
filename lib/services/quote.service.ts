@@ -33,14 +33,14 @@ interface QuoteImageData extends Omit<QuoteImageResource, 'context'> {
   title?: string;  
   description?: string;
   altText?: string;
-  format: string;          // Required
-  width: number;           // Required
-  height: number;          // Required
-  resource_type: 'image';  // Required
-  created_at: string;      // Required
-  bytes: number;           // Required
-  folder: string;          // Required
-  secure_url: string;      // Added for consistency
+  format: string;
+  width: number;  
+  height: number; 
+  resource_type: 'image'; 
+  created_at: string; 
+  bytes: number;  
+  folder: string; 
+  secure_url: string; 
   usageCount?: number;
 }
 
