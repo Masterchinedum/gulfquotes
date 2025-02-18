@@ -50,6 +50,7 @@ export default async function EditQuotePage({
         include: {
           category: true,
           authorProfile: true,
+          tags: true, // Add this to include tags
           images: {
             select: {
               id: true,
@@ -67,8 +68,6 @@ export default async function EditQuotePage({
               createdAt: true,
               updatedAt: true,
               quoteId: true,
-              // Remove fields that don't exist in the schema:
-              // folder, created_at, secure_url, resource_type
             }
           }
         }
@@ -117,7 +116,8 @@ export default async function EditQuotePage({
           alt: img.altText || undefined,
           isGlobal: img.isGlobal || false
         }
-      }))
+      })),
+      tags: quote.tags // Include the tags
     };
 
     return (
