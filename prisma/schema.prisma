@@ -153,13 +153,22 @@ model QuoteImage {
   id          String   @id @default(cuid())
   url         String
   publicId    String   // Cloudinary public ID
-  isActive    Boolean  @default(false)  // Track if this is the current background
+  isActive    Boolean  @default(false)  // Track if this is the current background  
+  // New fields for global image library
+  isGlobal    Boolean  @default(false)  // Track if image is available in global library
+  title       String?  // Optional title for the image
+  description String?  @db.Text  // Optional description
+  altText     String?  // Alternative text for accessibility
+  usageCount  Int      @default(0)  // Track number of quotes using this image
+  
+  // Existing fields
   quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
   quoteId     String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@map("quote_images")
+  @@index([isGlobal]) // Add index for faster queries on global images
 }
 
 // New UserProfile model
