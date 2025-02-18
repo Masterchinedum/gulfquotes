@@ -1,6 +1,6 @@
-import type { AppErrorCode } from "@/types/api/quotes"; // Add this import
-// import { auth } from "@/auth";
+import type { AppErrorCode } from "@/types/api/quotes";
 import db from "@/lib/prisma";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { AppError } from "@/lib/api-error";
 import { deleteImage } from "@/lib/cloudinary";
 import type { Prisma, QuoteImage } from "@prisma/client";
@@ -178,7 +178,7 @@ class MediaServiceImpl implements MediaService {
     } catch (error) {
       console.error("[MEDIA_SERVICE]", error); // Add logging
       
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
           throw new AppError("Image not found", "IMAGE_NOT_FOUND", 404);
         }
