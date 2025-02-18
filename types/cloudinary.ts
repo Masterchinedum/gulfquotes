@@ -68,6 +68,11 @@ export interface CloudinaryUploadOptions extends Omit<CloudinaryUploadWidgetOpti
   showSkipCropButton?: boolean;
   maxImageWidth?: number;
   maxImageHeight?: number;
+
+  // Add new media library specific options
+  showMediaLibrary?: boolean;
+  mediaLibraryOptions?: MediaLibraryOptions;
+  onMediaLibrarySelect?: (items: MediaLibraryItem[]) => void;
 }
 
 // Enhanced config type
@@ -126,10 +131,15 @@ export interface QuoteImageUploadProps {
 }
 
 // Define QuoteImageData
-export interface QuoteImageData {
+export interface QuoteImageData extends Omit<MediaLibraryItem, 'context'> {
   url: string;
   publicId: string;
   isActive: boolean;
+  isGlobal: boolean;
+  title?: string;
+  description?: string;
+  altText?: string;
+  usageCount: number;
   secure_url: string;
   public_id: string;
   format: string;
@@ -139,6 +149,61 @@ export interface QuoteImageData {
   created_at: string;
   bytes: number;
   folder: string;
+}
+
+// Media Library specific interfaces
+export interface MediaLibraryItem extends QuoteImageResource {
+  isGlobal: boolean;
+  title?: string;
+  description?: string;
+  altText?: string;
+  usageCount: number;
+}
+
+export interface MediaLibraryResponse {
+  items: MediaLibraryItem[];
+  total: number;
+  hasMore: boolean;
+  page: number;
+  limit: number;
+}
+
+// Sorting options
+export type MediaLibrarySortField = 
+  | 'createdAt'
+  | 'updatedAt'
+  | 'title'
+  | 'usageCount';
+
+export type SortDirection = 'asc' | 'desc';
+
+export interface MediaLibrarySortOption {
+  field: MediaLibrarySortField;
+  direction: SortDirection;
+}
+
+// Filtering options
+export interface MediaLibraryFilterOptions {
+  search?: string;
+  isGlobal?: boolean;
+  minUsageCount?: number;
+  maxUsageCount?: number;
+  createdAfter?: Date;
+  createdBefore?: Date;
+  formats?: string[];
+}
+
+// Pagination options
+export interface MediaLibraryPaginationOptions {
+  page?: number;
+  limit?: number;
+}
+
+// Combined options for fetching media library
+export interface MediaLibraryOptions {
+  sort?: MediaLibrarySortOption;
+  filter?: MediaLibraryFilterOptions;
+  pagination?: MediaLibraryPaginationOptions;
 }
 
 export type { CloudinaryUploadWidgetInfo };
