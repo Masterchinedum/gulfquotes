@@ -17,6 +17,8 @@ import { slugify } from "@/lib/utils"; // Import slugify utility
 import { ImageGallery } from "@/components/quotes/image-gallery";
 import type { CloudinaryUploadResult, QuoteImageResource } from "@/types/cloudinary";
 import { CldImage } from "next-cloudinary";
+import type { MediaLibraryItem } from "@/types/cloudinary";
+import { MediaLibraryModal } from "@/components/quotes/media-library-modal"; // Import MediaLibraryModal
 
 interface QuoteFormProps {
   categories: Category[];
@@ -34,6 +36,7 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
   const [images, setImages] = useState<QuoteImageResource[]>(initialData?.images || []);
   const [selectedImage, setSelectedImage] = useState<string | null>(initialData?.backgroundImage || null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
 
   const form = useForm<CreateQuoteInput>({
     resolver: zodResolver(createQuoteSchema),
@@ -105,7 +108,7 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
     }
   };
 
-  // Handle image upload
+  // Handle image upload with metadata
   const handleImageUpload = async (result: CloudinaryUploadResult) => {
     setIsUploading(true);
     try {
@@ -123,22 +126,25 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
         created_at: new Date().toISOString(),
         bytes: result.info.bytes,
         folder: 'quote-images',
+        // Add metadata from upload result
+        context: {
+          alt: result.info.context?.alt,
+          isGlobal: result.info.context?.isGlobal === 'true'
+        }
       };
 
       setImages(prev => [...prev, newImage]);
-      
-      // Optionally set this as the selected image if it's the first one
+
+      // Set as selected image if it's the first one
       if (images.length === 0) {
         setSelectedImage(newImage.secure_url);
         form.setValue('backgroundImage', newImage.secure_url);
       }
 
-    } catch (uploadError) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: uploadError instanceof Error 
-          ? uploadError.message 
-          : "Failed to process uploaded image",
+        description: error instanceof Error ? error.message : "Failed to process uploaded image",
         variant: "destructive",
       });
     } finally {
@@ -149,29 +155,47 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
   // Handle image selection
   const handleImageSelect = (imageUrl: string) => {
     setSelectedImage(imageUrl);
-    // Update the form data with the selected background image
     form.setValue('backgroundImage', imageUrl);
   };
 
-  // Handle image deletion
+  // Handle image deletion with global check
   const handleImageDelete = async (publicId: string) => {
     try {
-      const response = await fetch('/api/images', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ publicId }),
-      });
+      const image = images.find(img => img.public_id === publicId);
+      if (!image) return;
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to delete image');
+      // If image is global, only remove association
+      if (image.context?.isGlobal) {
+        const response = await fetch(`/api/quotes/${form.getValues("slug")}/images`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageId: publicId }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to remove image');
+        }
+      } else {
+        // Delete non-global image completely
+        const response = await fetch(`/api/quotes/${form.getValues("slug")}/images`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ publicId }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to delete image');
+        }
       }
 
       setImages(prev => prev.filter(img => img.public_id !== publicId));
-      if (images.find(img => img.secure_url === selectedImage)?.public_id === publicId) {
+      if (selectedImage === image.secure_url) {
         setSelectedImage(null);
         form.setValue('backgroundImage', null);
       }
+
     } catch (error) {
       toast({
         title: "Error",
@@ -179,6 +203,39 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
         variant: "destructive",
       });
     }
+  };
+
+  // Add handler for media library selection
+  const handleMediaLibrarySelect = (selectedImages: MediaLibraryItem[]) => {
+    // Process each selected image and add to images state
+    selectedImages.forEach(image => {
+      const newImage: QuoteImageResource = {
+        public_id: image.public_id,
+        secure_url: image.secure_url,
+        format: image.format,
+        width: image.width,
+        height: image.height,
+        resource_type: 'image',
+        created_at: image.created_at,
+        bytes: image.bytes,
+        folder: image.folder,
+        context: {
+          alt: image.altText,
+          quoteId: undefined,
+          isGlobal: true
+        }
+      };
+
+      setImages(prev => [...prev, newImage]);
+
+      // Set as selected image if it's the first one
+      if (images.length === 0) {
+        setSelectedImage(newImage.secure_url);
+        form.setValue('backgroundImage', newImage.secure_url);
+      }
+    });
+
+    setIsMediaLibraryOpen(false);
   };
 
   return (
@@ -350,7 +407,20 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
             onUpload={handleImageUpload}
             onDelete={handleImageDelete}
             disabled={isSubmitting || isUploading}
+            onMediaLibraryOpen={() => setIsMediaLibraryOpen(true)} // Add this prop
           />
+          
+          {/* Add MediaLibraryModal */}
+          <MediaLibraryModal
+            isOpen={isMediaLibraryOpen}
+            onClose={() => setIsMediaLibraryOpen(false)}
+            onSelect={handleMediaLibrarySelect}
+            maxSelectable={30 - images.length}
+            currentlySelected={images.map(img => img.public_id)}
+            title="Quote Background Library"
+            description="Select images from your library or upload new ones to use as quote backgrounds"
+          />
+
           {selectedImage && (
             <div className="mt-4">
               <h4 className="text-sm font-medium mb-2">Selected Background</h4>

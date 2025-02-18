@@ -7,7 +7,11 @@ import { cn } from "@/lib/utils";
 import { X, Check, ImagePlus } from "lucide-react";
 import { CloudinaryUploadWidget } from "@/components/ui/cloudinary-upload-widget";
 import { quoteUploadOptions } from "@/lib/cloudinary";
-import type { CloudinaryUploadResult, QuoteImageResource } from "@/types/cloudinary";
+import type { 
+  CloudinaryUploadResult, 
+  QuoteImageResource, 
+  MediaLibraryItem 
+} from "@/types/cloudinary";
 import { MediaLibraryModal } from "@/components/media/media-library-modal";
 
 interface ImageGalleryProps {
@@ -48,6 +52,13 @@ export function ImageGallery({
           width: image.width,
           height: image.height,
           bytes: image.bytes,
+          // Add metadata for global library
+          folder: "quote-images",
+          isGlobal: true,
+          title: image.title,
+          description: image.description,
+          altText: image.altText,
+          usageCount: image.usageCount
         }
       });
     });
@@ -74,7 +85,15 @@ export function ImageGallery({
           </Button>
           <CloudinaryUploadWidget
             onUploadSuccess={handleUpload}
-            options={quoteUploadOptions}
+            options={{
+              ...quoteUploadOptions,
+              // Add options for global library
+              tags: ['quote-background'],
+              context: {
+                alt: 'Quote background',
+                isGlobal: 'true'
+              }
+            }}
             buttonText={uploading ? "Uploading..." : "Upload New"}
             disabled={disabled || uploading}
           />
