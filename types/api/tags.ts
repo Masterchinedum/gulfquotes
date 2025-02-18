@@ -28,8 +28,23 @@ export interface TagsListData {
 }
 
 // API Response Types
+export type TagResponse = ApiResponse<TagData>;
 export type TagsResponse = ApiResponse<TagsListData>;
-export type TagResponse = ApiResponse<Tag>;
+
+// Request Parameter Types
+export interface TagFilterParams {
+  search?: string;
+  orderBy?: TagSortField;
+  order?: SortOrder;
+}
+
+export interface TagPaginationParams {
+  page?: number;
+  limit?: number;
+}
+
+// Combined params type
+export interface ListTagsParams extends TagFilterParams, TagPaginationParams {}
 
 // Error Codes
 export type TagErrorCode =
@@ -38,4 +53,18 @@ export type TagErrorCode =
   | "VALIDATION_ERROR"
   | "DUPLICATE_TAG"
   | "NOT_FOUND"
-  | "INTERNAL_ERROR";
+  | "INTERNAL_ERROR"
+  | "BAD_REQUEST";
+
+// Sort options
+export type TagSortField = "name" | "createdAt" | "quoteCount";
+export type SortOrder = "asc" | "desc";
+
+// Tag operation types
+export interface AddTagsToQuoteInput {
+  tagIds: string[];
+}
+
+export interface RemoveTagsFromQuoteInput {
+  tagIds: string[];
+}
