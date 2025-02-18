@@ -64,13 +64,11 @@ export default async function EditQuotePage({
               width: true,
               height: true,
               bytes: true,
-              folder: true,
-              created_at: true,
-              secure_url: true,
-              resource_type: true,
-              updatedAt: true,
               createdAt: true,
-              quoteId: true
+              updatedAt: true,
+              quoteId: true,
+              // Remove fields that don't exist in the schema:
+              // folder, created_at, secure_url, resource_type
             }
           }
         }
@@ -106,7 +104,15 @@ export default async function EditQuotePage({
       ...quote,
       backgroundImage: quote.backgroundImage || null, // Handle null case explicitly
       images: quote.images?.map(img => ({
-        ...img,
+        public_id: img.publicId,
+        secure_url: img.url,
+        format: img.format || 'webp',
+        width: img.width || 1200,
+        height: img.height || 630,
+        resource_type: 'image' as const,
+        created_at: img.createdAt.toISOString(),
+        bytes: img.bytes || 0,
+        folder: 'quote-images',
         context: {
           alt: img.altText || undefined,
           isGlobal: img.isGlobal || false
