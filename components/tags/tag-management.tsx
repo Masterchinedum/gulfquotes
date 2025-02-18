@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"; // Add useEffect import
 import { toast } from "sonner";
+import { X } from "lucide-react"; // Add this import
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tag } from "@prisma/client";
@@ -114,7 +115,7 @@ export function TagManagement({ onSuccess }: TagManagementProps) {
                 className="ml-2 h-4 w-4 p-0 opacity-0 group-hover:opacity-100"
                 onClick={() => handleDeleteTag(tag.id)}
               >
-                <Icons.close className="h-3 w-3" />
+                <X className="h-3 w-3" /> {/* Changed from Icons.close to X */}
                 <span className="sr-only">Delete tag</span>
               </Button>
             </Badge>
