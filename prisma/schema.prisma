@@ -25,7 +25,7 @@ model User {
   accounts              Account[]
   TwoFactorConfirmation TwoFactorConfirmation?
   quotes                Quote[]                @relation("QuoteAuthor")
-  userProfile           UserProfile?           // Add this relation
+  userProfile           UserProfile? 
 
   @@map("users")
 }
@@ -94,14 +94,14 @@ model Quote {
   id               String         @id @default(cuid())
   content          String         @db.Text
   slug             String         @unique
-  backgroundImage  String?        // For the currently selected background
+  backgroundImage  String? 
   author           User           @relation("QuoteAuthor", fields: [authorId], references: [id])
   authorId         String
   category         Category       @relation(fields: [categoryId], references: [id])
   categoryId       String
   authorProfile    AuthorProfile  @relation(fields: [authorProfileId], references: [id])
   authorProfileId  String
-  images           QuoteImage[]   // For storing all available backgrounds
+  images           QuoteImage[] 
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
@@ -130,13 +130,12 @@ model AuthorProfile {
   slug       String        @unique
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
-  images     AuthorImage[] // Add this relation
+  images     AuthorImage[]
   quotes     Quote[]
 
   @@map("author_profiles")
 }
 
-// New model for author images
 model AuthorImage {
   id             String       @id @default(cuid())
   url            String
@@ -148,49 +147,41 @@ model AuthorImage {
   @@map("author_images")
 }
 
-// New model for quote images
 model QuoteImage {
   id          String   @id @default(cuid())
   url         String
-  publicId    String   // Cloudinary public ID
-  isActive    Boolean  @default(false)  // Track if this is the current background  
-  // New fields for global image library
-  isGlobal    Boolean  @default(false)  // Track if image is available in global library
-  title       String?  // Optional title for the image
-  description String?  @db.Text  // Optional description
-  altText     String?  // Alternative text for accessibility
-  usageCount  Int      @default(0)  // Track number of quotes using this image
-  format      String?  // Add format field
-  width       Int?     // Add width field
-  height      Int?     // Add height field
-  bytes       Int?     // Add bytes field
-  
-  // Existing fields
+  publicId    String  
+  isActive    Boolean  @default(false) 
+  isGlobal    Boolean  @default(false) 
+  title       String? 
+  description String?  @db.Text 
+  altText     String? 
+  usageCount  Int      @default(0)  
+  format      String?
+  width       Int?
+  height      Int?
+  bytes       Int? 
   quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
   quoteId     String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@map("quote_images")
-  @@index([isGlobal]) // Add index for faster queries on global images
+  @@index([isGlobal])
 }
 
-// New UserProfile model
 model UserProfile {
   id          String    @id @default(cuid())
   username    String?   @unique
   bio         String?   @db.Text
-  slug        String    @unique @default("")  // We'll set this in a createMiddleware
+  slug        String    @unique @default("")
   website     String?
   location    String?
-  // Social links
   twitter     String?
   github      String?
   linkedin    String?
-  // Timestamps
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  // Relation to User
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String    @unique
 
