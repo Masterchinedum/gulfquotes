@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import db from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
 import { createTagSchema, updateTagSchema } from "@/schemas/tag";
-import type { Tag } from "@prisma/client";
+import type { Tag, Prisma } from "@prisma/client"; // Add Prisma import here
 import type { ListTagsParams } from "@/types/api/tags";
 
 // Error handling function
@@ -63,10 +63,10 @@ export async function searchTags(params: ListTagsParams) {
     const skip = (page - 1) * limit;
 
     // Build where condition for search
-    const where = search ? {
+    const where: Prisma.TagWhereInput = search ? {
       OR: [
-        { name: { contains: search, mode: 'insensitive' as Prisma.QueryMode } },
-        { slug: { contains: search, mode: 'insensitive' as Prisma.QueryMode } }
+        { name: { contains: search, mode: 'insensitive' } },
+        { slug: { contains: search, mode: 'insensitive' } }
       ]
     } : {};
 
@@ -118,6 +118,11 @@ export async function updateTag(id: string, data: { name: string }): Promise<Tag
     const validatedData = updateTagSchema.safeParse(data);
     if (!validatedData.success) {
       throw new Error(validatedData.error.errors[0].message);
+    }
+
+    // Add null check for name
+    if (!validatedData.data.name) {
+      throw new Error("Tag name is required");
     }
 
     const normalizedName = validatedData.data.name.trim();
