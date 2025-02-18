@@ -6,7 +6,6 @@ import { Check, ChevronsUpDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
-  Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
@@ -23,6 +22,7 @@ import { createTag, searchTags } from "@/actions/tag";
 import { toast } from "sonner";
 import { Tag } from "@prisma/client";
 import { useDebouncedCallback } from "use-debounce";
+import { Command as CommandPrimitive } from "cmdk";
 
 interface TagInputProps {
   selectedTags: Tag[];
@@ -133,7 +133,7 @@ export function TagInput({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-full p-0">
-          <Command
+          <CommandPrimitive
             className="flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground"
             shouldFilter={false} // Add this to handle filtering manually
           >
@@ -179,7 +179,7 @@ export function TagInput({
                 ))}
               </CommandGroup>
             </CommandList>
-          </Command>
+          </CommandPrimitive>
         </PopoverContent>
       </Popover>
 
