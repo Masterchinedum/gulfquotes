@@ -11,6 +11,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "@/components/ui/command";
 import {
   Popover,
@@ -132,47 +133,52 @@ export function TagInput({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-full p-0">
-          <Command>
-            <CommandInput
-              placeholder={loading ? "Searching..." : "Search tags..."}
-              value={searchQuery}
-              onValueChange={handleSearchChange}
-              className={loading ? "opacity-70" : ""}
-              disabled={loading}
-            />
-            <CommandEmpty>
-              {loading ? (
-                <p className="p-2 text-sm text-muted-foreground text-center">
-                  Searching...
-                </p>
-              ) : searchQuery && (
-                <button
-                  className="p-2 text-sm text-muted-foreground hover:bg-accent w-full text-left"
-                  onClick={() => handleSelect(searchQuery)}
-                >
-                  Create tag &quot;{searchQuery}&quot;
-                </button>
-              )}
-            </CommandEmpty>
-            <CommandGroup>
-              {tags.map((tag) => (
-                <CommandItem
-                  key={tag.id}
-                  value={tag.name}
-                  onSelect={() => handleSelect(tag.name)}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      selectedTags.some(t => t.id === tag.id) 
-                        ? "opacity-100" 
-                        : "opacity-0"
-                    )}
-                  />
-                  {tag.name}
-                </CommandItem>
-              ))}
-            </CommandGroup>
+          <Command
+            className="flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground"
+            shouldFilter={false} // Add this to handle filtering manually
+          >
+            <CommandList>
+              <CommandInput
+                placeholder={loading ? "Searching..." : "Search tags..."}
+                value={searchQuery}
+                onValueChange={handleSearchChange}
+                className={loading ? "opacity-70" : ""}
+                disabled={loading}
+              />
+              <CommandEmpty>
+                {loading ? (
+                  <p className="p-2 text-sm text-muted-foreground text-center">
+                    Searching...
+                  </p>
+                ) : searchQuery && (
+                  <button
+                    className="p-2 text-sm text-muted-foreground hover:bg-accent w-full text-left"
+                    onClick={() => handleSelect(searchQuery)}
+                  >
+                    Create tag &quot;{searchQuery}&quot;
+                  </button>
+                )}
+              </CommandEmpty>
+              <CommandGroup>
+                {tags.map((tag) => (
+                  <CommandItem
+                    key={tag.id}
+                    value={tag.name}
+                    onSelect={() => handleSelect(tag.name)}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        selectedTags.some(t => t.id === tag.id) 
+                          ? "opacity-100" 
+                          : "opacity-0"
+                      )}
+                    />
+                    {tag.name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
           </Command>
         </PopoverContent>
       </Popover>
