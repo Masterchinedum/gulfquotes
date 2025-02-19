@@ -96,10 +96,7 @@ export async function validateUpdateData(
     }
   }
 
-  if (data.slug) {
-    if (data.slug === existingQuote.slug) {
-      throw new AppError("New slug is identical to existing slug", "NO_CHANGES", 400);
-    }
+  if (data.slug && data.slug !== existingQuote.slug) {
     await validateSlug(data.slug, id);
   }
 
