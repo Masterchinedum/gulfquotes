@@ -224,9 +224,9 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
         bytes: image.bytes || 0,
         folder: 'quote-images',
         context: {
-          alt: image.altText,
+          alt: image.altText || undefined, // Convert null to undefined
           quoteId: quote.id,
-          isGlobal: image.isGlobal
+          isGlobal: image.isGlobal || false // Add fallback for isGlobal
         }
       };
 
