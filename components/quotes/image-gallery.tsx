@@ -21,6 +21,7 @@ interface ImageGalleryProps {
   onUpload: (result: CloudinaryUploadResult) => void;
   onDelete?: (publicId: string) => void;
   disabled?: boolean;
+  onMediaLibraryOpen?: () => void; // Add this optional prop
 }
 
 export function ImageGallery({
@@ -29,9 +30,9 @@ export function ImageGallery({
   onSelect,
   onUpload,
   onDelete,
-  disabled = false
+  disabled = false,
+  onMediaLibraryOpen // Add prop to destructuring
 }: ImageGalleryProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   const handleUpload = (result: CloudinaryUploadResult) => {
@@ -88,6 +89,7 @@ export function ImageGallery({
     setIsModalOpen(false);
   };
 
+  // Replace isModalOpen state with onMediaLibraryOpen prop
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -98,15 +100,17 @@ export function ImageGallery({
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setIsModalOpen(true)}
-            disabled={disabled}
-          >
-            <ImagePlus className="h-4 w-4 mr-2" />
-            Browse Library
-          </Button>
+          {onMediaLibraryOpen && ( // Conditionally render if prop exists
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onMediaLibraryOpen}
+              disabled={disabled}
+            >
+              <ImagePlus className="h-4 w-4 mr-2" />
+              Browse Library
+            </Button>
+          )}
           <CloudinaryUploadWidget
             onUploadSuccess={handleUpload}
             options={{
