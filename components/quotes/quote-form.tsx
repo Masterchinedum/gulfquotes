@@ -17,13 +17,11 @@ import { Icons } from "@/components/ui/icons";
 import { slugify } from "@/lib/utils";
 import { ImageGallery } from "@/components/quotes/image-gallery";
 import type { CloudinaryUploadResult, QuoteImageResource } from "@/types/cloudinary";
+import type { GalleryItem } from "@/types/gallery"; // Add this import
 import { CldImage } from "next-cloudinary";
-import type { MediaLibraryItem } from "@/types/cloudinary";
-import { MediaLibraryModal } from "@/components/media/media-library-modal";
 import { TagInput } from "@/components/forms/TagInput";
 import { TagManagementModal } from "@/components/forms/TagManagementModal";
 import { GalleryModal } from "@/components/gallery/GalleryModal";
-// Add ImagePlus import at the top
 import { ImagePlus } from "lucide-react";
 
 // Update interface to include tags
@@ -48,7 +46,6 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
   const [images, setImages] = useState<QuoteImageResource[]>(initialData?.images || []);
   const [selectedImage, setSelectedImage] = useState<string | null>(initialData?.backgroundImage || null);
   const [isUploading, setIsUploading] = useState(false);
-  const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
@@ -220,39 +217,6 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
         variant: "destructive",
       });
     }
-  };
-
-  // Add handler for media library selection
-  const handleMediaLibrarySelect = (selectedImages: MediaLibraryItem[]) => {
-    // Process each selected image and add to images state
-    selectedImages.forEach(image => {
-      const newImage: QuoteImageResource = {
-        public_id: image.public_id,
-        secure_url: image.secure_url,
-        format: image.format,
-        width: image.width,
-        height: image.height,
-        resource_type: 'image',
-        created_at: image.created_at,
-        bytes: image.bytes,
-        folder: image.folder,
-        context: {
-          alt: image.altText,
-          quoteId: undefined,
-          isGlobal: true
-        }
-      };
-
-      setImages(prev => [...prev, newImage]);
-
-      // Set as selected image if it's the first one
-      if (images.length === 0) {
-        setSelectedImage(newImage.secure_url);
-        form.setValue('backgroundImage', newImage.secure_url);
-      }
-    });
-
-    setIsMediaLibraryOpen(false);
   };
 
   // Add gallery selection handler
@@ -505,17 +469,6 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
           currentlySelected={images.map(img => img.public_id)}
           title="Quote Background Gallery"
           description="Select images from the gallery to use as quote backgrounds"
-        />
-
-        {/* Add MediaLibraryModal */}
-        <MediaLibraryModal
-          isOpen={isMediaLibraryOpen}
-          onClose={() => setIsMediaLibraryOpen(false)}
-          onSelect={handleMediaLibrarySelect}
-          maxSelectable={30 - images.length}
-          currentlySelected={images.map(img => img.public_id)}
-          title="Quote Background Library"
-          description="Select images from your library or upload new ones to use as quote backgrounds"
         />
 
         {selectedImage && (
