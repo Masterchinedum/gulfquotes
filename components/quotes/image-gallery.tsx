@@ -19,9 +19,8 @@ interface ImageGalleryProps {
   selectedImage?: string | null;
   onSelect: (imageUrl: string) => void;
   onUpload: (result: CloudinaryUploadResult) => void;
-  onDelete?: (imageId: string) => void;
+  onDelete?: (publicId: string) => void;
   disabled?: boolean;
-  onMediaLibraryOpen: () => void;
 }
 
 export function ImageGallery({
