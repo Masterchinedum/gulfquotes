@@ -42,6 +42,9 @@ export function GalleryUpload({ onUploadComplete, disabled = false }: GalleryUpl
     setUploading(false);
     if (result.event !== "success" || !result.info) return;
 
+    // Type guard for CloudinaryUploadWidgetInfo
+    if (typeof result.info === 'string') return;
+
     const info = result.info;
     form.setValue("url", info.secure_url);
     form.setValue("publicId", info.public_id);
@@ -62,7 +65,6 @@ export function GalleryUpload({ onUploadComplete, disabled = false }: GalleryUpl
       <div className="flex justify-center p-6 border-2 border-dashed rounded-lg">
         <CloudinaryUploadWidget
           onUploadSuccess={handleUploadSuccess}
-          onOpen={() => setUploading(true)}
           options={{
             ...cloudinaryConfig.limits.gallery,
             tags: ['gallery'],
@@ -74,7 +76,10 @@ export function GalleryUpload({ onUploadComplete, disabled = false }: GalleryUpl
             <Button
               type="button"
               variant="outline"
-              onClick={() => open()}
+              onClick={() => {
+                setUploading(true); // Move the uploading state here
+                open();
+              }}
               disabled={disabled || uploading}
               className="w-full max-w-xs"
             >
