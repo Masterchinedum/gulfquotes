@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { updateQuoteSchema } from "@/schemas/quote";
-import { quoteService } from "@/lib/services/quote.service";
+import { quoteService } from "@/lib/services/quote/quote.service";
 import { AppError } from "@/lib/api-error";
 import type { QuoteResponse, UpdateQuoteResponse, QuoteErrorCode } from "@/types/api/quotes";
 import { formatZodError } from "@/lib/api-error";

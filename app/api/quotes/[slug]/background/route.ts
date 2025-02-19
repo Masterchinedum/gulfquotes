@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { quoteService } from "@/lib/services/quote.service";
+import { quoteService } from "@/lib/services/quote/quote.service";
 import { AppError } from "@/lib/api-error";
 import type { QuoteResponse, QuoteErrorCode } from "@/types/api/quotes";
 

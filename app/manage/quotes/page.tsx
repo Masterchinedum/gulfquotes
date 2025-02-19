@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { Shell } from "@/components/shells/shell";
 import { QuoteTable } from "@/components/quotes/quote-table";
-import { quoteService } from "@/lib/services/quote.service";
+import { quoteService } from "@/lib/services/quote/quote.service";
 import { Button } from "@/components/ui/button";
 import { Suspense } from "react";
 

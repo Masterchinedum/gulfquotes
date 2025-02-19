@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { createQuoteSchema } from "@/schemas/quote";
 import { CreateQuoteResponse, QuotesResponse, QuoteErrorCode } from "@/types/api/quotes";
 import { formatZodError, AppError } from "@/lib/api-error";
-import { quoteService } from "@/lib/services/quote.service";
+import { quoteService } from "@/lib/services/quote/quote.service";
 import type { QuoteImageData } from "@/types/cloudinary"; // Add this import
 
 export async function POST(req: Request): Promise<NextResponse<CreateQuoteResponse>> {
