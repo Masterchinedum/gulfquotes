@@ -1,6 +1,6 @@
 // types/gallery.ts
 import { Gallery } from "@prisma/client";
-import { BaseErrorCode } from "./api/quotes"; // Change import to use BaseErrorCode instead
+import { BaseErrorCode, AppErrorCode } from "./api/quotes"; // Add AppErrorCode import
 
 // Step 1: Base Types
 export interface GalleryItem extends Gallery {
@@ -22,11 +22,16 @@ export type GalleryErrorCode =
   | "GALLERY_IMAGE_DELETE_FAILED"
   | "GALLERY_CLOUDINARY_ERROR"
   | "GALLERY_NOT_FOUND"
-  | "GALLERY_ALREADY_EXISTS";
+  | "GALLERY_ALREADY_EXISTS"
+  | "GALLERY_CREATION_FAILED"
+  | "GALLERY_UPDATE_FAILED"
+  | "GALLERY_DELETE_FAILED"
+  | "GALLERY_FETCH_FAILED"
+  | "GALLERY_QUOTE_OPERATION_FAILED";
 
 // Gallery-specific ApiError type
 export interface GalleryApiError {
-  code: GalleryErrorCode;
+  code: AppErrorCode; // Changed from GalleryErrorCode to AppErrorCode
   message: string;
   details?: Record<string, string[]>;
 }
@@ -40,6 +45,7 @@ export type GalleryListResponse = ApiResponse<{
   page: number;
   limit: number;
 }>;
+export type GalleryDeleteResponse = ApiResponse<null>;
 
 // Input Types (unchanged)
 export interface GalleryCreateInput {

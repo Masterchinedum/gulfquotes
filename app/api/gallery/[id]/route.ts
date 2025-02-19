@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { galleryService } from "@/lib/services/gallery.service";
 import { AppError } from "@/lib/api-error";
 import { updateGallerySchema } from "@/schemas/gallery";
-import type { GalleryResponse } from "@/types/gallery";
+import type { GalleryResponse, GalleryApiError, GalleryDeleteResponse } from "@/types/gallery";
 
 export async function GET(
   req: Request
@@ -38,9 +38,24 @@ export async function GET(
     return NextResponse.json({ data: gallery });
 
   } catch (error) {
+    if (error instanceof AppError) {
+      const galleryError: GalleryApiError = {
+        code: error.code,
+        message: error.message
+      };
+      return NextResponse.json(
+        { error: galleryError },
+        { status: error.statusCode }
+      );
+    }
     console.error("[GALLERY_GET_BY_ID]", error);
     return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
+      { 
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "Internal server error"
+        } 
+      },
       { status: 500 }
     );
   }
@@ -88,14 +103,23 @@ export async function PATCH(
 
   } catch (error) {
     if (error instanceof AppError) {
+      const galleryError: GalleryApiError = {
+        code: error.code,
+        message: error.message
+      };
       return NextResponse.json(
-        { error: { code: error.code, message: error.message } },
+        { error: galleryError },
         { status: error.statusCode }
       );
     }
     console.error("[GALLERY_PATCH]", error);
     return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
+      { 
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "Internal server error"
+        } 
+      },
       { status: 500 }
     );
   }
@@ -103,7 +127,7 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request
-): Promise<NextResponse<GalleryResponse>> {
+): Promise<NextResponse<GalleryDeleteResponse>> {
   try {
     const session = await auth();
     if (!session?.user) {
@@ -113,7 +137,6 @@ export async function DELETE(
       );
     }
 
-    // Extract id from URL
     const id = req.url.split('/gallery/')[1];
     if (!id) {
       return NextResponse.json(
@@ -127,14 +150,23 @@ export async function DELETE(
 
   } catch (error) {
     if (error instanceof AppError) {
+      const galleryError: GalleryApiError = {
+        code: error.code,
+        message: error.message
+      };
       return NextResponse.json(
-        { error: { code: error.code, message: error.message } },
+        { error: galleryError },
         { status: error.statusCode }
       );
     }
     console.error("[GALLERY_DELETE]", error);
     return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
+      { 
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "Internal server error"
+        } 
+      },
       { status: 500 }
     );
   }
