@@ -42,12 +42,16 @@ export function GalleryGrid({
 
       const data = await response.json();
       
-      setItems(prev => reset ? data.items : [...prev, ...data.items]);
-      setHasMore(data.hasMore);
+      // Ensure data.items is an array
+      const newItems = Array.isArray(data.items) ? data.items : [];
+      
+      setItems(prev => reset ? newItems : [...prev, ...newItems]);
+      setHasMore(!!data.hasMore);
       if (reset) setPage(1);
       
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
+      setItems([]); // Reset items on error
     } finally {
       setLoading(false);
     }
@@ -90,7 +94,7 @@ export function GalleryGrid({
     <div className="space-y-4">
       {/* Image grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {items.map((item) => (
+        {Array.isArray(items) && items.map((item) => (
           <div
             key={item.publicId}
             className={cn(
