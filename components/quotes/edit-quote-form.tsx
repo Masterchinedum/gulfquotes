@@ -1,4 +1,3 @@
-// components/quotes/edit-quote-form.tsx
 "use client";
 
 import { useState } from "react";
@@ -23,6 +22,7 @@ import type { MediaLibraryItem } from "@/types/cloudinary";
 import { MediaLibraryModal } from "@/components/media/media-library-modal";
 import { TagInput } from "@/components/forms/TagInput";
 import { TagManagementModal } from "@/components/forms/TagManagementModal";
+import { GalleryModal } from "@/components/gallery/GalleryModal";
 
 interface EditQuoteFormProps {
   quote: Quote & {
@@ -47,6 +47,7 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
   const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
   const [selectedTags, setSelectedTags] = useState<Tag[]>(quote.tags || []);
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   
   const form = useForm<UpdateQuoteInput>({
     resolver: zodResolver(updateQuoteSchema),
@@ -241,6 +242,36 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
     setIsMediaLibraryOpen(false);
   };
 
+  // Handle gallery selection
+  const handleGallerySelect = (selectedImages: GalleryItem[]) => {
+    selectedImages.forEach(image => {
+      const newImage: QuoteImageResource = {
+        public_id: image.publicId,
+        secure_url: image.url,
+        format: image.format || 'webp',
+        width: image.width || 1200,
+        height: image.height || 630,
+        resource_type: 'image',
+        created_at: new Date().toISOString(),
+        bytes: image.bytes || 0,
+        folder: 'quote-images',
+        context: {
+          alt: image.altText,
+          quoteId: quote.id,
+          isGlobal: image.isGlobal
+        }
+      };
+
+      setImages(prev => [...prev, newImage]);
+
+      // Set as selected image if it's the first one
+      if (images.length === 0) {
+        setSelectedImage(newImage.secure_url);
+        form.setValue('backgroundImage', newImage.secure_url);
+      }
+    });
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -402,41 +433,51 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
 
         <div className="space-y-4">
           <FormLabel>Quote Background</FormLabel>
-          <ImageGallery
-            images={images}
-            selectedImage={selectedImage}
-            onSelect={handleImageSelect}
-            onUpload={handleImageUpload}
-            onDelete={handleImageDelete}
-            disabled={isSubmitting || isUploading}
-            onMediaLibraryOpen={() => setIsMediaLibraryOpen(true)}
-          />
-          
-          <MediaLibraryModal
-            isOpen={isMediaLibraryOpen}
-            onClose={() => setIsMediaLibraryOpen(false)}
-            onSelect={handleMediaLibrarySelect}
-            maxSelectable={30 - images.length}
-            currentlySelected={images.map(img => img.public_id)}
-            title="Quote Background Library"
-            description="Select images from your library or upload new ones to use as quote backgrounds"
-          />
-        
-          {selectedImage && (
-            <div className="mt-4">
-              <h4 className="text-sm font-medium mb-2">Selected Background</h4>
-              <div className="relative aspect-[1.91/1] w-full max-w-xl mx-auto overflow-hidden rounded-lg border">
-                <CldImage
-                  src={selectedImage}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  alt="Selected background"
-                  className="object-cover"
-                />
-              </div>
-            </div>
-          )}
+          <div className="flex items-center justify-between gap-4">
+            <ImageGallery
+              images={images}
+              selectedImage={selectedImage}
+              onSelect={handleImageSelect}
+              onUpload={handleImageUpload}
+              onDelete={handleImageDelete}
+              disabled={isSubmitting || isUploading}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsGalleryOpen(true)}
+              disabled={isSubmitting}
+            >
+              <ImagePlus className="h-4 w-4 mr-2" />
+              Browse Gallery
+            </Button>
+          </div>
         </div>
+
+        <GalleryModal
+          isOpen={isGalleryOpen}
+          onClose={() => setIsGalleryOpen(false)}
+          onSelect={handleGallerySelect}
+          maxSelectable={30 - images.length}
+          currentlySelected={images.map(img => img.public_id)}
+          title="Quote Background Gallery"
+          description="Select images from the gallery to use as quote backgrounds"
+        />
+
+        {selectedImage && (
+          <div className="mt-4">
+            <h4 className="text-sm font-medium mb-2">Selected Background</h4>
+            <div className="relative aspect-[1.91/1] w-full max-w-xl mx-auto overflow-hidden rounded-lg border">
+              <CldImage
+                src={selectedImage}
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                alt="Selected background"
+                className="object-cover"
+              />
+            </div>
+          </div>
+        )}
 
         <div className="flex justify-end gap-4">
           <Button
