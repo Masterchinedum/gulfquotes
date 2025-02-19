@@ -103,6 +103,7 @@ model Quote {
   authorProfileId  String
   images           QuoteImage[] 
   tags             Tag[]          @relation("QuoteToTag")
+  gallery          QuoteToGallery[]
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
@@ -199,4 +200,37 @@ model Tag {
   updatedAt DateTime @updatedAt
 
   @@map("tags")
+}
+
+model Gallery {
+  id          String    @id @default(cuid())
+  url         String
+  publicId    String    @unique
+  title       String?
+  description String?   @db.Text
+  altText     String?
+  format      String?
+  width       Int?
+  height      Int?
+  bytes       Int?
+  isGlobal    Boolean   @default(true)
+  usageCount  Int       @default(0)
+  quotes      QuoteToGallery[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("galleries")
+}
+
+model QuoteToGallery {
+  id         String   @id @default(cuid())
+  quote      Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quoteId    String
+  gallery    Gallery  @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  galleryId  String
+  isActive   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@unique([quoteId, galleryId])
+  @@map("quote_to_galleries")
 }
