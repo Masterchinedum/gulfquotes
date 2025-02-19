@@ -16,7 +16,8 @@ import { Icons } from "@/components/ui/icons";
 import { slugify } from "@/lib/utils";
 import type { UpdateQuoteInput } from "@/schemas/quote";
 import { ImageGallery } from "@/components/quotes/image-gallery";
-import type { CloudinaryUploadResult, QuoteImageResource, GalleryItem } from "@/types/cloudinary";
+import type { CloudinaryUploadResult, QuoteImageResource } from "@/types/cloudinary";
+import type { GalleryItem } from "@/types/gallery"; // Change this import
 import { CldImage } from "next-cloudinary";
 import { TagInput } from "@/components/forms/TagInput";
 import { TagManagementModal } from "@/components/forms/TagManagementModal";
