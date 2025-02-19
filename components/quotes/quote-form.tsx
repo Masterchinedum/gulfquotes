@@ -23,6 +23,8 @@ import { MediaLibraryModal } from "@/components/media/media-library-modal";
 import { TagInput } from "@/components/forms/TagInput";
 import { TagManagementModal } from "@/components/forms/TagManagementModal";
 import { GalleryModal } from "@/components/gallery/GalleryModal";
+// Add ImagePlus import at the top
+import { ImagePlus } from "lucide-react";
 
 // Update interface to include tags
 interface QuoteFormProps {

@@ -16,13 +16,12 @@ import { Icons } from "@/components/ui/icons";
 import { slugify } from "@/lib/utils";
 import type { UpdateQuoteInput } from "@/schemas/quote";
 import { ImageGallery } from "@/components/quotes/image-gallery";
-import type { CloudinaryUploadResult, QuoteImageResource } from "@/types/cloudinary";
+import type { CloudinaryUploadResult, QuoteImageResource, GalleryItem } from "@/types/cloudinary";
 import { CldImage } from "next-cloudinary";
-import type { MediaLibraryItem } from "@/types/cloudinary";
-import { MediaLibraryModal } from "@/components/media/media-library-modal";
 import { TagInput } from "@/components/forms/TagInput";
 import { TagManagementModal } from "@/components/forms/TagManagementModal";
 import { GalleryModal } from "@/components/gallery/GalleryModal";
+import { ImagePlus } from "lucide-react"; // Add this import
 
 interface EditQuoteFormProps {
   quote: Quote & {
@@ -44,7 +43,6 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
   const [images, setImages] = useState<QuoteImageResource[]>(quote.images || []);
   const [selectedImage, setSelectedImage] = useState<string | null>(quote.backgroundImage || null);
   const [isUploading, setIsUploading] = useState(false);
-  const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
   const [selectedTags, setSelectedTags] = useState<Tag[]>(quote.tags || []);
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -209,37 +207,6 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
         variant: "destructive",
       });
     }
-  };
-
-  // Handle media library selection
-  const handleMediaLibrarySelect = (selectedImages: MediaLibraryItem[]) => {
-    selectedImages.forEach(image => {
-      const newImage: QuoteImageResource = {
-        public_id: image.public_id,
-        secure_url: image.secure_url,
-        format: image.format,
-        width: image.width,
-        height: image.height,
-        resource_type: 'image',
-        created_at: image.created_at,
-        bytes: image.bytes,
-        folder: image.folder,
-        context: {
-          alt: image.altText,
-          quoteId: undefined,
-          isGlobal: true
-        }
-      };
-
-      setImages(prev => [...prev, newImage]);
-
-      if (images.length === 0) {
-        setSelectedImage(newImage.secure_url);
-        form.setValue('backgroundImage', newImage.secure_url);
-      }
-    });
-
-    setIsMediaLibraryOpen(false);
   };
 
   // Handle gallery selection
