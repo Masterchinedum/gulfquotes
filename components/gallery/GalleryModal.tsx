@@ -9,12 +9,13 @@ import {
 } from "@/components/ui/dialog";
 import { CloudinaryUploadWidget } from "@/components/ui/cloudinary-upload-widget";
 import { Input } from "@/components/ui/input";
-// import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { GalleryGrid } from "./GalleryGrid";
 import type { GalleryItem } from "@/types/gallery";
 import { cloudinaryConfig } from "@/lib/cloudinary";
 import type { CloudinaryUploadResult } from "@/types/cloudinary";
+import { Loader2, ImagePlus } from "lucide-react";
 
 interface GalleryModalProps {
   isOpen: boolean;
@@ -68,15 +69,37 @@ export function GalleryModal({
           />
           <CloudinaryUploadWidget
             onUploadSuccess={handleUploadSuccess}
-            onOpen={() => setUploading(true)} // Add this to set uploading state when upload starts
             options={{
               ...cloudinaryConfig.limits.gallery,
               folder: 'gallery',
               tags: ['gallery'],
             }}
             disabled={uploading}
-            buttonText={uploading ? "Uploading..." : "Upload New"}
-          />
+          >
+            {({ open }) => (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setUploading(true);
+                  open();
+                }}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <ImagePlus className="h-4 w-4 mr-2" />
+                    Upload New
+                  </>
+                )}
+              </Button>
+            )}
+          </CloudinaryUploadWidget>
         </div>
 
         <div className="flex-1 overflow-y-auto">

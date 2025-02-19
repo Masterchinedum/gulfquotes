@@ -24,32 +24,37 @@ export const cloudinaryConfig: CloudinaryConfig = {
   folders: {
     profiles: 'user-profiles',
     authors: 'author-profiles',
-    quotes: 'quote-images',    // Add quotes folder
+    quotes: 'quote-images',
+    gallery: 'gallery-images',
   },
   limits: {
-    maxFileSize: 7 * 1024 * 1024, // 7MB
+    maxFileSize: 7 * 1024 * 1024, // 7MB per file
     profiles: {
       maxFiles: 1,
-      allowedFormats: ['jpg', 'jpeg', 'png', 'webp'] as const,
+      allowedFormats: ['jpg', 'jpeg', 'png', 'webp'] as const
     },
     authors: {
       maxFiles: 5,
-      allowedFormats: ['jpg', 'jpeg', 'png', 'webp'] as const,
+      allowedFormats: ['jpg', 'jpeg', 'png', 'webp'] as const
     },
-    quotes: {              // Add quotes limits
-      maxFiles: 30,         // Increase to 30 images
-      allowedFormats: ['jpg', 'jpeg', 'png', 'webp'] as const,
+    quotes: {
+      maxFiles: 30,
+      allowedFormats: ['jpg', 'jpeg', 'png', 'webp'] as const
+    },
+    gallery: {
+      maxFiles: 10, // Maximum files per upload operation
+      allowedFormats: ['jpg', 'jpeg', 'png', 'webp'] as const
     }
   }
 } as const;
 
 // Helper function to get max files based on type
-export function getMaxFiles(type: 'profiles' | 'authors' | 'quotes'): number {
+export function getMaxFiles(type: 'profiles' | 'authors' | 'quotes' | 'gallery'): number {
   return cloudinaryConfig.limits[type].maxFiles;
 }
 
 // Helper function to get folder based on type
-export function getFolder(type: 'profiles' | 'authors' | 'quotes'): string {
+export function getFolder(type: 'profiles' | 'authors' | 'quotes' | 'gallery'): string {
   return cloudinaryConfig.folders[type];
 }
 
@@ -103,6 +108,15 @@ export const quoteUploadOptions: CloudinaryUploadOptions = {
   cropping: true,
   croppingAspectRatio: 1.91, // 1200:630 optimal for social sharing
   croppingShowDimensions: true,
+  showAdvancedOptions: false,
+} as const;
+
+// Add gallery-specific upload options
+export const galleryUploadOptions: CloudinaryUploadOptions = {
+  ...defaultUploadOptions,
+  maxFiles: getMaxFiles('gallery'), // 10 files per upload
+  folder: getFolder('gallery'),
+  clientAllowedFormats: [...cloudinaryConfig.limits.gallery.allowedFormats],
   showAdvancedOptions: false,
 } as const;
 

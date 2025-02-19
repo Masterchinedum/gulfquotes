@@ -65,11 +65,8 @@ export function GalleryUpload({ onUploadComplete, disabled = false }: GalleryUpl
           onOpen={() => setUploading(true)}
           options={{
             ...cloudinaryConfig.limits.gallery,
-            folder: 'gallery',
             tags: ['gallery'],
             sources: ['local', 'url', 'camera'],
-            showAdvancedOptions: false,
-            maxFiles: 1
           }}
           disabled={disabled || uploading}
         >

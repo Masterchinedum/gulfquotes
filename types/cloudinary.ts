@@ -84,6 +84,7 @@ export interface CloudinaryConfig {
     profiles: string;
     authors: string;
     quotes: string;    // Add this
+    gallery: string; // Add gallery folder
   };
   limits: {
     maxFileSize: number;
@@ -96,6 +97,10 @@ export interface CloudinaryConfig {
       allowedFormats: readonly string[];
     };
     quotes: {         // Add this
+      maxFiles: number;
+      allowedFormats: readonly string[];
+    };
+    gallery: { // Add gallery limits type
       maxFiles: number;
       allowedFormats: readonly string[];
     };
