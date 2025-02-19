@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { galleryService } from "@/lib/services/gallery.service";
 import { AppError } from "@/lib/api-error";
 import { createGallerySchema } from "@/schemas/gallery";
-import type { GalleryResponse, GalleryListResponse } from "@/types/gallery";
+import type { GalleryResponse, GalleryListResponse, GallerySortField, SortDirection } from "@/types/gallery";
 
 export async function GET(
   req: Request
@@ -30,16 +30,13 @@ export async function GET(
     const formats = searchParams.get("formats")?.split(",");
     
     // Sort
-    const sortField = (searchParams.get("sortField") || "createdAt");
-    const sortDirection = (searchParams.get("sortDirection") || "desc");
+    const sortField = searchParams.get("sortField") as GallerySortField || "createdAt";
+    const sortDirection = searchParams.get("sortDirection") as SortDirection || "desc";
 
     const result = await galleryService.list({
       page,
       limit,
-      sort: {
-        field: sortField as any,
-        direction: sortDirection as any
-      },
+      sort: { field: sortField, direction: sortDirection },
       filter: {
         search,
         isGlobal,
@@ -50,6 +47,12 @@ export async function GET(
     return NextResponse.json({ data: result });
 
   } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        { error: { code: error.code, message: error.message } },
+        { status: error.statusCode }
+      );
+    }
     console.error("[GALLERY_GET]", error);
     return NextResponse.json(
       { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
@@ -70,7 +73,6 @@ export async function POST(
       );
     }
 
-    // Validate input
     const body = await req.json();
     const validatedData = createGallerySchema.safeParse(body);
 
