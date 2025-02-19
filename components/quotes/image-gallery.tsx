@@ -10,7 +10,7 @@ import { quoteUploadOptions } from "@/lib/cloudinary";
 import type { 
   CloudinaryUploadResult, 
   QuoteImageResource, 
-  MediaLibraryItem 
+
 } from "@/types/cloudinary";
 
 interface ImageGalleryProps {
@@ -39,52 +39,6 @@ export function ImageGallery({
     onUpload(result);
   };
 
-  // Handle media library selection
-  const handleMediaLibrarySelect = (selectedImages: MediaLibraryItem[]) => {
-    // Process each selected image
-    selectedImages.forEach(image => {
-      onUpload({
-        event: "success",
-        info: {
-          // Required CloudinaryUploadWidgetInfo fields
-          public_id: image.public_id,
-          secure_url: image.secure_url,
-          original_filename: image.title || 'untitled',
-          asset_id: image.public_id,
-          version: 1,  // Changed to number
-          version_id: 1, // Changed to number
-          width: image.width,
-          height: image.height,
-          format: image.format,
-          resource_type: 'image',
-          created_at: image.created_at,
-          bytes: image.bytes,
-          folder: 'quote-images',
-          access_mode: 'public',
-          url: image.secure_url,
-          context: {
-            alt: image.altText,
-            isGlobal: 'true'
-          },
-          // Add required fields from CloudinaryUploadWidgetInfo
-          hook_execution: { data: {} },  // Changed to match expected type
-          id: image.public_id,
-          type: 'upload',
-          api_key: '',
-          delete_token: '',
-          etag: '',
-          placeholder: false,
-          tags: ['quote-background'],
-          path: image.secure_url,
-          thumbnail_url: image.secure_url,
-          signature: '',
-          metadata: {},
-          batchId: ''
-        }
-      });
-    });
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -95,7 +49,7 @@ export function ImageGallery({
           </p>
         </div>
         <div className="flex gap-2">
-          {onMediaLibraryOpen && ( // Conditionally render if prop exists
+          {onMediaLibraryOpen && (
             <Button
               type="button"
               variant="outline"
@@ -110,7 +64,6 @@ export function ImageGallery({
             onUploadSuccess={handleUpload}
             options={{
               ...quoteUploadOptions,
-              // Add options for global library
               tags: ['quote-background'],
               context: {
                 alt: 'Quote background',
