@@ -6,8 +6,7 @@ import { updateGallerySchema } from "@/schemas/gallery";
 import type { GalleryResponse } from "@/types/gallery";
 
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: Request
 ): Promise<NextResponse<GalleryResponse>> {
   try {
     const session = await auth();
@@ -18,7 +17,16 @@ export async function GET(
       );
     }
 
-    const gallery = await galleryService.getById(params.id);
+    // Extract id from URL
+    const id = req.url.split('/gallery/')[1];
+    if (!id) {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "Gallery ID is required" } },
+        { status: 400 }
+      );
+    }
+
+    const gallery = await galleryService.getById(id);
     
     if (!gallery) {
       return NextResponse.json(
@@ -39,8 +47,7 @@ export async function GET(
 }
 
 export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: Request
 ): Promise<NextResponse<GalleryResponse>> {
   try {
     const session = await auth();
@@ -48,6 +55,15 @@ export async function PATCH(
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
         { status: 401 }
+      );
+    }
+
+    // Extract id from URL
+    const id = req.url.split('/gallery/')[1];
+    if (!id) {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "Gallery ID is required" } },
+        { status: 400 }
       );
     }
 
@@ -67,7 +83,7 @@ export async function PATCH(
       );
     }
 
-    const gallery = await galleryService.update(params.id, validatedData.data);
+    const gallery = await galleryService.update(id, validatedData.data);
     return NextResponse.json({ data: gallery });
 
   } catch (error) {
@@ -86,8 +102,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: Request
 ): Promise<NextResponse<GalleryResponse>> {
   try {
     const session = await auth();
@@ -98,7 +113,16 @@ export async function DELETE(
       );
     }
 
-    await galleryService.delete(params.id);
+    // Extract id from URL
+    const id = req.url.split('/gallery/')[1];
+    if (!id) {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "Gallery ID is required" } },
+        { status: 400 }
+      );
+    }
+
+    await galleryService.delete(id);
     return NextResponse.json({ data: null });
 
   } catch (error) {
