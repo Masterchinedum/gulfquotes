@@ -23,8 +23,6 @@ import { TagInput } from "@/components/forms/TagInput";
 import { TagManagementModal } from "@/components/forms/TagManagementModal";
 import { GalleryModal } from "@/components/gallery/GalleryModal";
 import { ImagePlus } from "lucide-react"; // Add this import
-import { MediaLibraryModal } from "@/components/media/media-library-modal";
-import type { MediaLibraryItem } from "@/types/cloudinary";
 
 interface EditQuoteFormProps {
   quote: Quote & {
@@ -49,7 +47,6 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
   const [selectedTags, setSelectedTags] = useState<Tag[]>(quote.tags || []);
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
 
   const form = useForm<UpdateQuoteInput>({
     resolver: zodResolver(updateQuoteSchema),
@@ -243,36 +240,6 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
     });
   };
 
-  const handleMediaLibrarySelect = (selectedImages: MediaLibraryItem[]) => {
-    selectedImages.forEach(image => {
-      const newImage: QuoteImageResource = {
-        public_id: image.public_id,
-        secure_url: image.secure_url,
-        format: image.format,
-        width: image.width,
-        height: image.height,
-        resource_type: 'image',
-        created_at: image.created_at,
-        bytes: image.bytes,
-        folder: image.folder,
-        context: {
-          alt: image.altText,
-          quoteId: quote.id,
-          isGlobal: true
-        }
-      };
-
-      setImages(prev => [...prev, newImage]);
-
-      if (images.length === 0) {
-        setSelectedImage(newImage.secure_url);
-        form.setValue('backgroundImage', newImage.secure_url);
-      }
-    });
-
-    setIsMediaLibraryOpen(false);
-  };
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -442,7 +409,6 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
               onUpload={handleImageUpload}
               onDelete={handleImageDelete}
               disabled={isSubmitting || isUploading}
-              onMediaLibraryOpen={() => setIsMediaLibraryOpen(true)} // Add this prop
             />
             <Button
               type="button"
@@ -455,16 +421,6 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
             </Button>
           </div>
         </div>
-
-        <MediaLibraryModal
-          isOpen={isMediaLibraryOpen}
-          onClose={() => setIsMediaLibraryOpen(false)}
-          onSelect={handleMediaLibrarySelect}
-          maxSelectable={30 - images.length}
-          currentlySelected={images.map(img => img.public_id)}
-          title="Quote Background Library"
-          description="Select images from your library or upload new ones to use as quote backgrounds"
-        />
 
         <GalleryModal
           isOpen={isGalleryOpen}

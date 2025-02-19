@@ -4,7 +4,7 @@ import { useState } from "react";
 import { CldImage } from "next-cloudinary";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { X, Check, ImagePlus } from "lucide-react";
+import { X, Check } from "lucide-react";
 import { CloudinaryUploadWidget } from "@/components/ui/cloudinary-upload-widget";
 import { quoteUploadOptions } from "@/lib/cloudinary";
 import type { 
@@ -20,7 +20,6 @@ interface ImageGalleryProps {
   onUpload: (result: CloudinaryUploadResult) => void;
   onDelete?: (publicId: string) => void;
   disabled?: boolean;
-  onMediaLibraryOpen?: () => void;
 }
 
 export function ImageGallery({
@@ -30,7 +29,6 @@ export function ImageGallery({
   onUpload,
   onDelete,
   disabled = false,
-  onMediaLibraryOpen
 }: ImageGalleryProps) {
   const [uploading, setUploading] = useState(false);
 
@@ -49,17 +47,6 @@ export function ImageGallery({
           </p>
         </div>
         <div className="flex gap-2">
-          {onMediaLibraryOpen && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onMediaLibraryOpen}
-              disabled={disabled}
-            >
-              <ImagePlus className="h-4 w-4 mr-2" />
-              Browse Library
-            </Button>
-          )}
           <CloudinaryUploadWidget
             onUploadSuccess={handleUpload}
             options={{
