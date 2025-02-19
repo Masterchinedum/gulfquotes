@@ -12,7 +12,6 @@ import type {
   QuoteImageResource, 
   MediaLibraryItem 
 } from "@/types/cloudinary";
-import { MediaLibraryModal } from "@/components/media/media-library-modal";
 
 interface ImageGalleryProps {
   images: QuoteImageResource[];
@@ -21,7 +20,7 @@ interface ImageGalleryProps {
   onUpload: (result: CloudinaryUploadResult) => void;
   onDelete?: (publicId: string) => void;
   disabled?: boolean;
-  onMediaLibraryOpen?: () => void; // Add this optional prop
+  onMediaLibraryOpen?: () => void;
 }
 
 export function ImageGallery({
@@ -31,7 +30,7 @@ export function ImageGallery({
   onUpload,
   onDelete,
   disabled = false,
-  onMediaLibraryOpen // Add prop to destructuring
+  onMediaLibraryOpen
 }: ImageGalleryProps) {
   const [uploading, setUploading] = useState(false);
 
@@ -84,12 +83,8 @@ export function ImageGallery({
         }
       });
     });
-    
-    // Close modal after selection
-    setIsModalOpen(false);
   };
 
-  // Replace isModalOpen state with onMediaLibraryOpen prop
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -190,17 +185,6 @@ export function ImageGallery({
           </p>
         </div>
       )}
-
-      {/* Add the MediaLibraryModal */}
-      <MediaLibraryModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSelect={handleMediaLibrarySelect}
-        maxSelectable={30 - images.length}
-        currentlySelected={images.map(img => img.public_id)}
-        title="Quote Background Library"
-        description="Select images from your library or upload new ones to use as quote backgrounds"
-      />
     </div>
   );
 }
