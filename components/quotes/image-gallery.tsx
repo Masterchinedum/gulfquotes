@@ -9,8 +9,7 @@ import { CloudinaryUploadWidget } from "@/components/ui/cloudinary-upload-widget
 import { quoteUploadOptions } from "@/lib/cloudinary";
 import type { 
   CloudinaryUploadResult, 
-  QuoteImageResource, 
-
+  QuoteImageResource 
 } from "@/types/cloudinary";
 
 interface ImageGalleryProps {
@@ -46,21 +45,19 @@ export function ImageGallery({
             Select or upload images for your quote background
           </p>
         </div>
-        <div className="flex gap-2">
-          <CloudinaryUploadWidget
-            onUploadSuccess={handleUpload}
-            options={{
-              ...quoteUploadOptions,
-              tags: ['quote-background'],
-              context: {
-                alt: 'Quote background',
-                isGlobal: 'true'
-              }
-            }}
-            buttonText={uploading ? "Uploading..." : "Upload New"}
-            disabled={disabled || uploading}
-          />
-        </div>
+        <CloudinaryUploadWidget
+          onUploadSuccess={handleUpload}
+          options={{
+            ...quoteUploadOptions,
+            tags: ['quote-background'],
+            context: {
+              alt: 'Quote background',
+              isGlobal: 'true'
+            }
+          }}
+          buttonText={uploading ? "Uploading..." : "Upload New"}
+          disabled={disabled || uploading}
+        />
       </div>
 
       {/* Image Grid */}
