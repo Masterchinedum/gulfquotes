@@ -233,9 +233,9 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
         bytes: image.bytes || 0,
         folder: 'quote-images',
         context: {
-          alt: image.altText,
+          alt: image.altText || undefined, // Convert null to undefined
           quoteId: undefined,
-          isGlobal: image.isGlobal
+          isGlobal: image.isGlobal || false // Add fallback for isGlobal
         }
       };
 
