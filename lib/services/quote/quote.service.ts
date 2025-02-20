@@ -312,6 +312,55 @@ class QuoteServiceImpl implements QuoteService {
       throw new AppError("Failed to set background image", "GALLERY_QUOTE_OPERATION_FAILED", 500);
     }
   }
+
+  async setBackgroundImage(quoteId: string, imageUrl: string | null): Promise<Quote> {
+    try {
+      return await db.$transaction(async (tx) => {
+        // Reset all gallery associations to not active
+        await tx.quoteToGallery.updateMany({
+          where: { quoteId },
+          data: { isActive: false }
+        });
+
+        if (imageUrl) {
+          // Find the gallery item by URL
+          const gallery = await tx.gallery.findFirst({
+            where: { url: imageUrl }
+          });
+
+          if (!gallery) {
+            throw new AppError("Gallery image not found", "GALLERY_NOT_FOUND", 404);
+          }
+
+          // Set the selected image as active
+          await tx.quoteToGallery.update({
+            where: {
+              quoteId_galleryId: { quoteId, galleryId: gallery.id }
+            },
+            data: { isActive: true }
+          });
+        }
+
+        // Update quote's background image
+        return tx.quote.update({
+          where: { id: quoteId },
+          data: { backgroundImage: imageUrl },
+          include: {
+            category: true,
+            authorProfile: true,
+            gallery: {
+              include: {
+                gallery: true
+              }
+            }
+          }
+        });
+      });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError("Failed to set background image", "GALLERY_QUOTE_OPERATION_FAILED", 500);
+    }
+  }
 }
 
 export const quoteService = new QuoteServiceImpl();

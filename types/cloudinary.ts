@@ -4,7 +4,16 @@ import type {
   CloudinaryUploadWidgetInfo,
   CloudinaryUploadWidgetOptions 
 } from 'next-cloudinary';
-import type { AppErrorCode } from '@/types/api/quotes';
+
+// Add near the top of the file with other types
+export type MediaLibraryErrorCode = 
+  | "UNAUTHORIZED"
+  | "BAD_REQUEST"
+  | "INTERNAL_ERROR"
+  | "VALIDATION_ERROR"
+  | "FETCH_IMAGES_FAILED"
+  | "UPDATE_METADATA_FAILED"
+  | "DELETE_IMAGE_FAILED";
 
 // Base resource interface
 export interface CloudinaryResource {
@@ -176,10 +185,12 @@ export interface MediaLibrarySuccessResponse {
   limit: number;
 }
 
+// Update the MediaLibraryErrorResponse to use the new type
 export interface MediaLibraryErrorResponse {
   error: {
-    code: AppErrorCode;
+    code: MediaLibraryErrorCode;
     message: string;
+    details?: Record<string, string[]>;
   };
 }
 

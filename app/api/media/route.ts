@@ -6,14 +6,17 @@ import type {
   MediaLibraryResponse, 
   MediaLibrarySortField,
   SortDirection,
-  MediaLibraryItem 
+  MediaLibraryItem
 } from "@/types/cloudinary";
-import type { QuoteErrorCode } from "@/types/api/quotes";
-import type { QuoteImage, Quote, Prisma } from "@prisma/client";
+import type { Gallery, Quote, Prisma } from "@prisma/client";
 
 // Define the type for the database item including relations
-type QuoteImageWithRelations = QuoteImage & {
-  quote: Pick<Quote, 'id' | 'slug'>;
+type GalleryWithQuotes = Gallery & {
+  quotes: {
+    quoteId: string;
+    isActive: boolean;
+    quote: Pick<Quote, 'id' | 'slug'>;
+  }[];
 };
 
 // Helper function to build sort order with type safety
@@ -26,8 +29,9 @@ function buildSortOrder(field: MediaLibrarySortField, direction: SortDirection) 
 }
 
 // Helper to transform database items to MediaLibraryItems
-function transformToMediaLibraryItem(item: QuoteImageWithRelations): MediaLibraryItem {
+function transformToMediaLibraryItem(item: GalleryWithQuotes): MediaLibraryItem {
   return {
+    id: item.id,
     public_id: item.publicId,
     secure_url: item.url,
     format: item.format ?? 'webp',
@@ -36,49 +40,39 @@ function transformToMediaLibraryItem(item: QuoteImageWithRelations): MediaLibrar
     resource_type: 'image' as const,
     created_at: item.createdAt.toISOString(),
     bytes: item.bytes ?? 0,
-    folder: 'quote-images',
+    folder: 'gallery-images',
     isGlobal: item.isGlobal,
     title: item.title ?? undefined,
     description: item.description ?? undefined,
     altText: item.altText ?? undefined,
-    usageCount: item.usageCount,
-    context: {
-      quoteId: item.quoteId,
-      alt: item.altText ?? undefined
-    }
+    usageCount: item.usageCount
   };
 }
 
 // GET endpoint for fetching media library items
 export async function GET(req: Request): Promise<NextResponse<MediaLibraryResponse>> {
   try {
-    // Auth check
     const session = await auth();
     if (!session?.user) {
       return NextResponse.json<MediaLibraryResponse>(
-        { 
-          error: { 
-            code: "UNAUTHORIZED" as QuoteErrorCode, 
-            message: "Not authenticated" 
-          } 
-        },
+        { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
         { status: 401 }
       );
     }
 
     const { searchParams } = new URL(req.url);
     
-    // Enhanced pagination with validation
+    // Pagination with validation
     const page = Math.max(1, Number(searchParams.get("page")) || 1);
     const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit")) || 20));
     const skip = (page - 1) * limit;
 
-    // Enhanced sorting
+    // Sort options
     const sortField = (searchParams.get("sortField") || "createdAt") as MediaLibrarySortField;
     const sortDirection = (searchParams.get("sortDirection") || "desc") as SortDirection;
 
-    // Build where conditions according to Prisma's types
-    const conditions: Prisma.QuoteImageWhereInput[] = [];
+    // Build where conditions
+    const conditions: Prisma.GalleryWhereInput[] = [];
 
     // Add isGlobal filter
     if (searchParams.get("isGlobal") === "true") {
@@ -126,34 +120,35 @@ export async function GET(req: Request): Promise<NextResponse<MediaLibraryRespon
     }
 
     // Create the where clause
-    const where: Prisma.QuoteImageWhereInput = conditions.length 
+    const where: Prisma.GalleryWhereInput = conditions.length 
       ? { AND: conditions }
       : {};
 
-    // Execute optimized queries
+    // Execute queries
     const [items, total] = await Promise.all([
-      db.quoteImage.findMany({
+      db.gallery.findMany({
         where,
         orderBy: buildSortOrder(sortField, sortDirection),
         skip,
         take: limit,
         include: {
-          quote: {
-            select: {
-              id: true,
-              slug: true,
+          quotes: {
+            include: {
+              quote: {
+                select: {
+                  id: true,
+                  slug: true
+                }
+              }
             }
           }
         }
       }),
-      db.quoteImage.count({ where })
+      db.gallery.count({ where })
     ]);
 
-    // Transform items to match MediaLibraryItem interface
-    const transformedItems = items.map(transformToMediaLibraryItem);
-
     return NextResponse.json<MediaLibraryResponse>({
-      items: transformedItems,
+      items: items.map(transformToMediaLibraryItem),
       total,
       hasMore: total > skip + items.length,
       page,
@@ -163,12 +158,7 @@ export async function GET(req: Request): Promise<NextResponse<MediaLibraryRespon
   } catch (error) {
     console.error("[MEDIA_LIBRARY_GET]", error);
     return NextResponse.json<MediaLibraryResponse>(
-      { 
-        error: { 
-          code: "INTERNAL_ERROR" as QuoteErrorCode, 
-          message: "Internal server error" 
-        } 
-      },
+      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
       { status: 500 }
     );
   }
@@ -182,12 +172,7 @@ export async function PATCH(
     const session = await auth();
     if (!session?.user) {
       return NextResponse.json<MediaLibraryResponse>(
-        { 
-          error: { 
-            code: "UNAUTHORIZED" as QuoteErrorCode, 
-            message: "Not authenticated" 
-          } 
-        },
+        { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
         { status: 401 }
       );
     }
@@ -197,13 +182,12 @@ export async function PATCH(
 
     if (!id) {
       return NextResponse.json(
-        { error: { code: "BAD_REQUEST" as QuoteErrorCode, message: "Image ID is required" } },
+        { error: { code: "BAD_REQUEST", message: "Image ID is required" } },
         { status: 400 }
       );
     }
 
-    // Update the query to include the quote relation
-    const updatedImage = await db.quoteImage.update({
+    const updatedImage = await db.gallery.update({
       where: { id },
       data: {
         title,
@@ -212,10 +196,14 @@ export async function PATCH(
         isGlobal,
       },
       include: {
-        quote: {
-          select: {
-            id: true,
-            slug: true,
+        quotes: {
+          include: {
+            quote: {
+              select: {
+                id: true,
+                slug: true
+              }
+            }
           }
         }
       }
@@ -232,12 +220,7 @@ export async function PATCH(
   } catch (error) {
     console.error("[MEDIA_LIBRARY_PATCH]", error);
     return NextResponse.json<MediaLibraryResponse>(
-      { 
-        error: { 
-          code: "INTERNAL_ERROR" as QuoteErrorCode, 
-          message: "Internal server error" 
-        } 
-      },
+      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
       { status: 500 }
     );
   }
