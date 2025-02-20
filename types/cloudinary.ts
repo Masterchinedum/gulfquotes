@@ -4,7 +4,7 @@ import type {
   CloudinaryUploadWidgetInfo,
   CloudinaryUploadWidgetOptions 
 } from 'next-cloudinary';
-import type { QuoteErrorCode } from '@/types/api/quotes'; // Add this import
+import type { AppErrorCode } from '@/types/api/quotes';
 
 // Base resource interface
 export interface CloudinaryResource {
@@ -159,7 +159,8 @@ export interface QuoteImageData extends Omit<MediaLibraryItem, 'context'> {
 }
 
 // Media Library specific interfaces
-export interface MediaLibraryItem extends QuoteImageResource {
+export interface MediaLibraryItem extends CloudinaryResource {
+  id: string;
   isGlobal: boolean;
   title?: string;
   description?: string;
@@ -177,7 +178,7 @@ export interface MediaLibrarySuccessResponse {
 
 export interface MediaLibraryErrorResponse {
   error: {
-    code: QuoteErrorCode;
+    code: AppErrorCode;
     message: string;
   };
 }

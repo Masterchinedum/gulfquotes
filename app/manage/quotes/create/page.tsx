@@ -3,7 +3,6 @@ import React from "react";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { QuoteForm } from "@/components/quotes/quote-form";
-// We will create the CategoryForm component for admin users in a later step.
 import { CategoryForm } from "@/components/quotes/category-form";
 import db from "@/lib/prisma";
 
@@ -11,7 +10,6 @@ export default async function NewQuotePage() {
   // Check for an authenticated session
   const session = await auth();
   if (!session?.user) {
-    // Redirect to login if there's no valid session
     redirect("/login");
   }
 
@@ -20,8 +18,8 @@ export default async function NewQuotePage() {
     redirect("/unauthorized");
   }
 
-  // Fetch both categories and author profiles
-  const [categories, authorProfiles] = await Promise.all([
+  // Fetch categories, author profiles, and global gallery items in parallel
+  const [categories, authorProfiles, galleryItems] = await Promise.all([
     db.category.findMany(),
     db.authorProfile.findMany({
       select: {
@@ -38,6 +36,10 @@ export default async function NewQuotePage() {
       orderBy: {
         name: 'asc'
       }
+    }),
+    db.gallery.findMany({
+      where: { isGlobal: true },
+      orderBy: { createdAt: 'desc' }
     })
   ]);
 
@@ -47,9 +49,11 @@ export default async function NewQuotePage() {
       <QuoteForm 
         categories={categories} 
         authorProfiles={authorProfiles}
+        initialData={{
+          galleryImages: galleryItems
+        }}
       />
       
-      {/* Conditionally render the admin-only category creation section */}
       {session.user.role === "ADMIN" && (
         <div className="mt-8">
           <h2 className="text-xl font-bold mb-4">Create a New Category</h2>

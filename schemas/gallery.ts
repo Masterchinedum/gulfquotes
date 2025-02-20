@@ -50,9 +50,17 @@ export const galleryListOptionsSchema = z.object({
   filter: galleryFilterSchema.optional(),
 });
 
+// Schema for quote-gallery association
+export const quoteToGallerySchema = z.object({
+  quoteId: z.string().min(1, "Quote ID is required"),
+  galleryId: z.string().min(1, "Gallery ID is required"),
+  isActive: z.boolean().default(false),
+});
+
 // Export types
 export type CreateGalleryInput = z.infer<typeof createGallerySchema>;
 export type UpdateGalleryInput = z.infer<typeof updateGallerySchema>;
 export type GalleryFilterInput = z.infer<typeof galleryFilterSchema>;
 export type GallerySortInput = z.infer<typeof gallerySortSchema>;
 export type GalleryListOptionsInput = z.infer<typeof galleryListOptionsSchema>;
+export type QuoteToGalleryInput = z.infer<typeof quoteToGallerySchema>;

@@ -51,23 +51,9 @@ export default async function EditQuotePage({
           category: true,
           authorProfile: true,
           tags: true, // Add this to include tags
-          images: {
-            select: {
-              id: true,
-              url: true,
-              publicId: true,
-              isActive: true,
-              isGlobal: true,
-              title: true,
-              description: true,
-              altText: true,
-              format: true,
-              width: true,
-              height: true,
-              bytes: true,
-              createdAt: true,
-              updatedAt: true,
-              quoteId: true,
+          gallery: {
+            include: {
+              gallery: true
             }
           }
         }
@@ -102,20 +88,9 @@ export default async function EditQuotePage({
     const transformedQuote = {
       ...quote,
       backgroundImage: quote.backgroundImage || null, // Handle null case explicitly
-      images: quote.images?.map(img => ({
-        public_id: img.publicId,
-        secure_url: img.url,
-        format: img.format || 'webp',
-        width: img.width || 1200,
-        height: img.height || 630,
-        resource_type: 'image' as const,
-        created_at: img.createdAt.toISOString(),
-        bytes: img.bytes || 0,
-        folder: 'quote-images',
-        context: {
-          alt: img.altText || undefined,
-          isGlobal: img.isGlobal || false
-        }
+      gallery: quote.gallery.map(g => ({
+        ...g.gallery,
+        isActive: g.isActive
       })),
       tags: quote.tags // Include the tags
     };
