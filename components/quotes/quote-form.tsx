@@ -20,6 +20,7 @@ import { TagInput } from "@/components/forms/TagInput";
 import { TagManagementModal } from "@/components/forms/TagManagementModal";
 import { QuoteGalleryModal } from "@/components/quotes/quote-gallery-modal";
 import { ImagePlus } from "lucide-react";
+import { QuoteImageUpload } from "@/components/quotes/quote-image-upload";
 
 interface QuoteFormProps {
   categories: Category[];
@@ -40,6 +41,7 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
   const [selectedImage, setSelectedImage] = useState<string | null>(initialData?.backgroundImage || null);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const form = useForm<CreateQuoteInput>({
     resolver: zodResolver(createQuoteSchema),
@@ -124,6 +126,37 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
         description: "Please enter quote content first",
         variant: "destructive",
       });
+    }
+  };
+
+  // Add upload handler
+  const handleImageUpload = async (result: CloudinaryUploadResult) => {
+    if (result.event === "success" && result.info && typeof result.info !== 'string') {
+      setIsUploading(false); // Reset upload state on success
+
+      const newImage: GalleryItem = {
+        id: result.info.public_id,
+        url: result.info.secure_url,
+        publicId: result.info.public_id,
+        format: result.info.format,
+        width: result.info.width,
+        height: result.info.height,
+        bytes: result.info.bytes,
+        isGlobal: true,
+        title: '',
+        createdAt: new Date(),
+        usageCount: 0
+      };
+
+      setGalleryImages(prev => [...prev, newImage]);
+
+      // Auto-select as background if none selected
+      if (!selectedImage) {
+        setSelectedImage(newImage.url);
+        form.setValue('backgroundImage', newImage.url);
+      }
+    } else {
+      setIsUploading(false); // Reset upload state on failure
     }
   };
 
@@ -318,6 +351,12 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
         {/* Gallery Section */}
         <div className="space-y-4">
           <FormLabel>Quote Background</FormLabel>
+          <QuoteImageUpload
+            onUploadComplete={handleImageUpload}
+            disabled={isSubmitting}
+            isUploading={isUploading}
+            maxFiles={30 - galleryImages.length}
+          />
           <div className="flex items-center justify-between gap-4">
             <div className="grid grid-cols-4 gap-4 flex-1">
               {galleryImages.map((image) => (

@@ -23,6 +23,14 @@ import { TagInput } from "@/components/forms/TagInput";
 import { TagManagementModal } from "@/components/forms/TagManagementModal";
 import { ImagePlus } from "lucide-react";
 import { QuoteGalleryModal } from "@/components/quotes/quote-gallery-modal";
+import { QuoteImageUpload } from "@/components/quotes/quote-image-upload";
+
+// EditQuoteForm state updates
+interface SelectedImageState {
+  imageUrl: string | null;
+  publicId: string | null;
+  isBackground: boolean;
+}
 
 interface EditQuoteFormProps {
   quote: Quote & {
@@ -44,32 +52,24 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
   const router = useRouter();
   const { toast } = useToast();
   const [charCount, setCharCount] = useState(quote.content.length);
-  
-  // Transform gallery items into QuoteImageResource format
-  const initialImages = quote.gallery.map(g => ({
-    public_id: g.gallery.publicId,
-    secure_url: g.gallery.url,
-    format: g.gallery.format || 'webp',
-    width: g.gallery.width || 1200,
-    height: g.gallery.height || 630,
-    resource_type: 'image' as const,
-    created_at: g.gallery.createdAt.toISOString(),
-    bytes: g.gallery.bytes || 0,
-    folder: 'gallery-images',
-    context: {
-      isGlobal: true,
-      alt: g.gallery.altText || undefined
-    }
-  }));
-
-  const [images, setImages] = useState<QuoteImageResource[]>(initialImages);
-  const [selectedImage, setSelectedImage] = useState<string | null>(quote.backgroundImage || null);
-  const [isUploading, setIsUploading] = useState(false);
   const [selectedTags, setSelectedTags] = useState<Tag[]>(quote.tags || []);
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Updated image states
+  const [selectedImage, setSelectedImage] = useState<SelectedImageState>({
+    imageUrl: quote.backgroundImage,
+    publicId: quote.gallery.find(g => g.isActive)?.gallery.publicId || null,
+    isBackground: !!quote.backgroundImage
+  });
+
   const [galleryImages, setGalleryImages] = useState<GalleryItem[]>(
-    quote.gallery.map(g => ({ ...g.gallery, isActive: g.isActive }))
+    quote.gallery.map(g => ({
+      ...g.gallery,
+      isActive: g.isActive,
+      isBackground: g.gallery.url === quote.backgroundImage
+    }))
   );
 
   const form = useForm<UpdateQuoteInput>({
@@ -93,10 +93,11 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
         },
         body: JSON.stringify({
           ...data,
-          backgroundImage: selectedImage,
+          backgroundImage: selectedImage.imageUrl,
           galleryImages: galleryImages.map(img => ({
             id: img.id,
-            isActive: img.url === selectedImage
+            isActive: img.url === selectedImage.imageUrl,
+            isBackground: img.url === selectedImage.imageUrl
           })),
           tagIds: selectedTags.map(tag => tag.id)
         }),
@@ -140,52 +141,59 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
 
   // Handle image upload
   const handleImageUpload = async (result: CloudinaryUploadResult) => {
-    setIsUploading(true);
-    try {
-      if (result.event !== "success" || !result.info || typeof result.info === 'string') {
-        throw new Error("Upload failed");
-      }
-
-      const newImage: QuoteImageResource = {
-        public_id: result.info.public_id,
-        secure_url: result.info.secure_url,
+    if (result.event === "success" && result.info && typeof result.info !== 'string') {
+      setIsUploading(false); // Reset upload state on success
+      
+      const newImage: GalleryItem = {
+        id: result.info.public_id,
+        url: result.info.secure_url,
+        publicId: result.info.public_id,
         format: result.info.format,
         width: result.info.width,
         height: result.info.height,
-        resource_type: 'image',
-        created_at: new Date().toISOString(),
         bytes: result.info.bytes,
-        folder: 'quote-images',
-        context: {
-          alt: typeof result.info.context?.alt === 'string' ? result.info.context.alt : undefined,
-          isGlobal: typeof result.info.context?.isGlobal === 'string' 
-            ? result.info.context.isGlobal === 'true'
-            : false
-        }
+        isGlobal: true,
+        title: '',
+        createdAt: new Date(),
+        usageCount: 0,
+        isActive: !selectedImage.imageUrl, // Make active if no image selected
+        isBackground: !selectedImage.imageUrl // Make background if no image selected
       };
 
-      setImages(prev => [...prev, newImage]);
+      setGalleryImages(prev => [...prev, newImage]);
 
-      if (images.length === 0) {
-        setSelectedImage(newImage.secure_url);
-        form.setValue('backgroundImage', newImage.secure_url);
+      // Auto-select as background if none selected
+      if (!selectedImage.imageUrl) {
+        setSelectedImage({
+          imageUrl: newImage.url,
+          publicId: newImage.publicId,
+          isBackground: true
+        });
+        form.setValue('backgroundImage', newImage.url);
       }
-
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to process uploaded image",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
     }
+    setIsUploading(false);
   };
 
   // Handle image selection
-  const handleImageSelect = (imageUrl: string) => {
-    setSelectedImage(imageUrl);
-    form.setValue('backgroundImage', imageUrl);
+  const handleImageSelect = (image: GalleryItem) => {
+    setSelectedImage({
+      imageUrl: image.url,
+      publicId: image.publicId,
+      isBackground: true
+    });
+    
+    // Update form value
+    form.setValue('backgroundImage', image.url);
+
+    // Update gallery images to reflect selection
+    setGalleryImages(prev => 
+      prev.map(img => ({
+        ...img,
+        isActive: img.id === image.id,
+        isBackground: img.url === image.url
+      }))
+    );
   };
 
   // Handle image deletion
@@ -239,12 +247,61 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
       newImg => !galleryImages.some(img => img.id === newImg.id)
     );
     
-    setGalleryImages(prev => [...prev, ...newImages]);
+    // Update gallery images with selection status
+    setGalleryImages(prev => {
+      const updated = [...prev];
+      newImages.forEach(newImg => {
+        updated.push({
+          ...newImg,
+          isActive: false,
+          isBackground: false
+        });
+      });
+      return updated;
+    });
 
-    if (!selectedImage && newImages.length > 0) {
-      setSelectedImage(newImages[0].url);
-      form.setValue('backgroundImage', newImages[0].url);
+    // Auto-select first image as background if none selected
+    if (!selectedImage.imageUrl && newImages.length > 0) {
+      const firstImage = newImages[0];
+      setSelectedImage({
+        imageUrl: firstImage.url,
+        publicId: firstImage.publicId,
+        isBackground: true
+      });
+      form.setValue('backgroundImage', firstImage.url);
+      
+      // Update gallery images to reflect selection
+      setGalleryImages(prev => 
+        prev.map(img => ({
+          ...img,
+          isActive: img.id === firstImage.id,
+          isBackground: img.url === firstImage.url
+        }))
+      );
     }
+  };
+
+  // Add deselection handler
+  const handleImageDeselect = (imageId: string) => {
+    const image = galleryImages.find(img => img.id === imageId);
+    if (!image) return;
+
+    if (image.url === selectedImage.imageUrl) {
+      setSelectedImage({
+        imageUrl: null,
+        publicId: null,
+        isBackground: false
+      });
+      form.setValue('backgroundImage', null);
+    }
+
+    setGalleryImages(prev =>
+      prev.map(img => ({
+        ...img,
+        isActive: img.id === imageId ? false : img.isActive,
+        isBackground: img.id === imageId ? false : img.isBackground
+      }))
+    );
   };
 
   return (
@@ -408,6 +465,12 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
 
         <div className="space-y-4">
           <FormLabel>Quote Background</FormLabel>
+          <QuoteImageUpload
+            onUploadComplete={handleImageUpload}
+            disabled={isSubmitting}
+            isUploading={isUploading}
+            maxFiles={30 - galleryImages.length}
+          />
           <div className="flex items-center justify-between gap-4">
             <ImageGallery
               images={images}

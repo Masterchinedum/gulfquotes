@@ -91,7 +91,8 @@ export function QuoteGalleryModal({
             error={error}
             maxSelectable={maxSelectable}
             currentlySelected={currentlySelected}
-            onSelect={handleSelect}
+            onSelect={(image) => handleSelect([image])}
+            isMultiSelect={maxSelectable > 1}
           />
         </div>
       </DialogContent>
