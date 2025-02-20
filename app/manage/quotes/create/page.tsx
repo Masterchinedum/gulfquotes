@@ -6,6 +6,7 @@ import { CategoryForm } from "@/components/quotes/category-form";
 import db from "@/lib/prisma";
 import type { CreateQuoteInput } from "@/schemas/quote";
 import type { GalleryItem } from "@/types/gallery";
+import type { Tag } from "@prisma/client";
 
 export default async function NewQuotePage() {
   const session = await auth();
@@ -45,15 +46,17 @@ export default async function NewQuotePage() {
   // Set initial data with first category and author profile as defaults
   const initialData: CreateQuoteInput & {
     galleryImages?: GalleryItem[];
-    backgroundImage?: string | null;
+    backgroundImage?: string;
+    tags?: Tag[];
   } = {
     content: "",
     categoryId: categories[0]?.id || "",
     authorProfileId: authorProfiles[0]?.id || "",
     slug: "",
     images: [],
-    backgroundImage: null,
-    galleryImages: galleryItems
+    backgroundImage: undefined, // Change from null to undefined
+    galleryImages: galleryItems,
+    tags: []
   };
 
   return (
