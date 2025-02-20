@@ -17,7 +17,7 @@ import { Icons } from "@/components/ui/icons";
 import { slugify } from "@/lib/utils";
 import { ImageGallery } from "@/components/quotes/image-gallery";
 import type { CloudinaryUploadResult, QuoteImageResource } from "@/types/cloudinary";
-import type { GalleryItem } from "@/types/gallery"; // Add this import
+import type { GalleryItem } from "@/types/gallery";
 import { CldImage } from "next-cloudinary";
 import { TagInput } from "@/components/forms/TagInput";
 import { TagManagementModal } from "@/components/forms/TagManagementModal";
@@ -31,7 +31,7 @@ interface QuoteFormProps {
   initialData?: CreateQuoteInput & {
     images?: QuoteImageResource[];
     backgroundImage?: string;
-    tags?: Tag[]; // Add this
+    tags?: Tag[];
   };
 }
 
@@ -55,7 +55,7 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
       content: "",
       slug: "",
       categoryId: "",
-      authorProfileId: "", // Add this default value
+      authorProfileId: "",
     },
   });
 
@@ -76,7 +76,7 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
             publicId: img.public_id,
             isActive: img.secure_url === selectedImage
           })),
-          tagIds: selectedTags.map(tag => tag.id) // Add tags to submission
+          tagIds: selectedTags.map(tag => tag.id)
         }),
       });
 

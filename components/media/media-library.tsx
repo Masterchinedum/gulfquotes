@@ -6,7 +6,7 @@ import { Check, Loader2 } from "lucide-react";
 import { CloudinaryUploadWidget } from "@/components/ui/cloudinary-upload-widget";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { quoteUploadOptions } from "@/lib/cloudinary";
+import { galleryUploadOptions } from "@/lib/cloudinary"; // Update to use gallery upload options
 import { cn } from "@/lib/utils";
 import type { 
   MediaLibraryItem, 
@@ -52,7 +52,7 @@ export function MediaLibrary({
         ...(search ? { search } : {})
       });
 
-      const response = await fetch(`/api/media?${searchParams}`);
+      const response = await fetch(`/api/gallery?${searchParams}`); // Update to use gallery endpoint
       if (!response.ok) throw new Error("Failed to fetch images");
 
       const data = await response.json();
@@ -135,7 +135,7 @@ export function MediaLibrary({
         />
         <CloudinaryUploadWidget
           onUploadSuccess={handleUpload}
-          options={quoteUploadOptions}
+          options={galleryUploadOptions} // Update to use gallery upload options
           buttonText={uploading ? "Uploading..." : "Upload New"}
           disabled={uploading}
         />

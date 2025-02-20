@@ -1,7 +1,7 @@
 import { Quote, Prisma } from "@prisma/client";
 import db from "@/lib/prisma";
 import { AppError } from "@/lib/api-error";
-import { auth } from "@/auth";  // Add this import
+import { auth } from "@/auth";
 import { CreateQuoteInput, UpdateQuoteInput } from "@/schemas/quote";
 import { slugify } from "@/lib/utils";
 import type { QuoteService, QuoteImageData, ListQuotesResult } from "./types";
@@ -26,7 +26,7 @@ import {
 class QuoteServiceImpl implements QuoteService {
   async create(data: CreateQuoteInput & { authorId: string; images?: QuoteImageData[] }): Promise<Quote> {
     if (data.content.length > 1500) {
-      throw new AppError("Quote content exceeds 500 characters", "CONTENT_TOO_LONG", 400);
+      throw new AppError("Quote content exceeds 1500 characters", "CONTENT_TOO_LONG", 400);
     }
 
     await validateAuthorProfile(data.authorProfileId);
@@ -208,6 +208,123 @@ class QuoteServiceImpl implements QuoteService {
   removeImage = removeImage;
   setBackgroundImage = setBackgroundImage;
   removeImageAssociation = removeImageAssociation;
+
+  // New methods for QuoteToGallery model
+  async addToQuote(galleryId: string, quoteId: string): Promise<Quote> {
+    try {
+      return await db.$transaction(async (tx) => {
+        // Check if association already exists
+        const existing = await tx.quoteToGallery.findUnique({
+          where: {
+            quoteId_galleryId: { quoteId, galleryId }
+          }
+        });
+
+        if (existing) {
+          throw new AppError("Image already added to quote", "GALLERY_DUPLICATE_IMAGE", 400);
+        }
+
+        // Create association
+        await tx.quoteToGallery.create({
+          data: {
+            quoteId,
+            galleryId
+          }
+        });
+
+        return tx.quote.findUniqueOrThrow({
+          where: { id: quoteId },
+          include: {
+            category: true,
+            authorProfile: true,
+            gallery: {
+              include: {
+                gallery: true
+              }
+            }
+          }
+        });
+      });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError("Failed to add image to quote", "GALLERY_QUOTE_OPERATION_FAILED", 500);
+    }
+  }
+
+  async removeFromQuote(galleryId: string, quoteId: string): Promise<Quote> {
+    try {
+      return await db.$transaction(async (tx) => {
+        await tx.quoteToGallery.delete({
+          where: {
+            quoteId_galleryId: { quoteId, galleryId }
+          }
+        });
+
+        return tx.quote.findUniqueOrThrow({
+          where: { id: quoteId },
+          include: {
+            category: true,
+            authorProfile: true,
+            gallery: {
+              include: {
+                gallery: true
+              }
+            }
+          }
+        });
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new AppError("Association not found", "GALLERY_NOT_FOUND", 404);
+        }
+      }
+      throw new AppError("Failed to remove image from quote", "GALLERY_QUOTE_OPERATION_FAILED", 500);
+    }
+  }
+
+  async setAsBackground(galleryId: string, quoteId: string): Promise<Quote> {
+    try {
+      return await db.$transaction(async (tx) => {
+        const gallery = await tx.gallery.findUnique({
+          where: { id: galleryId }
+        });
+
+        if (!gallery) {
+          throw new AppError("Gallery item not found", "GALLERY_NOT_FOUND", 404);
+        }
+
+        await tx.quoteToGallery.updateMany({
+          where: { quoteId },
+          data: { isActive: false }
+        });
+
+        await tx.quoteToGallery.update({
+          where: {
+            quoteId_galleryId: { quoteId, galleryId }
+          },
+          data: { isActive: true }
+        });
+
+        return tx.quote.update({
+          where: { id: quoteId },
+          data: { backgroundImage: gallery.url },
+          include: {
+            category: true,
+            authorProfile: true,
+            gallery: {
+              include: {
+                gallery: true
+              }
+            }
+          }
+        });
+      });
+    } catch (err) { // Changed from error to err and using it
+      if (err instanceof AppError) throw err;
+      throw new AppError("Failed to set background image", "GALLERY_QUOTE_OPERATION_FAILED", 500);
+    }
+  }
 }
 
 export const quoteService = new QuoteServiceImpl();

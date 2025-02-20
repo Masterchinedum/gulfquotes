@@ -1,4 +1,3 @@
-// app/api/quotes/[slug]/route.ts
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { updateQuoteSchema } from "@/schemas/quote";
@@ -111,7 +110,7 @@ export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteRespo
           error: {
             code: "VALIDATION_ERROR",
             message: "Invalid input data",
-            details: formatZodError(validatedData.error).details // Remove .error
+            details: formatZodError(validatedData.error).details
           }
         },
         { status: 400 }

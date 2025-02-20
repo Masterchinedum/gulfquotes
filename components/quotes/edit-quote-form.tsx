@@ -17,12 +17,12 @@ import { slugify } from "@/lib/utils";
 import type { UpdateQuoteInput } from "@/schemas/quote";
 import { ImageGallery } from "@/components/quotes/image-gallery";
 import type { CloudinaryUploadResult, QuoteImageResource } from "@/types/cloudinary";
-import type { GalleryItem } from "@/types/gallery"; // Change this import
+import type { GalleryItem } from "@/types/gallery";
 import { CldImage } from "next-cloudinary";
 import { TagInput } from "@/components/forms/TagInput";
 import { TagManagementModal } from "@/components/forms/TagManagementModal";
 import { GalleryModal } from "@/components/gallery/GalleryModal";
-import { ImagePlus } from "lucide-react"; // Add this import
+import { ImagePlus } from "lucide-react";
 
 interface EditQuoteFormProps {
   quote: Quote & {
