@@ -101,7 +101,6 @@ model Quote {
   categoryId       String
   authorProfile    AuthorProfile  @relation(fields: [authorProfileId], references: [id])
   authorProfileId  String
-  images           QuoteImage[] 
   tags             Tag[]          @relation("QuoteToTag")
   gallery          QuoteToGallery[]
   createdAt        DateTime       @default(now())
@@ -149,28 +148,7 @@ model AuthorImage {
   @@map("author_images")
 }
 
-model QuoteImage {
-  id          String   @id @default(cuid())
-  url         String
-  publicId    String  
-  isActive    Boolean  @default(false) 
-  isGlobal    Boolean  @default(false) 
-  title       String? 
-  description String?  @db.Text 
-  altText     String? 
-  usageCount  Int      @default(0)  
-  format      String?
-  width       Int?
-  height      Int?
-  bytes       Int? 
-  quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
-  quoteId     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("quote_images")
-  @@index([isGlobal])
-}
+// Remove QuoteImage model completely (delete this block)
 
 model UserProfile {
   id          String    @id @default(cuid())
