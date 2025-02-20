@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +11,6 @@ import {
 import { CloudinaryUploadWidget } from "@/components/ui/cloudinary-upload-widget";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 import { GalleryGrid } from "./GalleryGrid";
 import type { GalleryItem } from "@/types/gallery";
 import { cloudinaryConfig } from "@/lib/cloudinary";
@@ -38,25 +38,72 @@ export function GalleryModal({
 }: GalleryModalProps) {
   const [search, setSearch] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [items, setItems] = useState<GalleryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | undefined>();
 
-  const handleUploadSuccess = (result: CloudinaryUploadResult) => {
-    console.log('Upload result:', result);
-    setUploading(false);
-    if (result.event !== "success") {
-      console.log('Upload event was not successful:', result.event);
-      return;
+  // Fetch gallery items
+  const fetchGalleryItems = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const searchParams = new URLSearchParams();
+      if (search) searchParams.set('search', search);
+
+      const response = await fetch(`/api/gallery?${searchParams}`);
+      if (!response.ok) throw new Error('Failed to fetch images');
+
+      const data = await response.json();
+      setItems(data.data.items);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsLoading(false);
     }
-    // Continue with upload handling...
+  }, [search]);
+
+  // Fetch items when search changes
+  useEffect(() => {
+    fetchGalleryItems();
+  }, [fetchGalleryItems]);
+
+  const handleUploadSuccess = async (result: CloudinaryUploadResult) => {
+    setUploading(false);
+    if (result.event !== "success" || !result.info || typeof result.info === 'string') return;
+
+    try {
+      // Now TypeScript knows result.info is CloudinaryUploadWidgetInfo
+      const response = await fetch('/api/gallery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: result.info.secure_url,
+          publicId: result.info.public_id,
+          format: result.info.format,
+          width: result.info.width,
+          height: result.info.height,
+          bytes: result.info.bytes,
+          isGlobal: true, // Add this to match CreateGalleryInput
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to save image');
+      }
+      
+      // Refetch gallery items to show the new upload
+      await fetchGalleryItems();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save image');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSelect = (selectedImages: GalleryItem[]) => {
     onSelect(selectedImages);
     onClose();
   };
-
-  // Add logs for modal state changes
-  console.log('Modal open state:', isOpen);
-  console.log('Uploading state:', uploading);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -111,6 +158,9 @@ export function GalleryModal({
 
         <div className="flex-1 overflow-y-auto">
           <GalleryGrid
+            items={items}
+            isLoading={isLoading}
+            error={error}
             searchQuery={search}
             maxSelectable={maxSelectable}
             currentlySelected={currentlySelected}

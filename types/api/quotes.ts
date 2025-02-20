@@ -138,6 +138,7 @@ export type AppErrorCode =
   | "GALLERY_DELETE_FAILED"
   | "GALLERY_FETCH_FAILED"
   | "GALLERY_QUOTE_OPERATION_FAILED"
+  | "GALLERY_IN_USE"
   | QuoteErrorCode 
   | AuthorProfileErrorCode 
   | CategoryErrorCode;

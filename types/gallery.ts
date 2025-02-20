@@ -27,7 +27,8 @@ export type GalleryErrorCode =
   | "GALLERY_UPDATE_FAILED"
   | "GALLERY_DELETE_FAILED"
   | "GALLERY_FETCH_FAILED"
-  | "GALLERY_QUOTE_OPERATION_FAILED";
+  | "GALLERY_QUOTE_OPERATION_FAILED"
+  | "GALLERY_IN_USE"; // Add this new error code
 
 // Gallery-specific ApiError type
 export interface GalleryApiError {
