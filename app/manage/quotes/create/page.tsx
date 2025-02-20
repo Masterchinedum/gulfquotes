@@ -1,4 +1,3 @@
-// app/manage/quotes/create/page.tsx
 import React from "react";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
@@ -6,20 +5,19 @@ import { QuoteForm } from "@/components/quotes/quote-form";
 import { CategoryForm } from "@/components/quotes/category-form";
 import db from "@/lib/prisma";
 import type { CreateQuoteInput } from "@/schemas/quote";
+import type { GalleryItem } from "@/types/gallery";
 
 export default async function NewQuotePage() {
-  // Check for an authenticated session
   const session = await auth();
   if (!session?.user) {
     redirect("/login");
   }
 
-  // Only ADMINs or AUTHORS are allowed for quote creation
   if (session.user.role !== "ADMIN" && session.user.role !== "AUTHOR") {
     redirect("/unauthorized");
   }
 
-  // Fetch categories, author profiles, and global gallery items in parallel
+  // Fetch data in parallel
   const [categories, authorProfiles, galleryItems] = await Promise.all([
     db.category.findMany(),
     db.authorProfile.findMany({
@@ -44,10 +42,17 @@ export default async function NewQuotePage() {
     })
   ]);
 
-  const initialData: Partial<CreateQuoteInput> = {
+  // Set initial data with first category and author profile as defaults
+  const initialData: CreateQuoteInput & {
+    galleryImages?: GalleryItem[];
+    backgroundImage?: string | null;
+  } = {
     content: "",
-    categoryId: "",
-    authorProfileId: "",
+    categoryId: categories[0]?.id || "",
+    authorProfileId: authorProfiles[0]?.id || "",
+    slug: "",
+    images: [],
+    backgroundImage: null,
     galleryImages: galleryItems
   };
 
