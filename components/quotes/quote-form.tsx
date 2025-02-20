@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { Category, AuthorProfile, Tag } from "@prisma/client";
 import { useToast } from "@/hooks/use-toast";
 import { Icons } from "@/components/ui/icons";
-// import { slugify } from "@/lib/utils";
+import { slugify } from "@/lib/utils";
 import type { GalleryItem } from "@/types/gallery";
 import { CldImage } from "next-cloudinary";
 import { TagInput } from "@/components/forms/TagInput";
@@ -109,6 +109,21 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
     if (!selectedImage && newImages.length > 0) {
       setSelectedImage(newImages[0].url);
       form.setValue('backgroundImage', newImages[0].url);
+    }
+  };
+
+  // Add handleAutoGenerateSlug function
+  const handleAutoGenerateSlug = () => {
+    const content = form.getValues("content");
+    if (content) {
+      const generatedSlug = slugify(content.substring(0, 50));
+      form.setValue("slug", generatedSlug);
+    } else {
+      toast({
+        title: "Error",
+        description: "Please enter quote content first",
+        variant: "destructive",
+      });
     }
   };
 
