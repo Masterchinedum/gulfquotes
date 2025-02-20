@@ -1,7 +1,5 @@
 "use client";
 
-// Add Tag to the imports from @prisma/client
-import { Category, AuthorProfile, Tag } from "@prisma/client";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,11 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
+import { Category, AuthorProfile, Tag } from "@prisma/client";
 import { useToast } from "@/hooks/use-toast";
 import { Icons } from "@/components/ui/icons";
-import { slugify } from "@/lib/utils";
-import { ImageGallery } from "@/components/quotes/image-gallery";
-import type { CloudinaryUploadResult, QuoteImageResource } from "@/types/cloudinary";
+// import { slugify } from "@/lib/utils";
 import type { GalleryItem } from "@/types/gallery";
 import { CldImage } from "next-cloudinary";
 import { TagInput } from "@/components/forms/TagInput";
@@ -24,13 +21,12 @@ import { TagManagementModal } from "@/components/forms/TagManagementModal";
 import { GalleryModal } from "@/components/gallery/GalleryModal";
 import { ImagePlus } from "lucide-react";
 
-// Update interface to include tags
 interface QuoteFormProps {
   categories: Category[];
   authorProfiles: AuthorProfile[];
   initialData?: CreateQuoteInput & {
-    images?: QuoteImageResource[];
     backgroundImage?: string;
+    galleryImages?: GalleryItem[];
     tags?: Tag[];
   };
 }
@@ -38,16 +34,12 @@ interface QuoteFormProps {
 export function QuoteForm({ categories, authorProfiles, initialData }: QuoteFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  
-  // Add state for tags
   const [selectedTags, setSelectedTags] = useState<Tag[]>(initialData?.tags || []);
-  
   const [charCount, setCharCount] = useState(initialData?.content?.length || 0);
-  const [images, setImages] = useState<QuoteImageResource[]>(initialData?.images || []);
+  const [galleryImages, setGalleryImages] = useState<GalleryItem[]>(initialData?.galleryImages || []);
   const [selectedImage, setSelectedImage] = useState<string | null>(initialData?.backgroundImage || null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
 
   const form = useForm<CreateQuoteInput>({
     resolver: zodResolver(createQuoteSchema),
@@ -71,10 +63,9 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
         body: JSON.stringify({
           ...data,
           backgroundImage: selectedImage,
-          images: images.map(img => ({
-            url: img.secure_url,
-            publicId: img.public_id,
-            isActive: img.secure_url === selectedImage
+          galleryImages: galleryImages.map(img => ({
+            id: img.id,
+            isActive: img.url === selectedImage
           })),
           tagIds: selectedTags.map(tag => tag.id)
         }),
@@ -86,23 +77,18 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
         throw new Error(result.error.message);
       }
 
-      // Show success message
       toast({
         title: "Success",
         description: "Quote created successfully",
         variant: "default",
       });
 
-      // Reset form
       form.reset();
       setCharCount(0);
-
-      // Redirect to quotes list
       router.push("/manage/quotes");
       router.refresh();
 
     } catch (error) {
-      // Show error message
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Something went wrong",
@@ -111,144 +97,22 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
     }
   }
 
-  // Auto-generate slug based on content
-  const handleAutoGenerateSlug = () => {
-    const currentContent = form.getValues("content");
-    if (currentContent) {
-      const generatedSlug = slugify(currentContent.substring(0, 50));
-      form.setValue("slug", generatedSlug);
-    }
-  };
-
-  // Handle image upload with metadata
-  const handleImageUpload = async (result: CloudinaryUploadResult) => {
-    setIsUploading(true);
-    try {
-      if (result.event !== "success" || !result.info || typeof result.info === 'string') {
-        throw new Error("Upload failed");
-      }
-
-      const newImage: QuoteImageResource = {
-        public_id: result.info.public_id,
-        secure_url: result.info.secure_url,
-        format: result.info.format,
-        width: result.info.width,
-        height: result.info.height,
-        resource_type: 'image',
-        created_at: new Date().toISOString(),
-        bytes: result.info.bytes,
-        folder: 'quote-images',
-        // Updated context handling
-        context: {
-          alt: typeof result.info.context?.alt === 'string' ? result.info.context.alt : undefined,
-          isGlobal: typeof result.info.context?.isGlobal === 'string' 
-            ? result.info.context.isGlobal === 'true'
-            : false
-        }
-      };
-
-      setImages(prev => [...prev, newImage]);
-
-      // Set as selected image if it's the first one
-      if (images.length === 0) {
-        setSelectedImage(newImage.secure_url);
-        form.setValue('backgroundImage', newImage.secure_url);
-      }
-
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to process uploaded image",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  // Handle image selection
-  const handleImageSelect = (imageUrl: string) => {
-    setSelectedImage(imageUrl);
-    form.setValue('backgroundImage', imageUrl);
-  };
-
-  // Handle image deletion with global check
-  const handleImageDelete = async (publicId: string) => {
-    try {
-      const image = images.find(img => img.public_id === publicId);
-      if (!image) return;
-
-      // If image is global, only remove association
-      if (image.context?.isGlobal) {
-        const response = await fetch(`/api/quotes/${form.getValues("slug")}/images`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageId: publicId }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Failed to remove image');
-        }
-      } else {
-        // Delete non-global image completely
-        const response = await fetch(`/api/quotes/${form.getValues("slug")}/images`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ publicId }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Failed to delete image');
-        }
-      }
-
-      setImages(prev => prev.filter(img => img.public_id !== publicId));
-      if (selectedImage === image.secure_url) {
-        setSelectedImage(null);
-        form.setValue('backgroundImage', null);
-      }
-
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete image",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Add gallery selection handler
+  // Handle gallery selection
   const handleGallerySelect = (selectedImages: GalleryItem[]) => {
-    selectedImages.forEach(image => {
-      const newImage: QuoteImageResource = {
-        public_id: image.publicId,
-        secure_url: image.url,
-        format: image.format || 'webp',
-        width: image.width || 1200,
-        height: image.height || 630,
-        resource_type: 'image',
-        created_at: new Date().toISOString(),
-        bytes: image.bytes || 0,
-        folder: 'quote-images',
-        context: {
-          alt: image.altText || undefined, // Convert null to undefined
-          quoteId: undefined,
-          isGlobal: image.isGlobal || false // Add fallback for isGlobal
-        }
-      };
+    const newImages = selectedImages.filter(
+      newImg => !galleryImages.some(img => img.id === newImg.id)
+    );
+    
+    setGalleryImages(prev => [...prev, ...newImages]);
 
-      setImages(prev => [...prev, newImage]);
-
-      // Set as selected image if it's the first one
-      if (images.length === 0) {
-        setSelectedImage(newImage.secure_url);
-        form.setValue('backgroundImage', newImage.secure_url);
-      }
-    });
+    // Set first image as background if none selected
+    if (!selectedImage && newImages.length > 0) {
+      setSelectedImage(newImages[0].url);
+      form.setValue('backgroundImage', newImages[0].url);
+    }
   };
 
+  // Rest of your component remains the same...
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -436,18 +300,31 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
           </div>
         </FormItem>
 
-        {/* Add Image Gallery */}
+        {/* Gallery Section */}
         <div className="space-y-4">
           <FormLabel>Quote Background</FormLabel>
           <div className="flex items-center justify-between gap-4">
-            <ImageGallery
-              images={images}
-              selectedImage={selectedImage}
-              onSelect={handleImageSelect}
-              onUpload={handleImageUpload}
-              onDelete={handleImageDelete}
-              disabled={isSubmitting || isUploading}
-            />
+            <div className="grid grid-cols-4 gap-4 flex-1">
+              {galleryImages.map((image) => (
+                <div
+                  key={image.id}
+                  className={`relative aspect-[1.91/1] overflow-hidden rounded-lg border cursor-pointer
+                    ${selectedImage === image.url ? 'ring-2 ring-primary' : ''}`}
+                  onClick={() => {
+                    setSelectedImage(image.url);
+                    form.setValue('backgroundImage', image.url);
+                  }}
+                >
+                  <CldImage
+                    src={image.publicId}
+                    fill
+                    sizes="(max-width: 768px) 25vw, 20vw"
+                    alt={image.altText || "Gallery image"}
+                    className="object-cover"
+                  />
+                </div>
+              ))}
+            </div>
             <Button
               type="button"
               variant="outline"
@@ -460,32 +337,17 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
           </div>
         </div>
 
-        {/* Add GalleryModal */}
         <GalleryModal
           isOpen={isGalleryOpen}
           onClose={() => setIsGalleryOpen(false)}
           onSelect={handleGallerySelect}
-          maxSelectable={30 - images.length}
-          currentlySelected={images.map(img => img.public_id)}
+          maxSelectable={30 - galleryImages.length}
+          currentlySelected={galleryImages.map(img => img.publicId)}
           title="Quote Background Gallery"
           description="Select images from the gallery to use as quote backgrounds"
         />
 
-        {selectedImage && (
-          <div className="mt-4">
-            <h4 className="text-sm font-medium mb-2">Selected Background</h4>
-            <div className="relative aspect-[1.91/1] w-full max-w-xl mx-auto overflow-hidden rounded-lg border">
-              <CldImage
-                src={selectedImage}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                alt="Selected background"
-                className="object-cover"
-              />
-            </div>
-          </div>
-        )}
-
+        {/* Submit Button */}
         <div className="flex justify-end">
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting && (

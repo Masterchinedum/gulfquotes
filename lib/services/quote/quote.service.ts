@@ -4,27 +4,19 @@ import { AppError } from "@/lib/api-error";
 import { auth } from "@/auth";
 import { CreateQuoteInput, UpdateQuoteInput } from "@/schemas/quote";
 import { slugify } from "@/lib/utils";
-import type { QuoteService, QuoteImageData, ListQuotesResult } from "./types";
+import type { QuoteService, ListQuotesResult } from "./types";
 import type { ListQuotesParams } from "@/types/api/quotes";
+import type { GalleryItem } from "@/types/gallery";
 import {
   validateCategory,
   validateSlug,
   validateAccess,
-  validateAuthorProfile,
-  validateImages,
-  validateUpdateData
+  validateAuthorProfile
 } from "./validators";
 import { sanitizeContent, prepareUpdateData, handleUpdateError } from "./utils";
-import {
-  addImages,
-  addFromMediaLibrary,
-  removeImage,
-  setBackgroundImage,
-  removeImageAssociation
-} from "./image-operations";
 
 class QuoteServiceImpl implements QuoteService {
-  async create(data: CreateQuoteInput & { authorId: string; images?: QuoteImageData[] }): Promise<Quote> {
+  async create(data: CreateQuoteInput & { authorId: string }): Promise<Quote> {
     if (data.content.length > 1500) {
       throw new AppError("Quote content exceeds 1500 characters", "CONTENT_TOO_LONG", 400);
     }
@@ -36,10 +28,6 @@ class QuoteServiceImpl implements QuoteService {
     const slug = data.slug?.trim() || slugify(sanitizedContent.substring(0, 50));
     await validateSlug(slug);
 
-    if (data.images) {
-      await validateImages(data.images);
-    }
-
     return await db.$transaction(async (tx) => {
       const quote = await tx.quote.create({
         data: {
@@ -48,21 +36,16 @@ class QuoteServiceImpl implements QuoteService {
           authorId: data.authorId,
           categoryId: data.categoryId,
           authorProfileId: data.authorProfileId,
-          backgroundImage: data.images?.find(img => img.isActive)?.url || null,
-          images: data.images ? {
-            createMany: {
-              data: data.images.map(img => ({
-                url: img.url,
-                publicId: img.publicId,
-                isActive: img.isActive
-              }))
-            }
-          } : undefined
+          backgroundImage: null // Will be set later through setAsBackground
         },
         include: {
-          images: true,
           category: true,
-          authorProfile: true
+          authorProfile: true,
+          gallery: {
+            include: {
+              gallery: true
+            }
+          }
         }
       });
 
@@ -202,35 +185,28 @@ class QuoteServiceImpl implements QuoteService {
     });
   }
 
-  // Delegate image operations to the imported functions
-  addImages = addImages;
-  addFromMediaLibrary = addFromMediaLibrary;
-  removeImage = removeImage;
-  setBackgroundImage = setBackgroundImage;
-  removeImageAssociation = removeImageAssociation;
-
-  // New methods for QuoteToGallery model
-  async addToQuote(galleryId: string, quoteId: string): Promise<Quote> {
+  // Gallery Integration Methods
+  async addGalleryImages(quoteId: string, images: GalleryItem[]): Promise<Quote> {
     try {
       return await db.$transaction(async (tx) => {
-        // Check if association already exists
-        const existing = await tx.quoteToGallery.findUnique({
-          where: {
-            quoteId_galleryId: { quoteId, galleryId }
-          }
+        const quote = await tx.quote.findUnique({
+          where: { id: quoteId }
         });
 
-        if (existing) {
-          throw new AppError("Image already added to quote", "GALLERY_DUPLICATE_IMAGE", 400);
+        if (!quote) {
+          throw new AppError("Quote not found", "NOT_FOUND", 404);
         }
 
-        // Create association
-        await tx.quoteToGallery.create({
-          data: {
-            quoteId,
-            galleryId
-          }
-        });
+        // Create associations for each image
+        for (const image of images) {
+          await tx.quoteToGallery.create({
+            data: {
+              quoteId,
+              galleryId: image.id,
+              isActive: false
+            }
+          });
+        }
 
         return tx.quote.findUniqueOrThrow({
           where: { id: quoteId },
@@ -247,16 +223,24 @@ class QuoteServiceImpl implements QuoteService {
       });
     } catch (error) {
       if (error instanceof AppError) throw error;
-      throw new AppError("Failed to add image to quote", "GALLERY_QUOTE_OPERATION_FAILED", 500);
+      throw new AppError("Failed to add gallery images", "GALLERY_QUOTE_OPERATION_FAILED", 500);
     }
   }
 
-  async removeFromQuote(galleryId: string, quoteId: string): Promise<Quote> {
+  async removeGalleryImage(quoteId: string, galleryId: string): Promise<Quote> {
     try {
       return await db.$transaction(async (tx) => {
         await tx.quoteToGallery.delete({
           where: {
             quoteId_galleryId: { quoteId, galleryId }
+          }
+        });
+
+        // If this was the background image, reset it
+        await tx.quote.update({
+          where: { id: quoteId },
+          data: {
+            backgroundImage: null
           }
         });
 
@@ -276,16 +260,17 @@ class QuoteServiceImpl implements QuoteService {
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
-          throw new AppError("Association not found", "GALLERY_NOT_FOUND", 404);
+          throw new AppError("Gallery image not found", "GALLERY_NOT_FOUND", 404);
         }
       }
-      throw new AppError("Failed to remove image from quote", "GALLERY_QUOTE_OPERATION_FAILED", 500);
+      throw new AppError("Failed to remove gallery image", "GALLERY_QUOTE_OPERATION_FAILED", 500);
     }
   }
 
-  async setAsBackground(galleryId: string, quoteId: string): Promise<Quote> {
+  async setGalleryBackground(quoteId: string, galleryId: string): Promise<Quote> {
     try {
       return await db.$transaction(async (tx) => {
+        // Find the gallery item
         const gallery = await tx.gallery.findUnique({
           where: { id: galleryId }
         });
@@ -294,11 +279,13 @@ class QuoteServiceImpl implements QuoteService {
           throw new AppError("Gallery item not found", "GALLERY_NOT_FOUND", 404);
         }
 
+        // Reset all images to not active
         await tx.quoteToGallery.updateMany({
           where: { quoteId },
           data: { isActive: false }
         });
 
+        // Set the selected image as active and update background
         await tx.quoteToGallery.update({
           where: {
             quoteId_galleryId: { quoteId, galleryId }
@@ -320,8 +307,8 @@ class QuoteServiceImpl implements QuoteService {
           }
         });
       });
-    } catch (err) { // Changed from error to err and using it
-      if (err instanceof AppError) throw err;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
       throw new AppError("Failed to set background image", "GALLERY_QUOTE_OPERATION_FAILED", 500);
     }
   }

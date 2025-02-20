@@ -8,12 +8,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { MediaLibrary } from "./media-library";
-import type { MediaLibraryItem } from "@/types/cloudinary";
+import type { GalleryItem } from "@/types/gallery";
 
 interface MediaLibraryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (images: MediaLibraryItem[]) => void;
+  onSelect: (images: GalleryItem[]) => void;
   maxSelectable?: number;
   currentlySelected?: string[];
   title?: string;
@@ -27,9 +27,9 @@ export function MediaLibraryModal({
   maxSelectable = 1,
   currentlySelected = [],
   title = "Media Library",
-  description = "Select images from your library or upload new ones"
+  description = "Select images from your gallery"
 }: MediaLibraryModalProps) {
-  const handleSelect = (images: MediaLibraryItem[]) => {
+  const handleSelect = (images: GalleryItem[]) => {
     onSelect(images);
     onClose();
   };

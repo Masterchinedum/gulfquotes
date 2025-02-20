@@ -28,7 +28,10 @@ interface EditQuoteFormProps {
   quote: Quote & {
     category: Category;
     authorProfile: AuthorProfile;
-    images?: QuoteImageResource[];
+    gallery: {
+      gallery: GalleryItem;
+      isActive: boolean;
+    }[];
     backgroundImage: string | null;
     tags: Tag[];
   };
@@ -47,6 +50,9 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
   const [selectedTags, setSelectedTags] = useState<Tag[]>(quote.tags || []);
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<GalleryItem[]>(
+    quote.gallery.map(g => ({ ...g.gallery, isActive: g.isActive }))
+  );
 
   const form = useForm<UpdateQuoteInput>({
     resolver: zodResolver(updateQuoteSchema),
@@ -70,10 +76,9 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
         body: JSON.stringify({
           ...data,
           backgroundImage: selectedImage,
-          images: images.map(img => ({
-            url: img.secure_url,
-            publicId: img.public_id,
-            isActive: img.secure_url === selectedImage
+          galleryImages: galleryImages.map(img => ({
+            id: img.id,
+            isActive: img.url === selectedImage
           })),
           tagIds: selectedTags.map(tag => tag.id)
         }),
@@ -212,32 +217,16 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
 
   // Handle gallery selection
   const handleGallerySelect = (selectedImages: GalleryItem[]) => {
-    selectedImages.forEach(image => {
-      const newImage: QuoteImageResource = {
-        public_id: image.publicId,
-        secure_url: image.url,
-        format: image.format || 'webp',
-        width: image.width || 1200,
-        height: image.height || 630,
-        resource_type: 'image',
-        created_at: new Date().toISOString(),
-        bytes: image.bytes || 0,
-        folder: 'quote-images',
-        context: {
-          alt: image.altText || undefined, // Convert null to undefined
-          quoteId: quote.id,
-          isGlobal: image.isGlobal || false // Add fallback for isGlobal
-        }
-      };
+    const newImages = selectedImages.filter(
+      newImg => !galleryImages.some(img => img.id === newImg.id)
+    );
+    
+    setGalleryImages(prev => [...prev, ...newImages]);
 
-      setImages(prev => [...prev, newImage]);
-
-      // Set as selected image if it's the first one
-      if (images.length === 0) {
-        setSelectedImage(newImage.secure_url);
-        form.setValue('backgroundImage', newImage.secure_url);
-      }
-    });
+    if (!selectedImage && newImages.length > 0) {
+      setSelectedImage(newImages[0].url);
+      form.setValue('backgroundImage', newImages[0].url);
+    }
   };
 
   return (

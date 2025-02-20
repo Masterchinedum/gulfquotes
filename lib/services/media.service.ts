@@ -3,7 +3,7 @@ import db from "@/lib/prisma";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { AppError } from "@/lib/api-error";
 import { deleteImage } from "@/lib/cloudinary";
-import type { Prisma, QuoteImage } from "@prisma/client";
+import type { Prisma, Gallery } from "@prisma/client";
 import type { 
   MediaLibraryItem, 
   MediaLibrarySortField,
@@ -11,7 +11,7 @@ import type {
   MediaLibraryFilterOptions 
 } from "@/types/cloudinary";
 
-// Define service interface
+// Updated service interface
 export interface MediaService {
   getGlobalImages(options: {
     page?: number;
@@ -33,14 +33,12 @@ export interface MediaService {
     isGlobal?: boolean;
   }): Promise<MediaLibraryItem>;
   deleteImage(id: string): Promise<void>;
-  associateWithQuote(imageId: string, quoteId: string): Promise<void>;
-  dissociateFromQuote(imageId: string, quoteId: string): Promise<void>;
 }
 
 class MediaServiceImpl implements MediaService {
-  // Helper method to transform DB item to MediaLibraryItem
-  private transformToMediaLibraryItem(item: QuoteImage & {
-    quote?: { id: string; slug: string; }
+  // Updated transform method to work with Gallery
+  private transformToMediaLibraryItem(item: Gallery & {
+    _count?: { quotes: number };
   }): MediaLibraryItem {
     return {
       public_id: item.publicId,
@@ -51,20 +49,16 @@ class MediaServiceImpl implements MediaService {
       resource_type: 'image' as const,
       created_at: item.createdAt.toISOString(),
       bytes: item.bytes ?? 0,
-      folder: 'quote-images',
+      folder: 'galleries',
       isGlobal: item.isGlobal,
       title: item.title ?? undefined,
       description: item.description ?? undefined,
       altText: item.altText ?? undefined,
       usageCount: item.usageCount,
-      context: {
-        quoteId: item.quoteId,
-        alt: item.altText ?? undefined
-      }
     };
   }
 
-  // Get global images with filtering, sorting, and pagination
+  // Updated to use Gallery
   async getGlobalImages({ 
     page = 1, 
     limit = 20,
@@ -80,7 +74,7 @@ class MediaServiceImpl implements MediaService {
   }) {
     try {
       // Build where conditions
-      const conditions: Prisma.QuoteImageWhereInput[] = [
+      const conditions: Prisma.GalleryWhereInput[] = [
         { isGlobal: true }
       ];
 
@@ -119,21 +113,18 @@ class MediaServiceImpl implements MediaService {
 
       // Execute queries
       const [items, total] = await Promise.all([
-        db.quoteImage.findMany({
+        db.gallery.findMany({
           where,
           orderBy: { [sortField]: sortDirection },
           skip,
           take: limit,
           include: {
-            quote: {
-              select: {
-                id: true,
-                slug: true,
-              }
+            _count: {
+              select: { quotes: true }
             }
           }
         }),
-        db.quoteImage.count({ where })
+        db.gallery.count({ where })
       ]);
 
       return {
@@ -144,7 +135,7 @@ class MediaServiceImpl implements MediaService {
         limit
       };
     } catch (error) {
-      console.error("[MEDIA_SERVICE]", error); // Add logging
+      console.error("[MEDIA_SERVICE]", error);
       throw new AppError(
         "Failed to fetch global images",
         "FETCH_IMAGES_FAILED" as AppErrorCode,
@@ -153,7 +144,7 @@ class MediaServiceImpl implements MediaService {
     }
   }
 
-  // Update image metadata
+  // Updated to use Gallery
   async updateMetadata(id: string, data: {
     title?: string;
     description?: string;
@@ -161,22 +152,19 @@ class MediaServiceImpl implements MediaService {
     isGlobal?: boolean;
   }) {
     try {
-      const image = await db.quoteImage.update({
+      const image = await db.gallery.update({
         where: { id },
         data,
         include: {
-          quote: {
-            select: {
-              id: true,
-              slug: true,
-            }
+          _count: {
+            select: { quotes: true }
           }
         }
       });
 
       return this.transformToMediaLibraryItem(image);
     } catch (error) {
-      console.error("[MEDIA_SERVICE]", error); // Add logging
+      console.error("[MEDIA_SERVICE]", error);
       
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
@@ -192,10 +180,10 @@ class MediaServiceImpl implements MediaService {
     }
   }
 
-  // Delete image completely
+  // Updated to use Gallery
   async deleteImage(id: string) {
     try {
-      const image = await db.quoteImage.findUnique({
+      const image = await db.gallery.findUnique({
         where: { id }
       });
 
@@ -203,7 +191,7 @@ class MediaServiceImpl implements MediaService {
         throw new AppError("Image not found", "IMAGE_NOT_FOUND", 404);
       }
 
-      // Delete from Cloudinary
+      // Delete from Cloudinary first
       const deleted = await deleteImage(image.publicId);
       if (!deleted) {
         throw new AppError(
@@ -213,92 +201,23 @@ class MediaServiceImpl implements MediaService {
         );
       }
 
-      // Delete from database
-      await db.quoteImage.delete({
-        where: { id }
+      // Delete from database using transaction
+      await db.$transaction(async (tx) => {
+        // Delete all quote associations first
+        await tx.quoteToGallery.deleteMany({
+          where: { galleryId: id }
+        });
+
+        // Then delete the gallery item
+        await tx.gallery.delete({
+          where: { id }
+        });
       });
     } catch (error) {
       if (error instanceof AppError) throw error;
       throw new AppError(
         "Failed to delete image",
         "DELETE_IMAGE_FAILED" as AppErrorCode,
-        500
-      );
-    }
-  }
-
-  // Associate image with quote
-  async associateWithQuote(imageId: string, quoteId: string) {
-    try {
-      await db.$transaction(async (tx) => {
-        const image = await tx.quoteImage.findUnique({
-          where: { id: imageId }
-        });
-
-        if (!image) {
-          throw new AppError("Image not found", "IMAGE_NOT_FOUND", 404);
-        }
-
-        // Create new association
-        await tx.quoteImage.create({
-          data: {
-            quoteId,
-            url: image.url,
-            publicId: image.publicId,
-            isActive: false,
-            isGlobal: true,
-            title: image.title,
-            description: image.description,
-            altText: image.altText
-          }
-        });
-
-        // Update usage count
-        await tx.quoteImage.update({
-          where: { id: imageId },
-          data: { usageCount: { increment: 1 } }
-        });
-      });
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      throw new AppError(
-        "Failed to associate image with quote",
-        "IMAGE_ASSOCIATION_FAILED" as AppErrorCode,
-        500
-      );
-    }
-  }
-
-  // Dissociate image from quote
-  async dissociateFromQuote(imageId: string, quoteId: string) {
-    try {
-      await db.$transaction(async (tx) => {
-        const image = await tx.quoteImage.findFirst({
-          where: { id: imageId, quoteId }
-        });
-
-        if (!image) {
-          throw new AppError("Image not found", "IMAGE_NOT_FOUND", 404);
-        }
-
-        // Remove association
-        await tx.quoteImage.delete({
-          where: { id: imageId }
-        });
-
-        // Update usage count if image is global
-        if (image.isGlobal) {
-          await tx.quoteImage.updateMany({
-            where: { publicId: image.publicId },
-            data: { usageCount: { decrement: 1 } }
-          });
-        }
-      });
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      throw new AppError(
-        "Failed to dissociate image from quote",
-        "IMAGE_DISSOCIATION_FAILED" as AppErrorCode,
         500
       );
     }
