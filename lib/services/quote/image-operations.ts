@@ -80,7 +80,8 @@ export async function addImages(quoteId: string, images: QuoteImageData[]): Prom
 export async function addFromMediaLibrary(quoteId: string, images: MediaLibraryItem[]): Promise<Quote> {
   try {
     return await db.$transaction(async (tx) => {
-      const currentCount = await tx.quoteImage.count({
+      // Update to use quoteToGallery instead of quoteImage
+      const currentCount = await tx.quoteToGallery.count({
         where: { quoteId }
       });
 
@@ -92,16 +93,34 @@ export async function addFromMediaLibrary(quoteId: string, images: MediaLibraryI
         );
       }
 
+      // Create associations for media library items
       for (const image of images) {
-        await mediaService.associateWithQuote(image.public_id, quoteId);
+        // Create association with existing gallery item
+        await tx.quoteToGallery.create({
+          data: {
+            quoteId,
+            galleryId: image.id,
+            isActive: false
+          }
+        });
+
+        // Increment usage count for the gallery item
+        await tx.gallery.update({
+          where: { id: image.id },
+          data: { usageCount: { increment: 1 } }
+        });
       }
 
       return tx.quote.findUniqueOrThrow({
         where: { id: quoteId },
         include: {
-          images: true,
           category: true,
-          authorProfile: true
+          authorProfile: true,
+          gallery: {
+            include: {
+              gallery: true
+            }
+          }
         }
       });
     });
