@@ -41,6 +41,7 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
 
     try {
       const transformedImages: QuoteImageData[] = validatedData.data.images?.map(img => ({
+        id: img.id, // Add the required id field
         url: img.url,
         publicId: img.publicId,
         isActive: img.isActive,

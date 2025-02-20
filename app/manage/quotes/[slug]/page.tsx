@@ -84,15 +84,15 @@ export default async function EditQuotePage({
       notFound();
     }
 
-    // Transform the quote data to match the expected types
+    // Transform the quote data to match EditQuoteFormProps interface
     const transformedQuote = {
       ...quote,
-      backgroundImage: quote.backgroundImage || null, // Handle null case explicitly
       gallery: quote.gallery.map(g => ({
-        ...g.gallery,
+        gallery: g.gallery, // Keep the nested gallery object
         isActive: g.isActive
       })),
-      tags: quote.tags // Include the tags
+      backgroundImage: quote.backgroundImage || null,
+      tags: quote.tags
     };
 
     return (

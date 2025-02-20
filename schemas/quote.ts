@@ -14,8 +14,9 @@ export const quoteSchema = z.object({
 
 // Add new schema for quote images
 const quoteImageSchema = z.object({
-  url: z.string().url("Invalid image URL"),
-  publicId: z.string(),
+  id: z.string().min(1, "ID is required"),
+  url: z.string().url("Invalid URL"),
+  publicId: z.string().min(1, "Public ID is required"),
   isActive: z.boolean().default(false)
 });
 
