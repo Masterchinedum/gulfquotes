@@ -4,16 +4,24 @@ import { AppError } from "@/lib/api-error";
 import { auth } from "@/auth";
 import { CreateQuoteInput, UpdateQuoteInput } from "@/schemas/quote";
 import { slugify } from "@/lib/utils";
-import type { QuoteService, ListQuotesResult } from "./types";
+import type { QuoteService, ListQuotesResult, QuoteImageData } from "./types";
 import type { ListQuotesParams } from "@/types/api/quotes";
 import type { GalleryItem } from "@/types/gallery";
+import type { MediaLibraryItem } from "@/types/cloudinary";
 import {
   validateCategory,
   validateSlug,
   validateAccess,
-  validateAuthorProfile
+  validateAuthorProfile,
+  validateUpdateData
 } from "./validators";
 import { sanitizeContent, prepareUpdateData, handleUpdateError } from "./utils";
+import { 
+  addImages as addQuoteImages,
+  addFromMediaLibrary as addQuoteFromMediaLibrary,
+  removeImage as removeQuoteImage,
+  removeImageAssociation as removeQuoteImageAssociation
+} from "./image-operations";
 
 class QuoteServiceImpl implements QuoteService {
   async create(data: CreateQuoteInput & { authorId: string }): Promise<Quote> {
@@ -360,6 +368,23 @@ class QuoteServiceImpl implements QuoteService {
       if (error instanceof AppError) throw error;
       throw new AppError("Failed to set background image", "GALLERY_QUOTE_OPERATION_FAILED", 500);
     }
+  }
+
+  // Add the missing methods from QuoteService interface
+  async addImages(quoteId: string, images: QuoteImageData[]): Promise<Quote> {
+    return addQuoteImages(quoteId, images);
+  }
+
+  async addFromMediaLibrary(quoteId: string, images: MediaLibraryItem[]): Promise<Quote> {
+    return addQuoteFromMediaLibrary(quoteId, images);
+  }
+
+  async removeImage(quoteId: string, publicId: string): Promise<Quote> {
+    return removeQuoteImage(quoteId, publicId);
+  }
+
+  async removeImageAssociation(quoteId: string, imageId: string): Promise<Quote> {
+    return removeQuoteImageAssociation(quoteId, imageId);
   }
 }
 

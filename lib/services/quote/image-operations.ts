@@ -250,16 +250,23 @@ export async function setBackgroundImage(quoteId: string, imageUrl: string | nul
 export async function removeImageAssociation(quoteId: string, imageId: string): Promise<Quote> {
   try {
     return await db.$transaction(async (tx) => {
-      const image = await tx.quoteImage.findFirst({
-        where: { id: imageId, quoteId }
+      // Find the association
+      const association = await tx.quoteToGallery.findFirst({
+        where: { 
+          galleryId: imageId,
+          quoteId 
+        },
+        include: {
+          gallery: true
+        }
       });
 
-      if (!image) {
+      if (!association) {
         throw new AppError("Image not found", "IMAGE_NOT_FOUND", 404);
       }
 
-      // If this is the active background, reset it
-      if (image.isActive) {
+      // If this was the background image, reset it
+      if (association.isActive) {
         await tx.quote.update({
           where: { id: quoteId },
           data: { backgroundImage: null }
@@ -267,14 +274,19 @@ export async function removeImageAssociation(quoteId: string, imageId: string): 
       }
 
       // Remove the association
-      await tx.quoteImage.delete({
-        where: { id: imageId }
+      await tx.quoteToGallery.delete({
+        where: {
+          quoteId_galleryId: {
+            quoteId,
+            galleryId: imageId
+          }
+        }
       });
 
       // Update usage count for global images
-      if (image.isGlobal) {
-        await tx.quoteImage.updateMany({
-          where: { publicId: image.publicId },
+      if (association.gallery.isGlobal) {
+        await tx.gallery.update({
+          where: { id: imageId },
           data: { usageCount: { decrement: 1 } }
         });
       }
@@ -282,9 +294,13 @@ export async function removeImageAssociation(quoteId: string, imageId: string): 
       return tx.quote.findUniqueOrThrow({
         where: { id: quoteId },
         include: {
-          images: true,
           category: true,
-          authorProfile: true
+          authorProfile: true,
+          gallery: {
+            include: {
+              gallery: true
+            }
+          }
         }
       });
     });
@@ -298,9 +314,6 @@ export async function removeImageAssociation(quoteId: string, imageId: string): 
   }
 }
 
-/**
- * Add gallery images to a quote
- */
 export async function addGalleryImages(quoteId: string, images: GalleryItem[]): Promise<Quote> {
   try {
     return await db.$transaction(async (tx) => {
