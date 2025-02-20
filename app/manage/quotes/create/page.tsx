@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { QuoteForm } from "@/components/quotes/quote-form";
 import { CategoryForm } from "@/components/quotes/category-form";
 import db from "@/lib/prisma";
+import type { CreateQuoteInput } from "@/schemas/quote";
 
 export default async function NewQuotePage() {
   // Check for an authenticated session
@@ -43,15 +44,20 @@ export default async function NewQuotePage() {
     })
   ]);
 
+  const initialData: Partial<CreateQuoteInput> = {
+    content: "",
+    categoryId: "",
+    authorProfileId: "",
+    galleryImages: galleryItems
+  };
+
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-4">Create a New Quote</h1>
       <QuoteForm 
         categories={categories} 
         authorProfiles={authorProfiles}
-        initialData={{
-          galleryImages: galleryItems
-        }}
+        initialData={initialData}
       />
       
       {session.user.role === "ADMIN" && (
