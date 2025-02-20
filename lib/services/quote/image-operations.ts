@@ -7,13 +7,13 @@ import db from "@/lib/prisma";
 import type { QuoteImageData } from "./types";
 import type { MediaLibraryItem } from "@/types/cloudinary";
 import type { Quote } from "@prisma/client";
-// import { galleryService } from "@/lib/services/gallery.service";
 import type { GalleryItem } from "@/types/gallery";
 
 export async function addImages(quoteId: string, images: QuoteImageData[]): Promise<Quote> {
   try {
     return await db.$transaction(async (tx) => {
-      const currentCount = await tx.quoteImage.count({
+      // Update to use quoteToGallery instead of quoteImage
+      const currentCount = await tx.quoteToGallery.count({
         where: { quoteId }
       });
 
@@ -25,34 +25,50 @@ export async function addImages(quoteId: string, images: QuoteImageData[]): Prom
         );
       }
 
-      await tx.quoteImage.createMany({
-        data: images.map(img => ({
-          quoteId,
-          url: img.url,
-          publicId: img.publicId,
-          isActive: img.isActive,
-          isGlobal: img.isGlobal ?? false,
-          title: img.title,
-          description: img.description,
-          altText: img.altText,
-          format: img.format,
-          width: img.width,
-          height: img.height,
-          bytes: img.bytes,
-          usageCount: img.isGlobal ? 1 : 0,
-          resource_type: 'image',
-          created_at: img.created_at,
-          folder: img.folder,
-          secure_url: img.secure_url
-        }))
-      });
+      // Create gallery items first
+      const galleryItems = await Promise.all(
+        images.map(img => 
+          tx.gallery.create({
+            data: {
+              url: img.url,
+              publicId: img.publicId,
+              format: img.format,
+              width: img.width,
+              height: img.height,
+              bytes: img.bytes,
+              title: img.title,
+              description: img.description,
+              altText: img.altText,
+              isGlobal: img.isGlobal ?? false,
+              usageCount: 1
+            }
+          })
+        )
+      );
+
+      // Create quote associations
+      await Promise.all(
+        galleryItems.map(gallery =>
+          tx.quoteToGallery.create({
+            data: {
+              quoteId,
+              galleryId: gallery.id,
+              isActive: false
+            }
+          })
+        )
+      );
 
       return tx.quote.findUniqueOrThrow({
         where: { id: quoteId },
         include: {
-          images: true,
           category: true,
-          authorProfile: true
+          authorProfile: true,
+          gallery: {
+            include: {
+              gallery: true
+            }
+          }
         }
       });
     });
