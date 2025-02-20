@@ -4,7 +4,6 @@ import { GalleryUpload } from "@/components/gallery/GalleryUpload";
 import { GalleryGrid } from "@/components/gallery/GalleryGrid";
 import type { CreateGalleryInput } from "@/schemas/gallery";
 import type { GalleryApiError, GalleryItem, GalleryListResponse } from "@/types/gallery";
-// import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -42,9 +41,9 @@ export default function GalleryPage() {
       // Snapshot the previous value
       const previousImages = queryClient.getQueryData(['gallery-images']);
 
-      // Optimistically update to the new value
+      // Optimistically update to the new value with proper type checking
       queryClient.setQueryData(['gallery-images'], (old: GalleryListResponse | undefined) => {
-        if (!old) return old;
+        if (!old?.data?.items) return old;
         return {
           ...old,
           data: {
