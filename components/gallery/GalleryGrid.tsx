@@ -1,17 +1,20 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { CldImage } from "next-cloudinary";
-import { Loader2} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-// import { cn } from "@/lib/utils";
+import { GalleryCard } from "@/components/gallery/GalleryCard";
 import type { GalleryItem } from "@/types/gallery";
 
 interface GalleryGridProps {
   searchQuery?: string;
+  onDelete?: (id: string) => Promise<void>;
 }
 
-export function GalleryGrid({ searchQuery = "" }: GalleryGridProps) {
+export function GalleryGrid({ 
+  searchQuery = "",
+  onDelete
+}: GalleryGridProps) {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,26 +60,11 @@ export function GalleryGrid({ searchQuery = "" }: GalleryGridProps) {
       {/* Image grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {Array.isArray(items) && items.map((item) => (
-          <div
+          <GalleryCard
             key={item.publicId}
-            className="group relative aspect-[1.91/1] overflow-hidden rounded-lg border bg-muted"
-          >
-            <CldImage
-              src={item.publicId}
-              fill
-              sizes="(max-width: 768px) 50vw, 33vw"
-              alt={item.altText || "Gallery image"}
-              className="object-cover"
-            />
-            
-            {/* Image info overlay */}
-            <div className="absolute inset-x-0 bottom-0 bg-black/50 p-2 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-              <p className="text-xs truncate">{item.title || "Untitled"}</p>
-              <p className="text-xs text-gray-300">
-                Used: {item._count?.quotes || 0} times
-              </p>
-            </div>
-          </div>
+            item={item}
+            onDelete={onDelete}
+          />
         ))}
       </div>
 

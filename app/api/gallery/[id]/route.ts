@@ -5,6 +5,30 @@ import { AppError } from "@/lib/api-error";
 import { updateGallerySchema } from "@/schemas/gallery";
 import type { GalleryResponse, GalleryApiError, GalleryDeleteResponse } from "@/types/gallery";
 
+// Helper function for authentication checks
+async function validateAuth() {
+  const session = await auth();
+  if (!session?.user) {
+    throw new AppError("Not authenticated", "UNAUTHORIZED", 401);
+  }
+  
+  // Only ADMIN can delete images
+  if (session.user.role !== "ADMIN") {
+    throw new AppError("Only administrators can manage gallery items", "FORBIDDEN", 403);
+  }
+  
+  return session.user;
+}
+
+// Helper function to extract and validate ID
+function extractGalleryId(url: string) {
+  const id = url.split('/gallery/')[1];
+  if (!id) {
+    throw new AppError("Gallery ID is required", "BAD_REQUEST", 400);
+  }
+  return id;
+}
+
 export async function GET(
   req: Request
 ): Promise<NextResponse<GalleryResponse>> {
@@ -129,42 +153,44 @@ export async function DELETE(
   req: Request
 ): Promise<NextResponse<GalleryDeleteResponse>> {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
-        { status: 401 }
-      );
-    }
+    // Validate authentication and permissions
+    await validateAuth();
 
-    const id = req.url.split('/gallery/')[1];
-    if (!id) {
-      return NextResponse.json(
-        { error: { code: "BAD_REQUEST", message: "Gallery ID is required" } },
-        { status: 400 }
-      );
-    }
+    // Extract and validate gallery ID
+    const id = extractGalleryId(req.url);
 
+    // Attempt to delete the gallery item
     await galleryService.delete(id);
-    return NextResponse.json({ data: null });
+    
+    return NextResponse.json({ 
+      data: null,
+      message: "Gallery item deleted successfully" 
+    });
 
   } catch (error) {
+    console.error("[GALLERY_DELETE]", error);
+
     if (error instanceof AppError) {
+      // Handle specific error cases
+      const statusCode = error.statusCode || 500;
       const galleryError: GalleryApiError = {
         code: error.code,
-        message: error.message
+        message: error.message,
+        details: error.details
       };
+
       return NextResponse.json(
         { error: galleryError },
-        { status: error.statusCode }
+        { status: statusCode }
       );
     }
-    console.error("[GALLERY_DELETE]", error);
+
+    // Handle unexpected errors
     return NextResponse.json(
       { 
         error: {
           code: "INTERNAL_ERROR",
-          message: "Internal server error"
+          message: "An unexpected error occurred while deleting the gallery item"
         } 
       },
       { status: 500 }
