@@ -27,6 +27,8 @@ import { useState } from "react";
 interface GalleryCardProps {
   item: GalleryItem;
   onDelete?: (id: string) => Promise<void>;
+  onSelect?: () => void;
+  isSelected?: boolean;
   disabled?: boolean;
 }
 

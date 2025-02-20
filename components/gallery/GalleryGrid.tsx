@@ -9,13 +9,21 @@ interface GalleryGridProps {
   isLoading: boolean;
   onDelete?: (id: string) => Promise<void>;
   error?: string;
+  searchQuery?: string;
+  maxSelectable?: number;
+  currentlySelected?: string[];
+  onSelect?: (selectedImages: GalleryItem[]) => void;
 }
 
 export function GalleryGrid({ 
   items,
   isLoading,
   onDelete,
-  error
+  error,
+  // searchQuery,
+  // maxSelectable,
+  currentlySelected = [],
+  onSelect
 }: GalleryGridProps) {
   if (error) {
     return (
@@ -50,6 +58,8 @@ export function GalleryGrid({
           key={item.id}
           item={item}
           onDelete={onDelete}
+          onSelect={onSelect ? () => onSelect([item]) : undefined}
+          isSelected={currentlySelected?.includes(item.publicId)}
         />
       ))}
     </div>
