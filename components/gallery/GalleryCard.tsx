@@ -2,35 +2,58 @@
 
 import { CldImage } from "next-cloudinary";
 import { Button } from "@/components/ui/button";
-import { Check, Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import type { GalleryItem } from "@/types/gallery";
+import { useState } from "react";
 
 interface GalleryCardProps {
   item: GalleryItem;
-  isSelected?: boolean;
-  onSelect?: () => void;
-  onDelete?: () => void;
+  onDelete?: (id: string) => Promise<void>;
   disabled?: boolean;
-  loading?: boolean;
 }
 
 export function GalleryCard({
   item,
-  isSelected = false,
-  onSelect,
   onDelete,
-  disabled = false,
-  loading = false
+  disabled = false
 }: GalleryCardProps) {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!onDelete) return;
+    setIsDeleting(true);
+    try {
+      await onDelete(item.id);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div
       className={cn(
         "group relative aspect-[1.91/1] overflow-hidden rounded-lg border",
         "transition-all hover:opacity-90",
-        isSelected && "ring-2 ring-primary",
         disabled && "opacity-50 cursor-not-allowed",
-        loading && "animate-pulse"
+        isDeleting && "animate-pulse"
       )}
     >
       {/* Image */}
@@ -41,44 +64,57 @@ export function GalleryCard({
         alt={item.altText || "Gallery image"}
         className="object-cover"
       />
-      
-      {/* Selection Indicator */}
-      {isSelected && (
-        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-          <Check className="h-6 w-6 text-primary" />
-        </div>
-      )}
 
       {/* Loading Indicator */}
-      {loading && (
+      {isDeleting && (
         <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       )}
 
       {/* Hover Actions */}
-      <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 bg-black/50 transition-opacity">
-        {onSelect && (
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={onSelect}
-            disabled={disabled || loading}
-          >
-            Select
-          </Button>
-        )}
+      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
         {onDelete && (
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            onClick={onDelete}
-            disabled={disabled || loading}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      disabled={disabled || isDeleting}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Image</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete this image? This action cannot be undone 
+                        and will remove the image from any quotes using it.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        disabled={isDeleting}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {isDeleting ? "Deleting..." : "Delete"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Delete image permanently</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
       </div>
 

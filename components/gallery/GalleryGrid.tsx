@@ -2,28 +2,19 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { CldImage } from "next-cloudinary";
-import { Check, Loader2 } from "lucide-react";
+import { Loader2} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+// import { cn } from "@/lib/utils";
 import type { GalleryItem } from "@/types/gallery";
 
 interface GalleryGridProps {
   searchQuery?: string;
-  maxSelectable?: number;
-  currentlySelected?: string[];
-  onSelect: (images: GalleryItem[]) => void;
 }
 
-export function GalleryGrid({
-  searchQuery = "",
-  maxSelectable = 1,
-  currentlySelected = [],
-  onSelect
-}: GalleryGridProps) {
+export function GalleryGrid({ searchQuery = "" }: GalleryGridProps) {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(currentlySelected));
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
 
@@ -33,18 +24,17 @@ export function GalleryGrid({
       setLoading(true);
       const searchParams = new URLSearchParams({
         page: reset ? "1" : page.toString(),
-        limit: "20",
+        limit: "12",
         ...(searchQuery ? { search: searchQuery } : {})
       });
 
       const response = await fetch(`/api/gallery?${searchParams}`);
       if (!response.ok) throw new Error("Failed to fetch images");
 
-      const data = await response.json();
+      const { data } = await response.json();
       
-      // Ensure data.items is an array
+      // Handle the paginated data
       const newItems = Array.isArray(data.items) ? data.items : [];
-      
       setItems(prev => reset ? newItems : [...prev, ...newItems]);
       setHasMore(!!data.hasMore);
       if (reset) setPage(1);
@@ -62,34 +52,6 @@ export function GalleryGrid({
     fetchItems(true);
   }, [searchQuery, fetchItems]);
 
-  // Handle image selection
-  const handleImageSelect = (item: GalleryItem) => {
-    const newSelected = new Set(selectedIds);
-    
-    if (newSelected.has(item.publicId)) {
-      newSelected.delete(item.publicId);
-    } else {
-      if (newSelected.size >= maxSelectable) {
-        if (maxSelectable === 1) {
-          newSelected.clear();
-        } else {
-          return; // Don't add if we're at the limit
-        }
-      }
-      newSelected.add(item.publicId);
-    }
-    
-    setSelectedIds(newSelected);
-  };
-
-  // Handle confirm selection
-  const handleConfirm = () => {
-    const selectedImages = items.filter(item => 
-      selectedIds.has(item.publicId)
-    );
-    onSelect(selectedImages);
-  };
-
   return (
     <div className="space-y-4">
       {/* Image grid */}
@@ -97,12 +59,7 @@ export function GalleryGrid({
         {Array.isArray(items) && items.map((item) => (
           <div
             key={item.publicId}
-            className={cn(
-              "group relative aspect-[1.91/1] overflow-hidden rounded-lg border",
-              "cursor-pointer transition-all hover:opacity-90",
-              selectedIds.has(item.publicId) && "ring-2 ring-primary"
-            )}
-            onClick={() => handleImageSelect(item)}
+            className="group relative aspect-[1.91/1] overflow-hidden rounded-lg border bg-muted"
           >
             <CldImage
               src={item.publicId}
@@ -112,16 +69,12 @@ export function GalleryGrid({
               className="object-cover"
             />
             
-            {selectedIds.has(item.publicId) && (
-              <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                <Check className="h-6 w-6 text-primary" />
-              </div>
-            )}
-
             {/* Image info overlay */}
             <div className="absolute inset-x-0 bottom-0 bg-black/50 p-2 text-white opacity-0 group-hover:opacity-100 transition-opacity">
               <p className="text-xs truncate">{item.title || "Untitled"}</p>
-              <p className="text-xs text-gray-300">Used: {item._count?.quotes || 0} times</p>
+              <p className="text-xs text-gray-300">
+                Used: {item._count?.quotes || 0} times
+              </p>
             </div>
           </div>
         ))}
@@ -164,18 +117,6 @@ export function GalleryGrid({
           </Button>
         </div>
       )}
-
-      {/* Selection actions */}
-      <div className="flex justify-end gap-2 pt-4 border-t">
-        <Button 
-          onClick={handleConfirm}
-          disabled={selectedIds.size === 0}
-        >
-          {selectedIds.size === 0 
-            ? "Select Images" 
-            : `Use ${selectedIds.size} Selected`}
-        </Button>
-      </div>
     </div>
   );
 }
