@@ -21,8 +21,8 @@ import type { GalleryItem } from "@/types/gallery";
 import { CldImage } from "next-cloudinary";
 import { TagInput } from "@/components/forms/TagInput";
 import { TagManagementModal } from "@/components/forms/TagManagementModal";
-import { GalleryModal } from "@/components/gallery/GalleryModal";
 import { ImagePlus } from "lucide-react";
+import { QuoteGalleryModal } from "@/components/quotes/quote-gallery-modal";
 
 interface EditQuoteFormProps {
   quote: Quote & {
@@ -429,7 +429,7 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
           </div>
         </div>
 
-        <GalleryModal
+        <QuoteGalleryModal
           isOpen={isGalleryOpen}
           onClose={() => setIsGalleryOpen(false)}
           onSelect={handleGallerySelect}

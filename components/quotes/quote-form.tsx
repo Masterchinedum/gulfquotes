@@ -18,7 +18,7 @@ import type { GalleryItem } from "@/types/gallery";
 import { CldImage } from "next-cloudinary";
 import { TagInput } from "@/components/forms/TagInput";
 import { TagManagementModal } from "@/components/forms/TagManagementModal";
-import { GalleryModal } from "@/components/gallery/GalleryModal";
+import { QuoteGalleryModal } from "@/components/quotes/quote-gallery-modal";
 import { ImagePlus } from "lucide-react";
 
 interface QuoteFormProps {
@@ -352,7 +352,7 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
           </div>
         </div>
 
-        <GalleryModal
+        <QuoteGalleryModal
           isOpen={isGalleryOpen}
           onClose={() => setIsGalleryOpen(false)}
           onSelect={handleGallerySelect}
