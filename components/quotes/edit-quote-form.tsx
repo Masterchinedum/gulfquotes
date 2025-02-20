@@ -32,6 +32,7 @@ interface EditQuoteFormProps {
       gallery: GalleryItem;
       isActive: boolean;
     }[];
+    images?: QuoteImageResource[]; // Add this field
     backgroundImage: string | null;
     tags: Tag[];
   };
@@ -44,7 +45,24 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
   const { toast } = useToast();
   const [charCount, setCharCount] = useState(quote.content.length);
   
-  const [images, setImages] = useState<QuoteImageResource[]>(quote.images || []);
+  // Transform gallery items into QuoteImageResource format
+  const initialImages = quote.gallery.map(g => ({
+    public_id: g.gallery.publicId,
+    secure_url: g.gallery.url,
+    format: g.gallery.format || 'webp',
+    width: g.gallery.width || 1200,
+    height: g.gallery.height || 630,
+    resource_type: 'image' as const,
+    created_at: g.gallery.createdAt.toISOString(),
+    bytes: g.gallery.bytes || 0,
+    folder: 'gallery-images',
+    context: {
+      isGlobal: true,
+      alt: g.gallery.altText || undefined
+    }
+  }));
+
+  const [images, setImages] = useState<QuoteImageResource[]>(initialImages);
   const [selectedImage, setSelectedImage] = useState<string | null>(quote.backgroundImage || null);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedTags, setSelectedTags] = useState<Tag[]>(quote.tags || []);

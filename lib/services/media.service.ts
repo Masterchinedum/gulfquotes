@@ -41,6 +41,7 @@ class MediaServiceImpl implements MediaService {
     _count?: { quotes: number };
   }): MediaLibraryItem {
     return {
+      id: item.id, // Add the required id field
       public_id: item.publicId,
       secure_url: item.url,
       format: item.format ?? 'webp',
