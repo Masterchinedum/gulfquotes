@@ -3,14 +3,11 @@
 import { GalleryUpload } from "@/components/gallery/GalleryUpload";
 import { GalleryGrid } from "@/components/gallery/GalleryGrid";
 import type { CreateGalleryInput } from "@/schemas/gallery";
-import type { GalleryListResponse } from "@/types/gallery";
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function GalleryPage() {
-  // Remove selection-related state
   const [page, setPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -35,7 +32,6 @@ export default function GalleryPage() {
         throw new Error(error.message || 'Failed to save image');
       }
       
-      // Show success toast
       toast({
         title: "Success",
         description: "Image uploaded successfully"
@@ -44,7 +40,6 @@ export default function GalleryPage() {
       // Refresh the grid by resetting to page 1
       setPage(1);
     } catch (error) {
-      // Show error toast with specific message
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to save image",
@@ -81,7 +76,6 @@ export default function GalleryPage() {
         currentPage={page}
         onPageChange={handlePageChange}
         onError={handleError}
-        isLoading={isLoading}
       />
 
       {error && (

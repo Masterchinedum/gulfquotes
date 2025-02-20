@@ -73,35 +73,79 @@ class GalleryServiceImpl implements GalleryService {
 
   async delete(id: string): Promise<void> {
     try {
-      const gallery = await db.gallery.findUnique({
-        where: { id }
-      });
-
-      if (!gallery) {
-        throw new AppError("Gallery item not found", "GALLERY_NOT_FOUND", 404);
-      }
-
-      // Delete from Cloudinary first
-      const deleted = await deleteImage(gallery.publicId);
-      if (!deleted) {
-        throw new AppError("Failed to delete from Cloudinary", "GALLERY_CLOUDINARY_ERROR", 500);
-      }
-
-      // Then delete from database
+      // Start transaction to ensure data consistency
       await db.$transaction(async (tx) => {
-        // Remove all quote associations first
+        // Find gallery item with quote usage count
+        const gallery = await tx.gallery.findUnique({
+          where: { id },
+          include: {
+            _count: {
+              select: { quotes: true }
+            }
+          }
+        });
+
+        if (!gallery) {
+          throw new AppError("Gallery item not found", "GALLERY_NOT_FOUND", 404);
+        }
+
+        // Check if image is in use by any quotes
+        if (gallery._count.quotes > 0) {
+          throw new AppError(
+            "Cannot delete image that is in use by quotes", 
+            "GALLERY_IN_USE", 
+            400
+          );
+        }
+
+        // Delete from Cloudinary first
+        const deleted = await deleteImage(gallery.publicId);
+        if (!deleted) {
+          throw new AppError(
+            "Failed to delete image from cloud storage", 
+            "GALLERY_CLOUDINARY_ERROR", 
+            500
+          );
+        }
+
+        // Then delete from database in order:
+        // 1. Remove all quote associations
         await tx.quoteToGallery.deleteMany({
           where: { galleryId: id }
         });
 
-        // Then delete the gallery item
+        // 2. Delete the gallery item itself
         await tx.gallery.delete({
           where: { id }
         });
       });
     } catch (error) {
+      // Handle specific error cases
       if (error instanceof AppError) throw error;
-      throw new AppError("Failed to delete gallery item", "GALLERY_DELETE_FAILED", 500);
+      
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new AppError("Gallery item not found", "GALLERY_NOT_FOUND", 404);
+        }
+        
+        if (error.code === 'P2003') {
+          throw new AppError(
+            "Cannot delete image that is referenced by other records", 
+            "GALLERY_IN_USE", 
+            400
+          );
+        }
+      }
+
+      // Log unexpected errors
+      console.error("[GALLERY_DELETE]", error);
+      
+      // Generic error
+      throw new AppError(
+        "Failed to delete gallery item", 
+        "GALLERY_DELETE_FAILED", 
+        500
+      );
     }
   }
 
