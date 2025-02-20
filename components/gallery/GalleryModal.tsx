@@ -40,16 +40,23 @@ export function GalleryModal({
   const [uploading, setUploading] = useState(false);
 
   const handleUploadSuccess = (result: CloudinaryUploadResult) => {
-    setUploading(false); // Set uploading to false when upload completes
-    if (result.event !== "success") return;
-    // Refresh the gallery grid to show new image
-    // We'll implement this later with grid methods
+    console.log('Upload result:', result);
+    setUploading(false);
+    if (result.event !== "success") {
+      console.log('Upload event was not successful:', result.event);
+      return;
+    }
+    // Continue with upload handling...
   };
 
   const handleSelect = (selectedImages: GalleryItem[]) => {
     onSelect(selectedImages);
     onClose();
   };
+
+  // Add logs for modal state changes
+  console.log('Modal open state:', isOpen);
+  console.log('Uploading state:', uploading);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
