@@ -2,7 +2,7 @@ import { AppError } from "@/lib/api-error";
 import { cloudinaryConfig } from "@/lib/cloudinary";
 import { deleteImage } from "@/lib/cloudinary";
 import { handleDeleteError, handleUploadError } from "@/lib/utils/image-management";
-import { mediaService } from "@/lib/services/media.service";
+// import { mediaService } from "@/lib/services/media.service";
 import db from "@/lib/prisma";
 import type { QuoteImageData } from "./types";
 import type { MediaLibraryItem } from "@/types/cloudinary";
@@ -132,30 +132,64 @@ export async function addFromMediaLibrary(quoteId: string, images: MediaLibraryI
 export async function removeImage(quoteId: string, publicId: string): Promise<Quote> {
   try {
     return await db.$transaction(async (tx) => {
-      const image = await tx.quoteImage.findFirst({
-        where: { quoteId, publicId }
+      // Find the gallery item by publicId
+      const galleryImage = await tx.gallery.findFirst({
+        where: { publicId },
+        include: {
+          quotes: {
+            where: { quoteId }
+          }
+        }
       });
 
-      if (!image) {
+      if (!galleryImage || galleryImage.quotes.length === 0) {
         throw new AppError("Image not found", "IMAGE_NOT_FOUND", 404);
       }
 
-      if (image.isGlobal) {
-        await mediaService.dissociateFromQuote(image.id, quoteId);
+      if (galleryImage.isGlobal) {
+        // Just remove the association for global images
+        await tx.quoteToGallery.delete({
+          where: {
+            quoteId_galleryId: {
+              quoteId,
+              galleryId: galleryImage.id
+            }
+          }
+        });
+
+        // Decrement usage count
+        await tx.gallery.update({
+          where: { id: galleryImage.id },
+          data: { usageCount: { decrement: 1 } }
+        });
       } else {
+        // For non-global images, delete from Cloudinary and database
         const deleted = await deleteImage(publicId);
         if (!deleted) {
           throw new AppError("Failed to delete image", "IMAGE_DELETE_FAILED", 500);
         }
-        await tx.quoteImage.delete({ where: { id: image.id } });
+
+        // Remove gallery item and all its associations
+        await tx.quoteToGallery.deleteMany({
+          where: { galleryId: galleryImage.id }
+        });
+
+        await tx.gallery.delete({
+          where: { id: galleryImage.id }
+        });
       }
 
+      // Return updated quote
       return tx.quote.findUniqueOrThrow({
         where: { id: quoteId },
         include: {
-          images: true,
           category: true,
-          authorProfile: true
+          authorProfile: true,
+          gallery: {
+            include: {
+              gallery: true
+            }
+          }
         }
       });
     });
@@ -167,24 +201,27 @@ export async function removeImage(quoteId: string, publicId: string): Promise<Qu
 export async function setBackgroundImage(quoteId: string, imageUrl: string | null): Promise<Quote> {
   try {
     return await db.$transaction(async (tx) => {
-      // Reset all images to not active
-      await tx.quoteImage.updateMany({
+      // Reset all gallery associations to not active
+      await tx.quoteToGallery.updateMany({
         where: { quoteId },
         data: { isActive: false }
       });
 
       if (imageUrl) {
-        const image = await tx.quoteImage.findFirst({
-          where: { quoteId, url: imageUrl }
+        // Find the gallery item by URL
+        const gallery = await tx.gallery.findFirst({
+          where: { url: imageUrl }
         });
 
-        if (!image) {
-          throw new AppError("Image not found", "IMAGE_NOT_FOUND", 404);
+        if (!gallery) {
+          throw new AppError("Gallery image not found", "GALLERY_NOT_FOUND", 404);
         }
 
         // Set the selected image as active
-        await tx.quoteImage.update({
-          where: { id: image.id },
+        await tx.quoteToGallery.update({
+          where: {
+            quoteId_galleryId: { quoteId, galleryId: gallery.id }
+          },
           data: { isActive: true }
         });
       }
@@ -194,15 +231,19 @@ export async function setBackgroundImage(quoteId: string, imageUrl: string | nul
         where: { id: quoteId },
         data: { backgroundImage: imageUrl },
         include: {
-          images: true,
           category: true,
-          authorProfile: true
+          authorProfile: true,
+          gallery: {
+            include: {
+              gallery: true
+            }
+          }
         }
       });
     });
   } catch (error) {
     if (error instanceof AppError) throw error;
-    throw new AppError("Failed to set background image", "INTERNAL_ERROR", 500);
+    throw new AppError("Failed to set background image", "GALLERY_QUOTE_OPERATION_FAILED", 500);
   }
 }
 
