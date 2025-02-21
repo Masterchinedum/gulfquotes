@@ -1,3 +1,5 @@
+//app/api/quotes/route.ts
+
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { createQuoteAPISchema } from "@/schemas/quote"; // This is the correct schema

@@ -1,3 +1,5 @@
+//app/api/quotes/[slug]/route.ts
+
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { updateQuoteSchema } from "@/schemas/quote";
