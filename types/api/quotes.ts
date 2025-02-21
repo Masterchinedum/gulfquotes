@@ -1,5 +1,7 @@
 import type { Quote, Category, AuthorProfile } from "@prisma/client";
-import type { UpdateQuoteInput } from "@/schemas/quote";
+// Remove the conflicting import
+// import type { UpdateQuoteInput } from "@/schemas/quote";
+import type { QuoteImageData } from "@/lib/services/quote/types";
 
 // Response Types
 export interface ApiResponse<T> {
@@ -173,6 +175,7 @@ export interface UpdateQuoteParams {
 export type CategoryResponse = ApiResponse<Category>;
 export type CategoriesResponse = ApiResponse<Category[]>;
 
+// Move UpdateQuoteInput interface here
 export interface UpdateQuoteInput {
   content?: string;
   slug?: string;

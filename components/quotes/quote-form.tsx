@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Icons } from "@/components/ui/icons";
 import { slugify } from "@/lib/utils";
 import type { GalleryItem } from "@/types/gallery";
+import type { CloudinaryUploadResult } from "@/types/cloudinary"; // Add this import
 import { TagInput } from "@/components/forms/TagInput";
 import { TagManagementModal } from "@/components/forms/TagManagementModal";
 import { QuoteGalleryModal } from "@/components/quotes/quote-gallery-modal";
@@ -50,19 +51,17 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Update image state with proper type checking
+  // Update the image state initialization
   const [selectedImage, setSelectedImage] = useState<SelectedImageState>(() => {
     const matchingImage = initialData?.galleryImages?.find(
       img => 'url' in img && 
       'publicId' in img && 
       img.url === initialData.backgroundImage
-    );
+    ) as GalleryItem | undefined; // Add type assertion
 
     return {
       imageUrl: initialData?.backgroundImage || null,
-      publicId: matchingImage && typeof matchingImage.publicId === 'string' 
-        ? matchingImage.publicId 
-        : null,
+      publicId: matchingImage?.publicId || null,
       isBackground: !!initialData?.backgroundImage
     };
   });
@@ -72,22 +71,41 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
     if (!initialData?.galleryImages) return [];
 
     return initialData.galleryImages.map(img => {
-      if (!('url' in img)) {
-        // Handle case where img doesn't have required properties
-        return {
-          ...img,
-          url: '',
-          publicId: '',
-          isActive: false,
-          isBackground: false
-        } as GalleryItem;
-      }
-
-      return {
-        ...img,
-        isActive: img.url === initialData.backgroundImage,
-        isBackground: img.url === initialData.backgroundImage
+      // Assert the type to include all required GalleryItem properties
+      const fullImage = img as unknown as GalleryItem & {
+        format?: string;
+        width?: number;
+        height?: number;
+        bytes?: number;
+        isGlobal?: boolean;
+        title?: string;
+        description?: string;
+        altText?: string;
+        createdAt?: Date;
+        updatedAt?: Date;
+        usageCount?: number;
       };
+
+      const galleryItem: GalleryItem = {
+        id: fullImage.id,
+        url: fullImage.url,
+        publicId: fullImage.publicId,
+        format: fullImage.format || '',
+        width: fullImage.width || 0,
+        height: fullImage.height || 0,
+        bytes: fullImage.bytes || 0,
+        isGlobal: fullImage.isGlobal || false,
+        title: fullImage.title || '',
+        description: fullImage.description || '',
+        altText: fullImage.altText || '',
+        createdAt: fullImage.createdAt || new Date(),
+        updatedAt: fullImage.updatedAt || new Date(),
+        usageCount: fullImage.usageCount || 0,
+        isActive: fullImage.url === initialData.backgroundImage,
+        isBackground: fullImage.url === initialData.backgroundImage
+      };
+
+      return galleryItem;
     });
   });
 
@@ -239,7 +257,10 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
         bytes: result.info.bytes,
         isGlobal: true,
         title: '',
+        description: '', // Add missing required property
+        altText: '',    // Add missing required property
         createdAt: new Date(),
+        updatedAt: new Date(), // Add missing required property
         usageCount: 0,
         isActive: !selectedImage.imageUrl,
         isBackground: !selectedImage.imageUrl
