@@ -48,7 +48,7 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
           id: img.id,
           isActive: img.id === validatedData.data.backgroundImage,
           isBackground: img.id === validatedData.data.backgroundImage
-        })) || []
+        }))
       });
 
       return NextResponse.json({ data: quote });

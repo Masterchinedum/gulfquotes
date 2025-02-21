@@ -7,6 +7,9 @@ export interface GalleryItem extends Gallery {
   _count?: {
     quotes: number;
   };
+  // Add these optional properties for quote context
+  isActive?: boolean;
+  isBackground?: boolean;
 }
 
 // Base Response Types

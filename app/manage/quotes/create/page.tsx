@@ -43,7 +43,7 @@ export default async function NewQuotePage() {
     })
   ]);
 
-  // Set initial data with first category and author profile as defaults
+  // Set initial data with correct type properties
   const initialData: CreateQuoteInput & {
     galleryImages?: GalleryItem[];
     backgroundImage?: string;
@@ -53,7 +53,6 @@ export default async function NewQuotePage() {
     categoryId: categories[0]?.id || "",
     authorProfileId: authorProfiles[0]?.id || "",
     slug: "",
-    images: [],
     backgroundImage: undefined, // Change from null to undefined
     galleryImages: galleryItems,
     tags: []

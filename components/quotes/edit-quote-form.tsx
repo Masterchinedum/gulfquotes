@@ -144,7 +144,7 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
     if (result.event === "success" && result.info && typeof result.info !== 'string') {
       setIsUploading(false); // Reset upload state on success
       
-      const newImage: GalleryItem = {
+      const baseGalleryItem: Omit<GalleryItem, 'isActive' | 'isBackground'> = {
         id: result.info.public_id,
         url: result.info.secure_url,
         publicId: result.info.public_id,
@@ -155,7 +155,11 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
         isGlobal: true,
         title: '',
         createdAt: new Date(),
-        usageCount: 0,
+        usageCount: 0
+      };
+
+      const newImage: GalleryItem = {
+        ...baseGalleryItem,
         isActive: !selectedImage.imageUrl, // Make active if no image selected
         isBackground: !selectedImage.imageUrl // Make background if no image selected
       };

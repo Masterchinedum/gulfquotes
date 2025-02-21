@@ -20,16 +20,21 @@ const quoteImageSchema = z.object({
   isActive: z.boolean().default(false)
 });
 
-// Schema for Creating a Quote, now including the optional slug field
+// Update createQuoteSchema
 export const createQuoteSchema = z.object({
   content: z.string()
     .min(1, "Quote content is required")
     .max(1500, "Quote must not exceed 1500 characters"),
-  slug: z.string().optional(),
+  authorProfileId: z.string().min(1, "Author profile is required"),
   categoryId: z.string().min(1, "Category is required"),
-  authorProfileId: z.string().min(1, "Author profile is required"), // Add this field
-  backgroundImage: z.string().url().nullable().optional(),
-  images: z.array(quoteImageSchema).max(30, "Maximum 30 images allowed").optional()
+  slug: z.string().optional(),
+  backgroundImage: z.string().nullable().optional(),
+  galleryImages: z.array(z.object({
+    id: z.string(),
+    isActive: z.boolean().optional(),
+    isBackground: z.boolean().optional()
+  })).optional(),
+  tagIds: z.array(z.string()).optional()
 });
 
 // Update the updateQuoteSchema with specific edit validations
