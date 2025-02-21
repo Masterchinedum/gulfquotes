@@ -185,6 +185,10 @@ export interface UpdateQuoteInput {
     isActive: boolean;
     isBackground: boolean;
   }>;
+  tags?: {
+    connect?: Array<{ id: string }>;
+    disconnect?: Array<{ id: string }>;
+  };
   addImages?: QuoteImageData[];
   removeImages?: string[];
 }

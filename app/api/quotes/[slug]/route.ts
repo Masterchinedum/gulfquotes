@@ -89,19 +89,8 @@ export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteRespo
       categoryId: validatedData.data.categoryId,
       authorProfileId: validatedData.data.authorProfileId,
       backgroundImage: validatedData.data.backgroundImage,
-      // Transform gallery images to match QuoteImageData type
-      addImages: validatedData.data.galleryImages?.map(img => ({
-        id: img.id,
-        url: img.url,
-        publicId: img.publicId,
-        format: img.format || 'jpg',
-        width: img.width || 0,
-        height: img.height || 0,
-        resource_type: 'image',
-        type: 'upload',
-        created_at: new Date().toISOString(),
-        isActive: img.isActive || false
-      }))
+      galleryImages: validatedData.data.galleryImages,
+      tags: validatedData.data.tags
     };
 
     // Step 5: Update quote with transaction for atomicity
@@ -111,10 +100,10 @@ export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteRespo
         const updatedQuote = await quoteService.update(existingQuote.id, updateData);
 
         // Handle gallery images if provided
-        if (updateData.addImages?.length) {
-          // Validate gallery images first
+        if (updateData.galleryImages?.length) {
+          // Validate and update gallery images
           const galleryItems = await quoteService.validateGalleryImages(
-            updateData.addImages
+            updateData.galleryImages
           );
 
           // Update gallery images and background

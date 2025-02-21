@@ -14,14 +14,6 @@ export const quoteSchema = z.object({
   updatedAt: z.date(),
 });
 
-// Add new schema for quote images
-const quoteImageSchema = z.object({
-  id: z.string().min(1, "ID is required"),
-  url: z.string().url("Invalid URL"),
-  publicId: z.string().min(1, "Public ID is required"),
-  isActive: z.boolean().default(false)
-});
-
 // Gallery image schema
 const galleryImageSchema = z.object({
   galleryId: z.string(),
@@ -73,8 +65,10 @@ export const updateQuoteSchema = z.object({
     isActive: z.boolean(),
     isBackground: z.boolean()
   })).optional(),
-  addImages: z.array(quoteImageSchema).max(30).optional(),
-  removeImages: z.array(z.string()).optional()
+  tags: z.object({
+    connect: z.array(z.object({ id: z.string() })).optional(),
+    disconnect: z.array(z.object({ id: z.string() })).optional()
+  }).optional()
 });
 
 // Add a schema for edit response validation
