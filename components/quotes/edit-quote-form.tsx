@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { updateQuoteSchema } from "@/schemas/quote";
@@ -15,15 +16,15 @@ import { useToast } from "@/hooks/use-toast";
 import { Icons } from "@/components/ui/icons";
 import { slugify } from "@/lib/utils";
 import type { UpdateQuoteInput } from "@/schemas/quote";
-import { ImageGallery } from "@/components/quotes/image-gallery";
-import type { CloudinaryUploadResult, QuoteImageResource } from "@/types/cloudinary";
 import type { GalleryItem } from "@/types/gallery";
-import { CldImage } from "next-cloudinary";
+import type { CloudinaryUploadResult } from "@/types/cloudinary";
 import { TagInput } from "@/components/forms/TagInput";
 import { TagManagementModal } from "@/components/forms/TagManagementModal";
-import { ImagePlus } from "lucide-react";
 import { QuoteGalleryModal } from "@/components/quotes/quote-gallery-modal";
+import { ImagePlus } from "lucide-react";
 import { QuoteImageUpload } from "@/components/quotes/quote-image-upload";
+import { QuoteImageGallery } from "@/components/quotes/quote-image-gallery";
+// import { CldImage } from "next-cloudinary";
 
 // EditQuoteForm state updates
 interface SelectedImageState {
@@ -40,7 +41,6 @@ interface EditQuoteFormProps {
       gallery: GalleryItem;
       isActive: boolean;
     }[];
-    images?: QuoteImageResource[]; // Add this field
     backgroundImage: string | null;
     tags: Tag[];
   };
@@ -51,13 +51,13 @@ interface EditQuoteFormProps {
 export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [charCount, setCharCount] = useState(quote.content.length);
   const [selectedTags, setSelectedTags] = useState<Tag[]>(quote.tags || []);
-  const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
+  const [charCount, setCharCount] = useState(quote.content.length);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Updated image states
+  // Update the image state initialization
   const [selectedImage, setSelectedImage] = useState<SelectedImageState>({
     imageUrl: quote.backgroundImage,
     publicId: quote.gallery.find(g => g.isActive)?.gallery.publicId || null,
@@ -109,19 +109,16 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
         throw new Error(result.error.message);
       }
 
-      // Show success message
       toast({
         title: "Success",
         description: "Quote updated successfully",
         variant: "default",
       });
 
-      // Redirect to quotes list
       router.push("/manage/quotes");
       router.refresh();
 
     } catch (error) {
-      // Show error message
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Something went wrong",
@@ -130,21 +127,25 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
     }
   }
 
-  // Auto-generate slug based on content
   const handleAutoGenerateSlug = () => {
-    const currentContent = form.getValues("content");
-    if (currentContent) {
-      const generatedSlug = slugify(currentContent.substring(0, 50));
+    const content = form.getValues("content");
+    if (content) {
+      const generatedSlug = slugify(content.substring(0, 50));
       form.setValue("slug", generatedSlug);
+    } else {
+      toast({
+        title: "Error",
+        description: "Please enter quote content first",
+        variant: "destructive",
+      });
     }
   };
 
-  // Handle image upload
   const handleImageUpload = async (result: CloudinaryUploadResult) => {
     if (result.event === "success" && result.info && typeof result.info !== 'string') {
-      setIsUploading(false); // Reset upload state on success
+      setIsUploading(false);
       
-      const baseGalleryItem: Omit<GalleryItem, 'isActive' | 'isBackground'> = {
+      const newImage: GalleryItem = {
         id: result.info.public_id,
         url: result.info.secure_url,
         publicId: result.info.public_id,
@@ -154,22 +155,17 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
         bytes: result.info.bytes,
         isGlobal: true,
         title: '',
-        description: '', // Add missing required property
-        altText: '',    // Add missing required property
+        description: '',
+        altText: '',
         createdAt: new Date(),
-        updatedAt: new Date(), // Add missing required property
-        usageCount: 0
-      };
-
-      const newImage: GalleryItem = {
-        ...baseGalleryItem,
+        updatedAt: new Date(),
+        usageCount: 0,
         isActive: !selectedImage.imageUrl,
         isBackground: !selectedImage.imageUrl
       };
 
       setGalleryImages(prev => [...prev, newImage]);
 
-      // Auto-select as background if none selected
       if (!selectedImage.imageUrl) {
         setSelectedImage({
           imageUrl: newImage.url,
@@ -182,7 +178,6 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
     setIsUploading(false);
   };
 
-  // Handle image selection
   const handleImageSelect = (image: GalleryItem) => {
     setSelectedImage({
       imageUrl: image.url,
@@ -190,10 +185,8 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
       isBackground: true
     });
     
-    // Update form value
     form.setValue('backgroundImage', image.url);
 
-    // Update gallery images to reflect selection
     setGalleryImages(prev => 
       prev.map(img => ({
         ...img,
@@ -203,89 +196,6 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
     );
   };
 
-  // Handle image deletion
-  const handleImageDelete = async (imageId: string) => {
-    try {
-      const image = galleryImages.find(img => img.id === imageId);
-      if (!image) return;
-
-      const response = await fetch(`/api/quotes/${quote.slug}/images`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          imageId,
-          isGlobal: image.isGlobal 
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to delete image');
-      }
-
-      // Update state after successful deletion
-      setGalleryImages(prev => prev.filter(img => img.id !== imageId));
-
-      // Clear selected image if it was deleted
-      if (image.url === selectedImage.imageUrl) {
-        setSelectedImage({
-          imageUrl: null,
-          publicId: null,
-          isBackground: false
-        });
-        form.setValue('backgroundImage', null);
-      }
-
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete image",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Handle gallery selection
-  const handleGallerySelect = (selectedImages: GalleryItem[]) => {
-    const newImages = selectedImages.filter(
-      newImg => !galleryImages.some(img => img.id === newImg.id)
-    );
-    
-    // Update gallery images with selection status
-    setGalleryImages(prev => {
-      const updated = [...prev];
-      newImages.forEach(newImg => {
-        updated.push({
-          ...newImg,
-          isActive: false,
-          isBackground: false
-        });
-      });
-      return updated;
-    });
-
-    // Auto-select first image as background if none selected
-    if (!selectedImage.imageUrl && newImages.length > 0) {
-      const firstImage = newImages[0];
-      setSelectedImage({
-        imageUrl: firstImage.url,
-        publicId: firstImage.publicId,
-        isBackground: true
-      });
-      form.setValue('backgroundImage', firstImage.url);
-      
-      // Update gallery images to reflect selection
-      setGalleryImages(prev => 
-        prev.map(img => ({
-          ...img,
-          isActive: img.id === firstImage.id,
-          isBackground: img.url === firstImage.url
-        }))
-      );
-    }
-  };
-
-  // Add deselection handler
   const handleImageDeselect = (imageId: string) => {
     const image = galleryImages.find(img => img.id === imageId);
     if (!image) return;
@@ -299,266 +209,315 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
       form.setValue('backgroundImage', null);
     }
 
-    setGalleryImages(prev =>
-      prev.map(img => ({
-        ...img,
-        isActive: img.id === imageId ? false : img.isActive,
-        isBackground: img.id === imageId ? false : img.isBackground
-      }))
+    setGalleryImages(prev => prev.filter(img => img.id !== imageId));
+  };
+
+  const handleGallerySelect = (selectedImages: GalleryItem[]) => {
+    const newImages = selectedImages.filter(
+      newImg => !galleryImages.some(img => img.id === newImg.id)
     );
+    
+    setGalleryImages(prev => {
+      const updated = [...prev];
+      newImages.forEach(newImg => {
+        updated.push({
+          ...newImg,
+          isActive: false,
+          isBackground: false
+        });
+      });
+      return updated;
+    });
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        {/* Content Section */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-medium">Quote Details</h3>
-          <div className="space-y-4">
-            <FormField
-              control={form.control}
-              name="content"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Quote Content</FormLabel>
-                  <FormControl>
-                    <div className="space-y-2">
-                      <Textarea
-                        {...field}
-                        placeholder="Enter your quote here..."
-                        onChange={(e) => {
-                          field.onChange(e);
-                          setCharCount(e.target.value.length);
-                        }}
-                        disabled={isSubmitting}
-                        className="h-32 resize-none"
-                      />
-                      <div className={`text-sm text-right ${
-                        charCount > 1500 ? "text-destructive" : "text-muted-foreground"
-                      }`}>
-                        {charCount}/1500 characters
-                      </div>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="slug"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Quote Slug</FormLabel>
-                  <div className="flex gap-2">
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="URL-friendly slug"
-                        className="flex-1"
-                      />
-                    </FormControl>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={handleAutoGenerateSlug}
-                      disabled={isSubmitting}
-                    >
-                      Generate
-                    </Button>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-
-        {/* Metadata Section */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-medium">Metadata</h3>
-          <div className="space-y-4">
-            <FormField
-              control={form.control}
-              name="authorProfileId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Author</FormLabel>
-                  <Select
-                    disabled={isSubmitting}
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select an author" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {authorProfiles.map((author) => (
-                        <SelectItem 
-                          key={author.id} 
-                          value={author.id}
-                        >
-                          {author.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="categoryId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select
-                    disabled={isSubmitting}
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <FormField
+          control={form.control}
+          name="content"
+          render={({ field }) => (
             <FormItem>
-              <FormLabel>Tags</FormLabel>
-              <div className="space-y-2">
-                <div className="flex gap-2">
-                  <FormControl className="flex-1">
-                    <TagInput
-                      selectedTags={selectedTags}
-                      onTagsChange={setSelectedTags}
-                      disabled={isSubmitting}
-                      maxTags={10}
-                    />
-                  </FormControl>
-                  <Button 
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsTagManagementOpen(true)}
+              <FormLabel>Quote Content</FormLabel>
+              <FormControl>
+                <div className="space-y-2">
+                  <Textarea
+                    {...field}
+                    placeholder="Enter your quote here..."
+                    onChange={(e) => {
+                      field.onChange(e);
+                      setCharCount(e.target.value.length);
+                    }}
                     disabled={isSubmitting}
-                  >
-                    Manage Tags
-                  </Button>
+                    className="h-32 resize-none"
+                  />
+                  <div className={`text-sm text-right ${
+                    charCount > 1500 ? "text-destructive" : "text-muted-foreground"
+                  }`}>
+                    {charCount}/1500 characters
+                  </div>
                 </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Slug Field */}
+        <FormField
+          control={form.control}
+          name="slug"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Quote Slug</FormLabel>
+              <div className="flex gap-2">
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="Auto-generated or type a slug"
+                    className="border border-gray-300 rounded p-2 flex-1"
+                  />
+                </FormControl>
+                <Button type="button" onClick={handleAutoGenerateSlug}>
+                  Auto-generate slug
+                </Button>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Author Profile Field */}
+        <FormField
+          control={form.control}
+          name="authorProfileId"
+          render={({ field }) => (
+            <FormItem className="space-y-4">
+              <div className="space-y-1">
+                <FormLabel>Quote Author</FormLabel>
                 <p className="text-sm text-muted-foreground">
-                  Add up to 10 tags to categorize your quote
+                  Select the original author of this quote
                 </p>
               </div>
+              
+              <Select
+                disabled={isSubmitting}
+                onValueChange={field.onChange}
+                value={field.value}
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select an author" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {authorProfiles.map((author) => (
+                    <SelectItem 
+                      key={author.id} 
+                      value={author.id}
+                      className="cursor-pointer"
+                    >
+                      <div className="flex flex-col gap-1 py-1">
+                        <span className="font-medium">{author.name}</span>
+                        <span className="text-xs text-muted-foreground line-clamp-1">
+                          {author.born && `${author.born}`}
+                          {author.died && ` - ${author.died}`}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Author Preview */}
+              {field.value && (
+                <div className="rounded-lg border bg-card p-4">
+                  {authorProfiles.map((author) => 
+                    author.id === field.value ? (
+                      <div key={author.id} className="space-y-2">
+                        <h4 className="font-semibold">{author.name}</h4>
+                        {(author.born || author.died) && (
+                          <p className="text-sm text-muted-foreground">
+                            {author.born && `Born: ${author.born}`}
+                            {author.died && ` • Died: ${author.died}`}
+                          </p>
+                        )}
+                        {author.bio && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {author.bio}
+                          </p>
+                        )}
+                      </div>
+                    ) : null
+                  )}
+                </div>
+              )}
+
+              <FormMessage />
             </FormItem>
-          </div>
-        </div>
-
-        {/* Background Section */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-medium">Background Image</h3>
-          <div className="space-y-4">
-            <FormLabel>Quote Background</FormLabel>
-            <div className="flex items-center justify-between gap-4 mb-4">
-              <h3 className="text-lg font-medium">Gallery Images</h3>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsGalleryOpen(true)}
-                  disabled={isSubmitting}
-                >
-                  <ImagePlus className="h-4 w-4 mr-2" />
-                  Browse Gallery
-                </Button>
-                <QuoteImageUpload
-                  onUploadComplete={handleImageUpload}
-                  disabled={isSubmitting}
-                  isUploading={isUploading}
-                  maxFiles={30 - galleryImages.length}
-                />
-              </div>
-            </div>
-
-            <ImageGallery
-              images={galleryImages}
-              selectedImage={selectedImage.imageUrl}
-              onSelect={handleImageSelect}
-              onDeselect={handleImageDeselect}
-              onDelete={handleImageDelete}
-              onUpload={handleImageUpload}
-              disabled={isSubmitting || isUploading}
-            />
-          </div>
-        </div>
-
-        <TagManagementModal
-          open={isTagManagementOpen}
-          onOpenChange={setIsTagManagementOpen}
-          onSuccess={() => {
-            // Refresh tag suggestions in TagInput
-          }}
+          )}
         />
+
+        {/* Category Field */}
+        <FormField
+          control={form.control}
+          name="categoryId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              <Select
+                disabled={isSubmitting}
+                onValueChange={field.onChange}
+                value={field.value}
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Tags Field */}
+        <FormItem>
+          <FormLabel>Tags</FormLabel>
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <FormControl className="flex-1">
+                <TagInput
+                  selectedTags={selectedTags}
+                  onTagsChange={setSelectedTags}
+                  disabled={isSubmitting}
+                  maxTags={10}
+                />
+              </FormControl>
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={() => setIsTagManagementOpen(true)}
+                disabled={isSubmitting}
+              >
+                Manage Tags
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Add up to 10 tags to categorize your quote
+            </p>
+          </div>
+        </FormItem>
+
+        {/* Gallery Section */}
+        <div className="space-y-6 rounded-lg border bg-card">
+          <div className="p-6 border-b">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <FormLabel className="text-base font-semibold">Quote Images</FormLabel>
+                <p className="text-sm text-muted-foreground">
+                  Upload or select images for your quote background
+                </p>
+              </div>
+              <Button
+                type="button" 
+                variant="outline"
+                onClick={() => setIsGalleryOpen(true)}
+                disabled={isSubmitting}
+              >
+                <ImagePlus className="h-4 w-4 mr-2" />
+                Browse Gallery
+              </Button>
+            </div>
+          </div>
+
+          <div className="p-6 border-b bg-muted/50">
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium">Quick Upload</h4>
+              <QuoteImageUpload
+                onUploadComplete={handleImageUpload}
+                disabled={isSubmitting}
+                isUploading={isUploading}
+                maxFiles={30 - galleryImages.length}
+              />
+            </div>
+          </div>
+
+          <div className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-medium">Selected Images</h4>
+                <p className="text-sm text-muted-foreground">
+                  {galleryImages.length} of 30 images
+                </p>
+              </div>
+
+              <QuoteImageGallery
+                items={galleryImages}
+                selectedImage={selectedImage.imageUrl}
+                currentlySelected={galleryImages.map(img => img.publicId)}
+                maxSelectable={30}
+                onSelect={handleImageSelect}
+                onDeselect={handleImageDeselect}
+                isBackground={true}
+                disabled={isSubmitting || isUploading}
+              />
+
+              {selectedImage.imageUrl && (
+                <div className="mt-4 p-4 border rounded-lg bg-muted/50">
+                  <h4 className="text-sm font-medium mb-3">Background Preview</h4>
+                  <div className="relative aspect-[1.91/1] rounded-lg overflow-hidden">
+                    <Image
+                      src={selectedImage.imageUrl}
+                      alt="Selected background"
+                      className="object-cover"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
         <QuoteGalleryModal
           isOpen={isGalleryOpen}
           onClose={() => setIsGalleryOpen(false)}
           onSelect={handleGallerySelect}
-          onDeselect={handleImageDeselect}
           maxSelectable={30 - galleryImages.length}
           currentlySelected={galleryImages.map(img => img.publicId)}
-          selectedImage={selectedImage.imageUrl}
           title="Quote Background Gallery"
           description="Select images from the gallery to use as quote backgrounds"
         />
 
-        {selectedImage.imageUrl && (
-          <div className="mt-6 p-4 bg-muted/30 rounded-lg border">
-            <h4 className="text-sm font-medium mb-3">Selected Background</h4>
-            <div className="relative aspect-[1.91/1] w-full max-w-2xl mx-auto overflow-hidden rounded-lg shadow-sm">
-              <CldImage
-                src={selectedImage.publicId!}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                alt="Selected background"
-                className="object-cover"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="flex justify-end gap-4 pt-4 border-t">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.push("/manage/quotes")}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
+        {/* Submit Button */}
+        <div className="flex justify-end">
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting && (
               <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Save Changes
+            {isSubmitting ? "Updating..." : "Update Quote"}
           </Button>
         </div>
       </form>
+
+      <TagManagementModal
+        open={isTagManagementOpen}
+        onOpenChange={setIsTagManagementOpen}
+        onSuccess={() => {
+          // Refresh tag suggestions in TagInput
+        }}
+      />
     </Form>
   );
 }
