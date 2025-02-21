@@ -89,17 +89,25 @@ export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteRespo
     }
 
     try {
-      // Update quote with gallery images
+      // First update the quote's basic information
       const updatedQuote = await quoteService.update(existingQuote.id, {
         ...validatedData.data,
-        galleryImages: validatedData.data.galleryImages?.map(img => ({
-          id: img.id,
-          isActive: img.id === validatedData.data.backgroundImage,
-          isBackground: img.id === validatedData.data.backgroundImage
-        })) || undefined
+        backgroundImage: validatedData.data.backgroundImage
       });
 
-      return NextResponse.json({ data: updatedQuote });
+      // If gallery images are provided, update them separately
+      if (validatedData.data.galleryImages) {
+        await quoteService.updateGalleryImages(
+          existingQuote.id,
+          validatedData.data.galleryImages,
+          validatedData.data.backgroundImage
+        );
+      }
+
+      // Fetch the updated quote with all relationships
+      const finalQuote = await quoteService.getBySlug(updatedQuote.slug);
+      return NextResponse.json({ data: finalQuote });
+
     } catch (error) {
       if (error instanceof AppError) {
         return NextResponse.json(

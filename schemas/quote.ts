@@ -49,12 +49,14 @@ export const updateQuoteSchema = z.object({
     .min(1, "Author profile is required")
     .optional(),
   backgroundImage: z.string().url().nullable().optional(),
+  galleryImages: z.array(z.object({
+    id: z.string(),
+    isActive: z.boolean(),
+    isBackground: z.boolean()
+  })).optional(),
   addImages: z.array(quoteImageSchema).max(30).optional(),
   removeImages: z.array(z.string()).optional()
-}).refine(
-  (data) => Object.keys(data).length > 0,
-  "At least one field must be provided for update"
-);
+});
 
 // Add a schema for edit response validation
 export const editQuoteResponseSchema = quoteSchema.extend({

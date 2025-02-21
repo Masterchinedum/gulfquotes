@@ -173,3 +173,18 @@ export interface UpdateQuoteParams {
 export type CategoryResponse = ApiResponse<Category>;
 export type CategoriesResponse = ApiResponse<Category[]>;
 
+export interface UpdateQuoteInput {
+  content?: string;
+  slug?: string;
+  categoryId?: string;
+  authorProfileId?: string;
+  backgroundImage?: string | null;
+  galleryImages?: Array<{
+    id: string;
+    isActive: boolean;
+    isBackground: boolean;
+  }>;
+  addImages?: QuoteImageData[];
+  removeImages?: string[];
+}
+
