@@ -24,9 +24,7 @@ import { QuoteGalleryModal } from "@/components/quotes/quote-gallery-modal";
 import { ImagePlus } from "lucide-react";
 import { QuoteImageUpload } from "@/components/quotes/quote-image-upload";
 import { QuoteImageGallery } from "@/components/quotes/quote-image-gallery";
-// import { CldImage } from "next-cloudinary";
 
-// EditQuoteForm state updates
 interface SelectedImageState {
   imageUrl: string | null;
   publicId: string | null;
