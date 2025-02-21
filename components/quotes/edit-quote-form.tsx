@@ -311,153 +311,200 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          control={form.control}
-          name="content"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Quote Content</FormLabel>
-              <FormControl>
-                <div className="space-y-2">
-                  <Textarea
-                    {...field}
-                    placeholder="Enter your quote here..."
-                    onChange={(e) => {
-                      field.onChange(e);
-                      setCharCount(e.target.value.length);
-                    }}
-                    disabled={isSubmitting}
-                    className="h-32 resize-none"
-                  />
-                  <div className={`text-sm text-right ${
-                    charCount > 1500 ? "text-destructive" : "text-muted-foreground"
-                  }`}>
-                    {charCount}/1500 characters
+        {/* Content Section */}
+        <div className="space-y-6">
+          <h3 className="text-lg font-medium">Quote Details</h3>
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="content"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Quote Content</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <Textarea
+                        {...field}
+                        placeholder="Enter your quote here..."
+                        onChange={(e) => {
+                          field.onChange(e);
+                          setCharCount(e.target.value.length);
+                        }}
+                        disabled={isSubmitting}
+                        className="h-32 resize-none"
+                      />
+                      <div className={`text-sm text-right ${
+                        charCount > 1500 ? "text-destructive" : "text-muted-foreground"
+                      }`}>
+                        {charCount}/1500 characters
+                      </div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="slug"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Quote Slug</FormLabel>
+                  <div className="flex gap-2">
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="URL-friendly slug"
+                        className="flex-1"
+                      />
+                    </FormControl>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={handleAutoGenerateSlug}
+                      disabled={isSubmitting}
+                    >
+                      Generate
+                    </Button>
                   </div>
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
 
-        <FormField
-          control={form.control}
-          name="slug"
-          render={({ field }) => (
+        {/* Metadata Section */}
+        <div className="space-y-6">
+          <h3 className="text-lg font-medium">Metadata</h3>
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="authorProfileId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Author</FormLabel>
+                  <Select
+                    disabled={isSubmitting}
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select an author" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {authorProfiles.map((author) => (
+                        <SelectItem 
+                          key={author.id} 
+                          value={author.id}
+                        >
+                          {author.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="categoryId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <Select
+                    disabled={isSubmitting}
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormItem>
-              <FormLabel>Quote Slug</FormLabel>
+              <FormLabel>Tags</FormLabel>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <FormControl className="flex-1">
+                    <TagInput
+                      selectedTags={selectedTags}
+                      onTagsChange={setSelectedTags}
+                      disabled={isSubmitting}
+                      maxTags={10}
+                    />
+                  </FormControl>
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsTagManagementOpen(true)}
+                    disabled={isSubmitting}
+                  >
+                    Manage Tags
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Add up to 10 tags to categorize your quote
+                </p>
+              </div>
+            </FormItem>
+          </div>
+        </div>
+
+        {/* Background Section */}
+        <div className="space-y-6">
+          <h3 className="text-lg font-medium">Background Image</h3>
+          <div className="space-y-4">
+            <FormLabel>Quote Background</FormLabel>
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <h3 className="text-lg font-medium">Gallery Images</h3>
               <div className="flex gap-2">
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="URL-friendly slug"
-                    className="flex-1"
-                  />
-                </FormControl>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={handleAutoGenerateSlug}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsGalleryOpen(true)}
                   disabled={isSubmitting}
                 >
-                  Generate
+                  <ImagePlus className="h-4 w-4 mr-2" />
+                  Browse Gallery
                 </Button>
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="authorProfileId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Author</FormLabel>
-              <Select
-                disabled={isSubmitting}
-                onValueChange={field.onChange}
-                value={field.value}
-                defaultValue={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select an author" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {authorProfiles.map((author) => (
-                    <SelectItem 
-                      key={author.id} 
-                      value={author.id}
-                    >
-                      {author.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="categoryId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Category</FormLabel>
-              <Select
-                disabled={isSubmitting}
-                onValueChange={field.onChange}
-                value={field.value}
-                defaultValue={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormItem>
-          <FormLabel>Tags</FormLabel>
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <FormControl className="flex-1">
-                <TagInput
-                  selectedTags={selectedTags}
-                  onTagsChange={setSelectedTags}
+                <QuoteImageUpload
+                  onUploadComplete={handleImageUpload}
                   disabled={isSubmitting}
-                  maxTags={10}
+                  isUploading={isUploading}
+                  maxFiles={30 - galleryImages.length}
                 />
-              </FormControl>
-              <Button 
-                type="button"
-                variant="outline"
-                onClick={() => setIsTagManagementOpen(true)}
-                disabled={isSubmitting}
-              >
-                Manage Tags
-              </Button>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Add up to 10 tags to categorize your quote
-            </p>
+
+            <ImageGallery
+              images={galleryImages}
+              selectedImage={selectedImage.imageUrl}
+              onSelect={handleImageSelect}
+              onDeselect={handleImageDeselect}
+              onDelete={handleImageDelete}
+              onUpload={handleImageUpload}
+              disabled={isSubmitting || isUploading}
+            />
           </div>
-        </FormItem>
+        </div>
 
         <TagManagementModal
           open={isTagManagementOpen}
@@ -466,36 +513,6 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
             // Refresh tag suggestions in TagInput
           }}
         />
-
-        <div className="space-y-4">
-          <FormLabel>Quote Background</FormLabel>
-          <QuoteImageUpload
-            onUploadComplete={handleImageUpload}
-            disabled={isSubmitting}
-            isUploading={isUploading}
-            maxFiles={30 - galleryImages.length}
-          />
-          <div className="flex items-center justify-between gap-4">
-            <ImageGallery
-              images={galleryImages}
-              selectedImage={selectedImage.imageUrl}
-              onSelect={handleImageSelect}
-              onDeselect={handleImageDeselect}
-              onDelete={handleImageDelete} // Add this line
-              onUpload={handleImageUpload}
-              disabled={isSubmitting || isUploading}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsGalleryOpen(true)}
-              disabled={isSubmitting}
-            >
-              <ImagePlus className="h-4 w-4 mr-2" />
-              Browse Gallery
-            </Button>
-          </div>
-        </div>
 
         <QuoteGalleryModal
           isOpen={isGalleryOpen}
@@ -510,11 +527,11 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
         />
 
         {selectedImage.imageUrl && (
-          <div className="mt-4">
-            <h4 className="text-sm font-medium mb-2">Selected Background</h4>
-            <div className="relative aspect-[1.91/1] w-full max-w-xl mx-auto overflow-hidden rounded-lg border">
+          <div className="mt-6 p-4 bg-muted/30 rounded-lg border">
+            <h4 className="text-sm font-medium mb-3">Selected Background</h4>
+            <div className="relative aspect-[1.91/1] w-full max-w-2xl mx-auto overflow-hidden rounded-lg shadow-sm">
               <CldImage
-                src={selectedImage.publicId!} // Use publicId for CldImage
+                src={selectedImage.publicId!}
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
                 alt="Selected background"
@@ -524,7 +541,8 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
           </div>
         )}
 
-        <div className="flex justify-end gap-4">
+        {/* Actions */}
+        <div className="flex justify-end gap-4 pt-4 border-t">
           <Button
             type="button"
             variant="outline"
