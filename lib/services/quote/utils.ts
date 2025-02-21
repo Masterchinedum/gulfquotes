@@ -15,8 +15,13 @@ export function prepareUpdateData(
   return {
     content: data.content,
     slug: data.slug,
-    categoryId: data.categoryId,
-    authorProfileId: data.authorProfileId,
+    // Use connect/disconnect pattern for relations
+    category: data.categoryId ? {
+      connect: { id: data.categoryId }
+    } : undefined,
+    authorProfile: data.authorProfileId ? {
+      connect: { id: data.authorProfileId }
+    } : undefined,
     backgroundImage: data.backgroundImage,
     tags: data.tags ? {
       connect: data.tags.connect,
