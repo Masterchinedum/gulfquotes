@@ -126,22 +126,53 @@ export function QuoteImageGallery({
 
               {/* Actions Overlay */}
               <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 bg-black/50 transition-opacity">
-                <Button
-                  type="button"
-                  variant={isSelected(item) ? "destructive" : "secondary"}
-                  size="sm"
-                  onClick={() => {
-                    if (isSelected(item) && onDeselect) {
-                      onDeselect(item.id);
-                    } else if (canSelect(item)) {
-                      onSelect(item);
-                    }
-                  }}
-                  disabled={!canSelect(item)}
-                  className="relative z-10"
-                >
-                  {isSelected(item) ? "Remove" : "Select"}
-                </Button>
+                {/* Only show Select as Background if not current background */}
+                {!isSelected(item) && isBackground && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => onSelect(item)}
+                    disabled={disabled}
+                    className="relative z-10"
+                  >
+                    Background
+                  </Button>
+                )}
+
+                {/* Always show Remove button for quote gallery view */}
+                {isBackground && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => onDeselect?.(item.id)}
+                    disabled={disabled}
+                    className="relative z-10"
+                  >
+                    Remove
+                  </Button>
+                )}
+
+                {/* Single toggle button for modal view */}
+                {!isBackground && (
+                  <Button
+                    type="button"
+                    variant={isSelected(item) ? "destructive" : "secondary"}
+                    size="sm"
+                    onClick={() => {
+                      if (isSelected(item) && onDeselect) {
+                        onDeselect(item.id);
+                      } else if (canSelect(item)) {
+                        onSelect(item);
+                      }
+                    }}
+                    disabled={!canSelect(item)}
+                    className="relative z-10"
+                  >
+                    {isSelected(item) ? "Remove" : "Select"}
+                  </Button>
+                )}
               </div>
             </div>
           ))}

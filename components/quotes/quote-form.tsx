@@ -66,12 +66,11 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
     };
   });
 
-  // Update gallery images state with proper type checking
+  // Update gallery images state initialization - don't set isActive/isBackground by default
   const [galleryImages, setGalleryImages] = useState<GalleryItem[]>(() => {
     if (!initialData?.galleryImages) return [];
 
     return initialData.galleryImages.map(img => {
-      // Assert the type to include all required GalleryItem properties
       const fullImage = img as unknown as GalleryItem & {
         format?: string;
         width?: number;
@@ -101,8 +100,8 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
         createdAt: fullImage.createdAt || new Date(),
         updatedAt: fullImage.updatedAt || new Date(),
         usageCount: fullImage.usageCount || 0,
-        isActive: fullImage.url === initialData.backgroundImage,
-        isBackground: fullImage.url === initialData.backgroundImage
+        isActive: false, // Set to false by default
+        isBackground: false // Set to false by default
       };
 
       return galleryItem;
@@ -168,21 +167,23 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
 
   // Handle gallery selection
   const handleGallerySelect = (selectedImages: GalleryItem[]) => {
+    // Filter out images that are already in the quote's gallery
     const newImages = selectedImages.filter(
       newImg => !galleryImages.some(img => img.id === newImg.id)
     );
     
-    setGalleryImages(prev => [...prev, ...newImages]);
-
-    // Set first image as background if none selected
-    if (!selectedImage.imageUrl && newImages.length > 0) {
-      setSelectedImage({
-        imageUrl: newImages[0].url,
-        publicId: newImages[0].publicId,
-        isBackground: true
+    // Add new images to gallery with no active/background state
+    setGalleryImages(prev => {
+      const updated = [...prev];
+      newImages.forEach(newImg => {
+        updated.push({
+          ...newImg,
+          isActive: false,
+          isBackground: false
+        });
       });
-      form.setValue('backgroundImage', newImages[0].url);
-    }
+      return updated;
+    });
   };
 
   // Add handleAutoGenerateSlug function
@@ -210,6 +211,7 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
     
     form.setValue('backgroundImage', image.url);
 
+    // Update gallery images to reflect background selection
     setGalleryImages(prev => 
       prev.map(img => ({
         ...img,
@@ -219,11 +221,12 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
     );
   };
 
-  // Add image deselection handler
+  // Add image deselection handler - completely remove from gallery
   const handleImageDeselect = (imageId: string) => {
     const image = galleryImages.find(img => img.id === imageId);
     if (!image) return;
 
+    // If this was the background image, reset it
     if (image.url === selectedImage.imageUrl) {
       setSelectedImage({
         imageUrl: null,
@@ -233,13 +236,8 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
       form.setValue('backgroundImage', null);
     }
 
-    setGalleryImages(prev =>
-      prev.map(img => ({
-        ...img,
-        isActive: img.id === imageId ? false : img.isActive,
-        isBackground: img.id === imageId ? false : img.isBackground
-      }))
-    );
+    // Remove the image from gallery completely
+    setGalleryImages(prev => prev.filter(img => img.id !== imageId));
   };
 
   // Update upload handler
@@ -522,7 +520,7 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
                 currentlySelected={galleryImages.map(img => img.publicId)}
                 maxSelectable={30}
                 onSelect={handleImageSelect}
-                onDeselect={handleImageDeselect}
+                onDeselect={handleImageDeselect} // Make sure this is connected
                 isBackground={true}
                 disabled={isSubmitting || isUploading}
               />
