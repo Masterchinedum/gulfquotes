@@ -2,12 +2,12 @@ import { UserRole } from "@prisma/client";
 import { createAuthMiddleware, createQuoteOwnershipMiddleware } from "./auth";
 import { createValidationMiddleware } from "./validation";
 import { composeMiddleware } from "./compose";
-import { createQuoteSchema } from "@/schemas/quote";
+import { createQuoteAPISchema } from "@/schemas/quote"; // Changed from createQuoteSchema
 
 export function createQuoteMiddleware(requiredRoles: UserRole[]) {
   return composeMiddleware(
     createAuthMiddleware(requiredRoles),
-    createValidationMiddleware(createQuoteSchema)
+    createValidationMiddleware(createQuoteAPISchema) // Updated to use createQuoteAPISchema
   );
 }
 
@@ -15,6 +15,6 @@ export function createProtectedQuoteMiddleware(quoteId: string, requiredRoles: U
   return composeMiddleware(
     createAuthMiddleware(requiredRoles),
     createQuoteOwnershipMiddleware(quoteId),
-    createValidationMiddleware(createQuoteSchema)
+    createValidationMiddleware(createQuoteAPISchema) // Updated to use createQuoteAPISchema
   );
 }

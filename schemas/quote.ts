@@ -1,4 +1,6 @@
 import { z } from "zod";
+import type { Tag } from "@prisma/client";
+import type { GalleryItem } from "@/types/gallery";
 
 // Base Quote Schema
 export const quoteSchema = z.object({
