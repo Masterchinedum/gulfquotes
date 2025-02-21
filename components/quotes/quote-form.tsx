@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createQuoteSchema, CreateQuoteInput } from "@/schemas/quote";
@@ -15,12 +16,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Icons } from "@/components/ui/icons";
 import { slugify } from "@/lib/utils";
 import type { GalleryItem } from "@/types/gallery";
-import { CldImage } from "next-cloudinary";
 import { TagInput } from "@/components/forms/TagInput";
 import { TagManagementModal } from "@/components/forms/TagManagementModal";
 import { QuoteGalleryModal } from "@/components/quotes/quote-gallery-modal";
 import { ImagePlus } from "lucide-react";
 import { QuoteImageUpload } from "@/components/quotes/quote-image-upload";
+import { QuoteImageGallery } from "@/components/quotes/quote-image-gallery";
 
 // Add new interface for image state
 interface SelectedImageState {
@@ -421,63 +422,79 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
         </FormItem>
 
         {/* Gallery Section */}
-        <div className="space-y-4">
-          <FormLabel>Quote Background</FormLabel>
-          <QuoteImageUpload
-            onUploadComplete={handleImageUpload}
-            disabled={isSubmitting}
-            isUploading={isUploading}
-            maxFiles={30 - galleryImages.length}
-          />
-          <div className="flex items-center justify-between gap-4">
-            <div className="grid grid-cols-4 gap-4 flex-1">
-              {galleryImages.map((image) => (
-                <div
-                  key={image.id}
-                  className={cn(
-                    "group relative aspect-[1.91/1] overflow-hidden rounded-lg border cursor-pointer",
-                    selectedImage.imageUrl === image.url && "ring-2 ring-primary"
-                  )}
-                >
-                  <CldImage
-                    src={image.publicId}
-                    fill
-                    sizes="(max-width: 768px) 25vw, 20vw"
-                    alt={image.altText || "Gallery image"}
-                    className="object-cover"
-                  />
-                  
-                  {/* Update deselection button with proper handler */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/50 transition-opacity">
-                    <Button
-                      type="button"
-                      variant={selectedImage.imageUrl === image.url ? "destructive" : "secondary"}
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (selectedImage.imageUrl === image.url) {
-                          handleImageDeselect(image.id);
-                        } else {
-                          handleImageSelect(image);
-                        }
-                      }}
-                      disabled={isSubmitting}
-                    >
-                      {selectedImage.imageUrl === image.url ? "Remove" : "Select"}
-                    </Button>
+        <div className="space-y-6 rounded-lg border bg-card">
+          {/* Header */}
+          <div className="p-6 border-b">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <FormLabel className="text-base font-semibold">Quote Images</FormLabel>
+                <p className="text-sm text-muted-foreground">
+                  Upload or select images for your quote background
+                </p>
+              </div>
+              <Button
+                type="button" 
+                variant="outline"
+                onClick={() => setIsGalleryOpen(true)}
+                disabled={isSubmitting}
+              >
+                <ImagePlus className="h-4 w-4 mr-2" />
+                Browse Gallery
+              </Button>
+            </div>
+          </div>
+
+          {/* Upload Section */}
+          <div className="p-6 border-b bg-muted/50">
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium">Quick Upload</h4>
+              <QuoteImageUpload
+                onUploadComplete={handleImageUpload}
+                disabled={isSubmitting}
+                isUploading={isUploading}
+                maxFiles={30 - galleryImages.length}
+              />
+            </div>
+          </div>
+
+          {/* Selected Images Section */}
+          <div className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-medium">Selected Images</h4>
+                <p className="text-sm text-muted-foreground">
+                  {galleryImages.length} of 30 images
+                </p>
+              </div>
+
+              {/* Gallery Grid */}
+              <QuoteImageGallery
+                items={galleryImages}
+                selectedImage={selectedImage.imageUrl}
+                currentlySelected={galleryImages.map(img => img.publicId)}
+                maxSelectable={30}
+                onSelect={handleImageSelect}
+                onDeselect={handleImageDeselect}
+                isBackground={true}
+                disabled={isSubmitting || isUploading}
+              />
+
+              {/* Selected Background Preview */}
+              {selectedImage.imageUrl && (
+                <div className="mt-4 p-4 border rounded-lg bg-muted/50">
+                  <h4 className="text-sm font-medium mb-3">Background Preview</h4>
+                  <div className="relative aspect-[1.91/1] rounded-lg overflow-hidden">
+                    <Image
+                      src={selectedImage.imageUrl}
+                      alt="Selected background"
+                      className="object-cover"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
                   </div>
                 </div>
-              ))}
+              )}
             </div>
-            <Button
-              type="button" 
-              variant="outline"
-              onClick={() => setIsGalleryOpen(true)}
-              disabled={isSubmitting}
-            >
-              <ImagePlus className="h-4 w-4 mr-2" />
-              Browse Gallery
-            </Button>
           </div>
         </div>
 

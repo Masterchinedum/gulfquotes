@@ -149,15 +149,17 @@ export async function PATCH(
     return NextResponse.json({ data: updatedQuote });
   } catch (error) {
     if (error instanceof AppError) {
+      // Cast the error code to QuoteErrorCode
+      const errorCode = error.code as QuoteErrorCode;
       return NextResponse.json(
-        { error: { code: error.code, message: error.message } },
+        { error: { code: errorCode, message: error.message } },
         { status: error.statusCode }
       );
     }
     
     console.error("[QUOTE_IMAGES_PATCH]", error);
     return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
+      { error: { code: "INTERNAL_ERROR" as QuoteErrorCode, message: "Internal server error" } },
       { status: 500 }
     );
   }

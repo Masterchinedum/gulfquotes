@@ -107,7 +107,19 @@ export type QuoteErrorCode =
   | "QUOTE_ACCESS_DENIED"
   | "NO_CHANGES"
   | "CATEGORY_NOT_FOUND"
-  | "AUTHOR_PROFILE_NOT_FOUND";
+  | "AUTHOR_PROFILE_NOT_FOUND"
+  | "INVALID_IMAGE"                    // Add this
+  | "INVALID_IMAGE_FORMAT"             // Add this
+  | "INVALID_IMAGE_SIZE"               // Add this
+  | "INVALID_IMAGE_DIMENSIONS"         // Add this
+  | "MAX_IMAGES_EXCEEDED"              // Add this
+  | "IMAGE_UPLOAD_FAILED"              // Add this
+  | "IMAGE_DELETE_FAILED"              // Add this
+  | "IMAGE_NOT_FOUND"                  // Add this
+  | "IMAGE_ASSOCIATION_FAILED"         // Add this
+  | "IMAGE_DISSOCIATION_FAILED"        // Add this
+  | "GALLERY_QUOTE_OPERATION_FAILED"   // Add this
+  | "GALLERY_IN_USE";                  // Add this
 
 // Author Profile specific error codes
 export type AuthorProfileErrorCode =
