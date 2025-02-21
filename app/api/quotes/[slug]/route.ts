@@ -63,25 +63,21 @@ export async function GET(req: Request): Promise<NextResponse<QuoteResponse>> {
 export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteResponse>> {
   try {
     console.log("[QUOTE_PATCH] Starting PATCH request");
-    // Step 1: Authenticate and get user session with guaranteed id and role
     const session = await validateAuth();
     console.log("[QUOTE_PATCH] Auth validated:", { userId: session.user.id, role: session.user.role });
 
-    // Step 2: Extract and validate slug
     const slug = req.url.split('/quotes/')[1]?.split('/')[0];
     console.log("[QUOTE_PATCH] Extracted slug:", slug);
     const existingQuote = await getQuoteFromSlug(slug);
     console.log("[QUOTE_PATCH] Found existing quote:", { id: existingQuote.id, slug: existingQuote.slug });
 
-    // Step 3: Check permissions - now TypeScript knows these values exist
     validateQuoteAccess(existingQuote, session.user.id, session.user.role);
     console.log("[QUOTE_PATCH] Access validated");
 
-    // Step 4: Validate request body
     const body = await req.json();
     console.log("[QUOTE_PATCH] Request body:", body);
-    const validatedData = updateQuoteSchema.safeParse(body);
 
+    const validatedData = updateQuoteSchema.safeParse(body);
     if (!validatedData.success) {
       console.log("[QUOTE_PATCH] Validation failed:", validatedData.error);
       return NextResponse.json({
@@ -92,81 +88,122 @@ export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteRespo
         }
       }, { status: 400 });
     }
+
+    const updateData: UpdateQuoteInput = validatedData.data;
     console.log("[QUOTE_PATCH] Data validated successfully");
 
-    // Transform the validated data to match UpdateQuoteInput type
-    const updateData: UpdateQuoteInput = {
-      content: validatedData.data.content,
-      slug: validatedData.data.slug,
-      categoryId: validatedData.data.categoryId,
-      authorProfileId: validatedData.data.authorProfileId,
-      backgroundImage: validatedData.data.backgroundImage,
-      galleryImages: validatedData.data.galleryImages,
-      tags: validatedData.data.tags
-    };
-    console.log("[QUOTE_PATCH] Prepared update data:", updateData);
+    try {
+      console.log("[QUOTE_PATCH] Starting transaction");
+      const finalQuote = await db.$transaction(async (tx) => {
+        console.log("[QUOTE_PATCH] Updating basic quote data");
+        const updatedQuote = await tx.quote.update({
+          where: { id: existingQuote.id },
+          data: {
+            content: updateData.content,
+            slug: updateData.slug,
+            categoryId: updateData.categoryId,
+            authorProfileId: updateData.authorProfileId,
+            backgroundImage: updateData.backgroundImage,
+            tags: updateData.tags ? {
+              connect: updateData.tags.connect,
+              disconnect: updateData.tags.disconnect
+            } : undefined
+          },
+          include: {
+            category: true,
+            authorProfile: true,
+            tags: true,
+            gallery: {
+              include: {
+                gallery: true
+              }
+            }
+          }
+        });
+        console.log("[QUOTE_PATCH] Basic quote update completed:", { id: updatedQuote.id });
 
-    // Step 5: Update quote with transaction for atomicity
-    const finalQuote = await db.$transaction(async (tx) => {
-      try {
-        console.log("[QUOTE_PATCH] Starting transaction");
-        
-        // Update basic quote information using the typed data
-        const updatedQuote = await quoteService.update(existingQuote.id, updateData);
-        console.log("[QUOTE_PATCH] Basic quote update completed");
-
-        // Handle gallery images if provided
         if (updateData.galleryImages?.length) {
-          console.log("[QUOTE_PATCH] Updating gallery images");
-          const galleryItems = await quoteService.validateGalleryImages(
-            updateData.galleryImages
-          );
-          await quoteService.updateGalleryImages(
-            existingQuote.id,
-            galleryItems,
-            updateData.backgroundImage
-          );
-        }
-
-        // Handle tags updates if provided
-        if (validatedData.data.tags?.connect || validatedData.data.tags?.disconnect) {
-          console.log("[QUOTE_PATCH] Updating tags");
-          await tx.quote.update({
-            where: { id: existingQuote.id },
-            data: {
-              tags: {
-                ...(validatedData.data.tags.connect && {
-                  connect: validatedData.data.tags.connect // Use directly since it's already in correct format
-                }),
-                ...(validatedData.data.tags.disconnect && {
-                  disconnect: validatedData.data.tags.disconnect // Use directly since it's already in correct format
-                })
+          console.log("[QUOTE_PATCH] Starting gallery images update");
+          
+          console.log("[QUOTE_PATCH] Fetching gallery items");
+          const galleryItems = await tx.gallery.findMany({
+            where: {
+              id: {
+                in: updateData.galleryImages.map(img => img.id)
               }
             }
           });
+          console.log("[QUOTE_PATCH] Found gallery items:", galleryItems.length);
+
+          if (galleryItems.length !== updateData.galleryImages.length) {
+            console.log("[QUOTE_PATCH] Gallery items mismatch", {
+              expected: updateData.galleryImages.length,
+              found: galleryItems.length
+            });
+            throw new AppError("Some gallery images not found", "GALLERY_NOT_FOUND", 404);
+          }
+          
+          console.log("[QUOTE_PATCH] Deleting existing gallery associations");
+          await tx.quoteToGallery.deleteMany({
+            where: { quoteId: existingQuote.id }
+          });
+
+          console.log("[QUOTE_PATCH] Creating new gallery associations");
+          await tx.quoteToGallery.createMany({
+            data: updateData.galleryImages.map(img => ({
+              quoteId: existingQuote.id,
+              galleryId: img.id,
+              isActive: img.isActive,
+              isBackground: img.isBackground
+            }))
+          });
+
+          console.log("[QUOTE_PATCH] Fetching final quote state");
+          const finalQuoteWithGallery = await tx.quote.findUnique({
+            where: { id: updatedQuote.id },
+            include: {
+              category: true,
+              authorProfile: true,
+              tags: true,
+              gallery: {
+                include: {
+                  gallery: true
+                }
+              }
+            }
+          });
+
+          if (!finalQuoteWithGallery) {
+            console.log("[QUOTE_PATCH] Failed to fetch final quote state");
+            throw new AppError("Failed to retrieve updated quote", "NOT_FOUND", 404);
+          }
+
+          console.log("[QUOTE_PATCH] Gallery update completed successfully");
+          return finalQuoteWithGallery;
         }
 
-        // Get final quote with all relationships
-        const finalQuote = await quoteService.getBySlug(updatedQuote.slug);
-        if (!finalQuote) {
-          throw new AppError("Failed to retrieve updated quote", "NOT_FOUND", 404);
-        }
-        console.log("[QUOTE_PATCH] Transaction completed successfully");
-        return finalQuote;
-      } catch (error) {
-        console.error("[QUOTE_PATCH] Transaction failed:", error);
-        throw error instanceof AppError ? error : new AppError(
-          "Failed to update quote",
-          "INTERNAL_ERROR", // Use existing error code instead
-          500
-        );
-      }
-    });
+        console.log("[QUOTE_PATCH] No gallery updates needed");
+        return updatedQuote;
+      });
 
-    console.log("[QUOTE_PATCH] Update successful:", finalQuote);
-    return NextResponse.json({ data: finalQuote });
+      console.log("[QUOTE_PATCH] Transaction completed successfully");
+      console.log("[QUOTE_PATCH] Final quote data:", finalQuote);
+      
+      return NextResponse.json({ data: finalQuote });
+    } catch (error) {
+      console.error("[QUOTE_PATCH] Transaction failed. Error details:", {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack
+      });
+      throw new AppError("Failed to update quote", "INTERNAL_ERROR", 500);
+    }
   } catch (error) {
-    console.error("[QUOTE_PATCH] Update failed:", error);
+    console.error("[QUOTE_PATCH] Update failed. Error details:", {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack
+    });
     return handleApiError(error, "QUOTE_PATCH");
   }
 }

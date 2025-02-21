@@ -201,13 +201,14 @@ model Gallery {
 }
 
 model QuoteToGallery {
-  id         String   @id @default(cuid())
-  quote      Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
-  quoteId    String
-  gallery    Gallery  @relation(fields: [galleryId], references: [id], onDelete: Cascade)
-  galleryId  String
-  isActive   Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  id          String   @id @default(cuid())
+  quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quoteId     String
+  gallery     Gallery  @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  galleryId   String
+  isActive    Boolean  @default(false)
+  isBackground Boolean @default(false)
+  createdAt   DateTime @default(now())
 
   @@unique([quoteId, galleryId])
   @@map("quote_to_galleries")
