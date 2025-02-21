@@ -143,7 +143,7 @@ class QuoteServiceImpl implements QuoteService {
       await validateUpdateData(id, data, existingQuote);
       console.log("[QUOTE_SERVICE] Update data validated");
       
-      const updateData = prepareUpdateData(data, existingQuote);
+      const updateData = prepareUpdateData(data); // Remove existingQuote parameter
       console.log("[QUOTE_SERVICE] Prepared update data:", updateData);
   
       try {
