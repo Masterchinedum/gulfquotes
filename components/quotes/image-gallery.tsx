@@ -13,7 +13,7 @@ import type {
 } from "@/types/cloudinary";
 
 interface ImageGalleryProps {
-  images: QuoteImageResource[];
+  images: GalleryItem[] | QuoteImageResource[];
   selectedImage?: string | null;
   onSelect: (imageUrl: string) => void;
   onUpload: (result: CloudinaryUploadResult) => void;
@@ -34,6 +34,14 @@ export function ImageGallery({
   const handleUpload = (result: CloudinaryUploadResult) => {
     setUploading(false);
     onUpload(result);
+  };
+
+  const getPublicId = (image: GalleryItem | QuoteImageResource) => {
+    return 'publicId' in image ? image.publicId : image.public_id;
+  };
+
+  const getUrl = (image: GalleryItem | QuoteImageResource) => {
+    return 'url' in image ? image.url : image.secure_url;
   };
 
   return (
@@ -62,56 +70,61 @@ export function ImageGallery({
 
       {/* Image Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {images.map((image) => (
-          <div
-            key={image.public_id}
-            className={cn(
-              "group relative aspect-[1.91/1] overflow-hidden rounded-lg border",
-              "transition-all hover:opacity-90",
-              selectedImage === image.secure_url && "ring-2 ring-primary",
-              disabled && "opacity-50 cursor-not-allowed"
-            )}
-          >
-            <CldImage
-              src={image.public_id}
-              fill
-              sizes="(max-width: 768px) 50vw, 33vw"
-              alt="Quote background"
-              className="object-cover"
-            />
-            
-            {/* Selection Indicator */}
-            {selectedImage === image.secure_url && (
-              <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                <Check className="h-6 w-6 text-primary" />
-              </div>
-            )}
+        {images.map((image) => {
+          const publicId = getPublicId(image);
+          const url = getUrl(image);
 
-            {/* Actions Overlay */}
-            <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 bg-black/50 transition-opacity">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => onSelect(image.secure_url)}
-                disabled={disabled}
-              >
-                Select
-              </Button>
-              {onDelete && (
+          return (
+            <div
+              key={publicId}
+              className={cn(
+                "group relative aspect-[1.91/1] overflow-hidden rounded-lg border",
+                "transition-all hover:opacity-90",
+                selectedImage === url && "ring-2 ring-primary",
+                disabled && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              <CldImage
+                src={publicId}
+                fill
+                sizes="(max-width: 768px) 50vw, 33vw"
+                alt="Quote background"
+                className="object-cover"
+              />
+              
+              {/* Selection Indicator */}
+              {selectedImage === url && (
+                <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                  <Check className="h-6 w-6 text-primary" />
+                </div>
+              )}
+
+              {/* Actions Overlay */}
+              <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 bg-black/50 transition-opacity">
                 <Button
                   type="button"
-                  variant="destructive"
+                  variant="secondary"
                   size="sm"
-                  onClick={() => onDelete(image.public_id)}
+                  onClick={() => onSelect(url)}
                   disabled={disabled}
                 >
-                  <X className="h-4 w-4" />
+                  Select
                 </Button>
-              )}
+                {onDelete && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => onDelete(publicId)}
+                    disabled={disabled}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Empty State */}
