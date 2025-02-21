@@ -119,6 +119,7 @@ export type QuoteErrorCode =
   | "IMAGE_ASSOCIATION_FAILED"         // Add this
   | "IMAGE_DISSOCIATION_FAILED"        // Add this
   | "GALLERY_QUOTE_OPERATION_FAILED"   // Add this
+  | "UPDATE_FAILED" 
   | "GALLERY_IN_USE";                  // Add this
 
 // Author Profile specific error codes

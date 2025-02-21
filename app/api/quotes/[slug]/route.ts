@@ -121,10 +121,10 @@ export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteRespo
             data: {
               tags: {
                 ...(validatedData.data.tags.connect && {
-                  connect: validatedData.data.tags.connect.map(id => ({ id }))
+                  connect: validatedData.data.tags.connect // Use directly since it's already in correct format
                 }),
                 ...(validatedData.data.tags.disconnect && {
-                  disconnect: validatedData.data.tags.disconnect.map(id => ({ id }))
+                  disconnect: validatedData.data.tags.disconnect // Use directly since it's already in correct format
                 })
               }
             }
@@ -142,7 +142,7 @@ export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteRespo
         // If any operation fails, the transaction will be rolled back
         throw error instanceof AppError ? error : new AppError(
           "Failed to update quote",
-          "UPDATE_FAILED",
+          "INTERNAL_ERROR", // Use existing error code instead
           500
         );
       }
