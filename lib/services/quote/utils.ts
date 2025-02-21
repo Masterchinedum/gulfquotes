@@ -1,8 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { AppError } from "@/lib/api-error";
 import { UpdateQuoteInput } from "@/schemas/quote";
-import { slugify } from "@/lib/utils";
-import type { Quote } from "@prisma/client";
 
 export function sanitizeContent(content: string): string {
   return content
@@ -12,25 +10,19 @@ export function sanitizeContent(content: string): string {
 }
 
 export function prepareUpdateData(
-  data: UpdateQuoteInput,
-  existingQuote: Quote
+  data: UpdateQuoteInput
 ): Prisma.QuoteUpdateInput {
-  const updateData: Prisma.QuoteUpdateInput = { ...data };
-
-  if (data.content || data.slug !== undefined) {
-    const sanitizedContent = data.content
-      ? sanitizeContent(data.content)
-      : existingQuote.content;
-
-    const newSlug = data.slug?.trim() || slugify(sanitizedContent.substring(0, 50));
-
-    if (data.content) {
-      updateData.content = sanitizedContent;
-    }
-    updateData.slug = newSlug;
-  }
-
-  return updateData;
+  return {
+    content: data.content,
+    slug: data.slug,
+    categoryId: data.categoryId,
+    authorProfileId: data.authorProfileId,
+    backgroundImage: data.backgroundImage,
+    tags: data.tags ? {
+      connect: data.tags.connect,
+      disconnect: data.tags.disconnect
+    } : undefined
+  };
 }
 
 export function handleUpdateError(error: unknown): never {

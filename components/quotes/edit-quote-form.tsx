@@ -97,7 +97,13 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
             isActive: img.url === selectedImage.imageUrl,
             isBackground: img.url === selectedImage.imageUrl
           })),
-          tagIds: selectedTags.map(tag => tag.id)
+          tags: {
+            // Format tags properly according to the schema
+            connect: selectedTags.map(tag => ({ id: tag.id })),
+            disconnect: quote.tags
+              .filter(tag => !selectedTags.some(st => st.id === tag.id))
+              .map(tag => ({ id: tag.id }))
+          }
         }),
       });
 

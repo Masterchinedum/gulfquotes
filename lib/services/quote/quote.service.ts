@@ -121,32 +121,49 @@ class QuoteServiceImpl implements QuoteService {
   }
 
   async update(id: string, data: UpdateQuoteInput): Promise<Quote> {
-    const session = await auth();
-    if (!session?.user?.id) {
-      throw new AppError("Unauthorized", "UNAUTHORIZED", 401);
-    }
-
-    await validateAccess(id, session.user.id);
-    
-    const existingQuote = await this.getById(id);
-    if (!existingQuote) {
-      throw new AppError("Quote not found", "NOT_FOUND", 404);
-    }
-
-    await validateUpdateData(id, data, existingQuote);
-    const updateData = prepareUpdateData(data, existingQuote);
-
     try {
-      return await db.quote.update({
-        where: { id },
-        data: updateData,
-        include: {
-          category: true,
-          authorProfile: true,
-        }
-      });
+      console.log("[QUOTE_SERVICE] Starting quote update:", { id, data });
+      
+      const session = await auth();
+      if (!session?.user?.id) {
+        console.log("[QUOTE_SERVICE] Update failed: Unauthorized");
+        throw new AppError("Unauthorized", "UNAUTHORIZED", 401);
+      }
+  
+      await validateAccess(id, session.user.id);
+      console.log("[QUOTE_SERVICE] Access validated");
+      
+      const existingQuote = await this.getById(id);
+      if (!existingQuote) {
+        console.log("[QUOTE_SERVICE] Update failed: Quote not found");
+        throw new AppError("Quote not found", "NOT_FOUND", 404);
+      }
+      console.log("[QUOTE_SERVICE] Found existing quote");
+  
+      await validateUpdateData(id, data, existingQuote);
+      console.log("[QUOTE_SERVICE] Update data validated");
+      
+      const updateData = prepareUpdateData(data, existingQuote);
+      console.log("[QUOTE_SERVICE] Prepared update data:", updateData);
+  
+      try {
+        const result = await db.quote.update({
+          where: { id },
+          data: updateData,
+          include: {
+            category: true,
+            authorProfile: true,
+          }
+        });
+        console.log("[QUOTE_SERVICE] Update successful");
+        return result;
+      } catch (error) {
+        console.error("[QUOTE_SERVICE] Update failed:", error);
+        handleUpdateError(error);
+      }
     } catch (error) {
-      handleUpdateError(error);
+      console.error("[QUOTE_SERVICE] Update process failed:", error);
+      throw error;
     }
   }
 
