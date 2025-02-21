@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createQuoteSchema, CreateQuoteInput } from "@/schemas/quote";
+import { createQuoteFormSchema, createQuoteAPISchema, CreateQuoteInput } from "@/schemas/quote";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -108,40 +108,44 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
     });
   });
 
-  const form = useForm<CreateQuoteInput>({
-    resolver: zodResolver(createQuoteSchema),
-    defaultValues: initialData || {
-      content: "",
-      slug: "",
-      categoryId: "",
-      authorProfileId: "",
+  // Update the form type
+  const form = useForm<z.infer<typeof createQuoteFormSchema>>({
+    resolver: zodResolver(createQuoteFormSchema),
+    defaultValues: {
+      content: initialData?.content || "",
+      slug: initialData?.slug || "",
+      categoryId: initialData?.categoryId || "",
+      authorProfileId: initialData?.authorProfileId || "",
     },
   });
 
   const { isSubmitting } = form.formState;
 
-  async function onSubmit(data: CreateQuoteInput) {
+  // The submit handler transforms the data
+  async function onSubmit(formData: z.infer<typeof createQuoteFormSchema>) {
     try {
+      // Transform to API format
+      const apiData = {
+        ...formData,
+        backgroundImage: selectedImage.imageUrl,
+        tags: selectedTags.length > 0 ? {
+          connect: selectedTags.map(tag => ({ id: tag.id }))
+        } : undefined,
+        gallery: galleryImages.length > 0 ? {
+          create: galleryImages.map(img => ({
+            galleryId: img.id,
+            isActive: img.url === selectedImage.imageUrl
+          }))
+        } : undefined
+      };
+
+      // Validate API data
+      const validatedData = createQuoteAPISchema.parse(apiData);
+
       const response = await fetch("/api/quotes", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...data,
-          backgroundImage: selectedImage.imageUrl,
-          // Format tags to match Prisma's connect format
-          tags: {
-            connect: selectedTags.map(tag => ({ id: tag.id }))
-          },
-          // Format gallery to match Prisma's create format
-          gallery: {
-            create: galleryImages.map(img => ({
-              galleryId: img.id,
-              isActive: img.url === selectedImage.imageUrl
-            }))
-          }
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validatedData)
       });
 
       const result = await response.json();

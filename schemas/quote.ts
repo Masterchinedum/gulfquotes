@@ -20,21 +20,33 @@ const quoteImageSchema = z.object({
   isActive: z.boolean().default(false)
 });
 
-// Update createQuoteSchema
-export const createQuoteSchema = z.object({
-  content: z.string()
-    .min(1, "Quote content is required")
-    .max(1500, "Quote must not exceed 1500 characters"),
-  authorProfileId: z.string().min(1, "Author profile is required"),
-  categoryId: z.string().min(1, "Category is required"),
+// Gallery image schema
+const galleryImageSchema = z.object({
+  galleryId: z.string(),
+  isActive: z.boolean().optional(),
+  isBackground: z.boolean().optional(),
+});
+
+// Split into two schemas - one for form, one for API
+export const createQuoteFormSchema = z.object({
+  content: z.string().min(1).max(1500),
+  categoryId: z.string().min(1),
+  authorProfileId: z.string().min(1),
   slug: z.string().optional(),
   backgroundImage: z.string().nullable().optional(),
-  galleryImages: z.array(z.object({
-    id: z.string(),
-    isActive: z.boolean().optional(),
-    isBackground: z.boolean().optional()
-  })).optional(),
-  tagIds: z.array(z.string()).optional()
+  // No tags here - we'll handle them separately
+});
+
+// Schema for the API payload
+export const createQuoteAPISchema = createQuoteFormSchema.extend({
+  tags: z.object({
+    connect: z.array(z.object({
+      id: z.string()
+    }))
+  }).optional(),
+  gallery: z.object({
+    create: z.array(galleryImageSchema)
+  }).optional(),
 });
 
 // Update the updateQuoteSchema with specific edit validations
@@ -71,6 +83,6 @@ export const editQuoteResponseSchema = quoteSchema.extend({
 
 // TypeScript Types
 export type Quote = z.infer<typeof quoteSchema>;
-export type CreateQuoteInput = z.infer<typeof createQuoteSchema>;
+export type CreateQuoteInput = z.infer<typeof createQuoteAPISchema>;
 export type UpdateQuoteInput = z.infer<typeof updateQuoteSchema>;
 export type EditQuoteResponse = z.infer<typeof editQuoteResponseSchema>;

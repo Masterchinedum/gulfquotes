@@ -1,6 +1,4 @@
 import type { Quote, Category, AuthorProfile } from "@prisma/client";
-// Remove the conflicting import
-// import type { UpdateQuoteInput } from "@/schemas/quote";
 import type { QuoteImageData } from "@/lib/services/quote/types";
 
 // Response Types

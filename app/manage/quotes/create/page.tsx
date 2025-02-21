@@ -44,7 +44,7 @@ export default async function NewQuotePage() {
   ]);
 
   // Set initial data with correct type properties
-  const initialData: CreateQuoteInput & {
+  const initialData: Omit<CreateQuoteInput, 'tags' | 'gallery'> & {
     galleryImages?: GalleryItem[];
     backgroundImage?: string;
     tags?: Tag[];
@@ -53,9 +53,9 @@ export default async function NewQuotePage() {
     categoryId: categories[0]?.id || "",
     authorProfileId: authorProfiles[0]?.id || "",
     slug: "",
-    backgroundImage: undefined, // Change from null to undefined
+    backgroundImage: undefined,
     galleryImages: galleryItems,
-    tags: []
+    tags: [] as Tag[], // Explicitly type as Tag[]
   };
 
   return (

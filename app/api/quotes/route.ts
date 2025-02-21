@@ -4,7 +4,8 @@ import { createQuoteSchema } from "@/schemas/quote";
 import { CreateQuoteResponse, QuotesResponse, QuoteErrorCode } from "@/types/api/quotes";
 import { formatZodError, AppError } from "@/lib/api-error";
 import { quoteService } from "@/lib/services/quote/quote.service";
-
+import db from "@/lib/prisma"; // Add this import
+import type { GalleryItem } from "@/types/gallery"; // Add this import if not already present
 
 export async function POST(req: Request): Promise<NextResponse<CreateQuoteResponse>> {
   try {
@@ -48,14 +49,30 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
 
       // Step 2: If there are gallery images, add them
       if (validatedData.data.gallery?.create?.length) {
-        await quoteService.addGalleryImages(
-          quote.id,
-          validatedData.data.gallery.create.map(img => ({
-            id: img.galleryId,
-            isActive: false,
-            isBackground: false
-          }))
+        // First fetch the full gallery items
+        const galleryItems = await Promise.all(
+          validatedData.data.gallery.create.map(async (img) => {
+            const galleryItem = await db.gallery.findUnique({
+              where: { id: img.galleryId }
+            });
+
+            if (!galleryItem) {
+              throw new AppError(
+                `Gallery item not found: ${img.galleryId}`,
+                "GALLERY_NOT_FOUND",
+                404
+              );
+            }
+
+            return {
+              ...galleryItem,
+              isActive: img.isActive || false,
+              isBackground: img.isBackground || false
+            } as GalleryItem;
+          })
         );
+
+        await quoteService.addGalleryImages(quote.id, galleryItems);
       }
 
       // Step 3: If there's a background image, set it
@@ -77,6 +94,14 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
 
       // Step 5: Fetch the final quote with all relationships
       const finalQuote = await quoteService.getById(quote.id);
+      
+      if (!finalQuote) {
+        throw new AppError(
+          "Failed to retrieve created quote",
+          "NOT_FOUND",
+          404
+        );
+      }
 
       return NextResponse.json({ data: finalQuote });
 
