@@ -4,9 +4,7 @@ import { auth } from "@/auth";
 import { QuoteForm } from "@/components/quotes/quote-form";
 import { CategoryForm } from "@/components/quotes/category-form";
 import db from "@/lib/prisma";
-import type { CreateQuoteInput } from "@/schemas/quote";
-import type { GalleryItem } from "@/types/gallery";
-import type { Tag } from "@prisma/client";
+import type { QuoteFormData } from "@/schemas/quote";
 
 export default async function NewQuotePage() {
   const session = await auth();
@@ -43,19 +41,15 @@ export default async function NewQuotePage() {
     })
   ]);
 
-  // Set initial data with correct type properties
-  const initialData: Omit<CreateQuoteInput, 'tags' | 'gallery'> & {
-    galleryImages?: GalleryItem[];
-    backgroundImage?: string;
-    tags?: Tag[];
-  } = {
+  // Set initial data with correct type
+  const initialData: QuoteFormData = {
     content: "",
     categoryId: categories[0]?.id || "",
     authorProfileId: authorProfiles[0]?.id || "",
     slug: "",
     backgroundImage: undefined,
     galleryImages: galleryItems,
-    tags: [] as Tag[], // Explicitly type as Tag[]
+    tags: [] // No need for type assertion now
   };
 
   return (

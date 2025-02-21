@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createQuoteFormSchema, createQuoteAPISchema, CreateQuoteInput } from "@/schemas/quote";
+import { createQuoteFormSchema, createQuoteAPISchema } from "@/schemas/quote";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,6 +23,9 @@ import { QuoteGalleryModal } from "@/components/quotes/quote-gallery-modal";
 import { ImagePlus } from "lucide-react";
 import { QuoteImageUpload } from "@/components/quotes/quote-image-upload";
 import { QuoteImageGallery } from "@/components/quotes/quote-image-gallery";
+import type { QuoteFormData } from "@/schemas/quote";
+import { z } from "zod";
+
 
 // Add new interface for image state
 interface SelectedImageState {
@@ -35,11 +38,7 @@ interface SelectedImageState {
 interface QuoteFormProps {
   categories: Category[];
   authorProfiles: AuthorProfile[];
-  initialData?: CreateQuoteInput & {
-    backgroundImage?: string;
-    galleryImages?: GalleryItem[]; // This needs to be a full GalleryItem
-    tags?: Tag[];
-  };
+  initialData?: QuoteFormData;
 }
 
 export function QuoteForm({ categories, authorProfiles, initialData }: QuoteFormProps) {

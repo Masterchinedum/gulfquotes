@@ -86,3 +86,14 @@ export type Quote = z.infer<typeof quoteSchema>;
 export type CreateQuoteInput = z.infer<typeof createQuoteAPISchema>;
 export type UpdateQuoteInput = z.infer<typeof updateQuoteSchema>;
 export type EditQuoteResponse = z.infer<typeof editQuoteResponseSchema>;
+
+// In types/quote.ts
+export interface QuoteFormData {
+  content: string;
+  slug?: string;
+  categoryId: string;
+  authorProfileId: string;
+  backgroundImage?: string | null;
+  galleryImages?: GalleryItem[];
+  tags?: Tag[]; // Simple Tag array for form state
+}

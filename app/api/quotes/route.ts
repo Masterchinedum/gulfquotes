@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { createQuoteSchema } from "@/schemas/quote";
+import { createQuoteAPISchema } from "@/schemas/quote"; // This is the correct schema
 import { CreateQuoteResponse, QuotesResponse, QuoteErrorCode } from "@/types/api/quotes";
 import { formatZodError, AppError } from "@/lib/api-error";
 import { quoteService } from "@/lib/services/quote/quote.service";
@@ -26,7 +26,7 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
     }
 
     const body = await req.json();
-    const validatedData = createQuoteSchema.safeParse(body);
+    const validatedData = createQuoteAPISchema.safeParse(body); // Use createQuoteAPISchema instead of createQuoteSchema
 
     if (!validatedData.success) {
       return NextResponse.json(
