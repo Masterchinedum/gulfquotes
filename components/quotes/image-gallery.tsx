@@ -11,6 +11,7 @@ import type {
   CloudinaryUploadResult, 
   QuoteImageResource 
 } from "@/types/cloudinary";
+import type { GalleryItem } from "@/types/gallery"; // Add this import
 
 interface ImageGalleryProps {
   images: GalleryItem[] | QuoteImageResource[];

@@ -30,12 +30,13 @@ interface SelectedImageState {
   isBackground: boolean;
 }
 
+// QuoteFormProps interface update
 interface QuoteFormProps {
   categories: Category[];
   authorProfiles: AuthorProfile[];
   initialData?: CreateQuoteInput & {
     backgroundImage?: string;
-    galleryImages?: GalleryItem[];
+    galleryImages?: GalleryItem[]; // This needs to be a full GalleryItem
     tags?: Tag[];
   };
 }
@@ -49,20 +50,46 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Update state definitions
-  const [selectedImage, setSelectedImage] = useState<SelectedImageState>({
-    imageUrl: initialData?.backgroundImage || null,
-    publicId: initialData?.galleryImages?.find(g => g.url === initialData.backgroundImage)?.publicId || null,
-    isBackground: !!initialData?.backgroundImage
+  // Update image state with proper type checking
+  const [selectedImage, setSelectedImage] = useState<SelectedImageState>(() => {
+    const matchingImage = initialData?.galleryImages?.find(
+      img => 'url' in img && 
+      'publicId' in img && 
+      img.url === initialData.backgroundImage
+    );
+
+    return {
+      imageUrl: initialData?.backgroundImage || null,
+      publicId: matchingImage && typeof matchingImage.publicId === 'string' 
+        ? matchingImage.publicId 
+        : null,
+      isBackground: !!initialData?.backgroundImage
+    };
   });
 
-  const [galleryImages, setGalleryImages] = useState<GalleryItem[]>(
-    initialData?.galleryImages?.map(img => ({
-      ...img,
-      isActive: img.url === initialData?.backgroundImage,
-      isBackground: img.url === initialData?.backgroundImage
-    })) || []
-  );
+  // Update gallery images state with proper type checking
+  const [galleryImages, setGalleryImages] = useState<GalleryItem[]>(() => {
+    if (!initialData?.galleryImages) return [];
+
+    return initialData.galleryImages.map(img => {
+      if (!('url' in img)) {
+        // Handle case where img doesn't have required properties
+        return {
+          ...img,
+          url: '',
+          publicId: '',
+          isActive: false,
+          isBackground: false
+        } as GalleryItem;
+      }
+
+      return {
+        ...img,
+        isActive: img.url === initialData.backgroundImage,
+        isBackground: img.url === initialData.backgroundImage
+      };
+    });
+  });
 
   const form = useForm<CreateQuoteInput>({
     resolver: zodResolver(createQuoteSchema),

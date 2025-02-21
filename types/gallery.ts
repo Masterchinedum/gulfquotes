@@ -4,6 +4,8 @@ import { BaseErrorCode, AppErrorCode } from "./api/quotes"; // Add AppErrorCode 
 
 // Step 1: Base Types
 export interface GalleryItem extends Gallery {
+  publicId: string;
+  url: string;
   _count?: {
     quotes: number;
   };
