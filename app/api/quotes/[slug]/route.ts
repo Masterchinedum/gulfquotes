@@ -190,19 +190,19 @@ export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteRespo
       console.log("[QUOTE_PATCH] Final quote data:", finalQuote);
       
       return NextResponse.json({ data: finalQuote });
-    } catch (error) {
+    } catch (error: unknown) {  // Add type annotation here
       console.error("[QUOTE_PATCH] Transaction failed. Error details:", {
-        name: error?.name,
-        message: error?.message,
-        stack: error?.stack
+        name: error instanceof Error ? error.name : 'Unknown Error',
+        message: error instanceof Error ? error.message : 'An unknown error occurred',
+        stack: error instanceof Error ? error.stack : undefined
       });
       throw new AppError("Failed to update quote", "INTERNAL_ERROR", 500);
     }
-  } catch (error) {
+  } catch (error: unknown) {  // Add type annotation here
     console.error("[QUOTE_PATCH] Update failed. Error details:", {
-      name: error?.name,
-      message: error?.message,
-      stack: error?.stack
+      name: error instanceof Error ? error.name : 'Unknown Error',
+      message: error instanceof Error ? error.message : 'An unknown error occurred',
+      stack: error instanceof Error ? error.stack : undefined
     });
     return handleApiError(error, "QUOTE_PATCH");
   }
