@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { updateQuoteSchema } from "@/schemas/quote";
 import { quoteService } from "@/lib/services/quote/quote.service";
 import { AppError } from "@/lib/api-error";
+import db from "@/lib/prisma"; // Add this import
 import type { QuoteResponse, UpdateQuoteResponse, QuoteErrorCode } from "@/types/api/quotes";
 import { formatZodError } from "@/lib/api-error";
 
@@ -95,26 +96,10 @@ export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteRespo
         backgroundImage: validatedData.data.backgroundImage
       });
 
-      // If gallery images are provided, fetch full gallery items first
+      // If gallery images are provided, validate and update them
       if (validatedData.data.galleryImages?.length) {
-        const galleryItems = await Promise.all(
-          validatedData.data.galleryImages.map(async (img) => {
-            const galleryItem = await db.gallery.findUnique({
-              where: { id: img.id }
-            });
-            if (!galleryItem) {
-              throw new AppError(
-                `Gallery item not found: ${img.id}`,
-                "GALLERY_NOT_FOUND",
-                404
-              );
-            }
-            return {
-              ...galleryItem,
-              isActive: img.isActive,
-              isBackground: img.isBackground
-            };
-          })
+        const galleryItems = await quoteService.validateGalleryImages(
+          validatedData.data.galleryImages
         );
 
         await quoteService.updateGalleryImages(

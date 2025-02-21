@@ -500,6 +500,30 @@ class QuoteServiceImpl implements QuoteService {
   async removeImageAssociation(quoteId: string, imageId: string): Promise<Quote> {
     return removeQuoteImageAssociation(quoteId, imageId);
   }
+
+  async validateGalleryImages(images: Array<{ id: string; isActive: boolean; isBackground: boolean }>) {
+    return await Promise.all(
+      images.map(async (img) => {
+        const galleryItem = await db.gallery.findUnique({
+          where: { id: img.id }
+        });
+        
+        if (!galleryItem) {
+          throw new AppError(
+            `Gallery item not found: ${img.id}`,
+            "GALLERY_NOT_FOUND",
+            404
+          );
+        }
+        
+        return {
+          ...galleryItem,
+          isActive: img.isActive,
+          isBackground: img.isBackground
+        };
+      })
+    );
+  }
 }
 
 export const quoteService = new QuoteServiceImpl();
