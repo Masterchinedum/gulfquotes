@@ -15,9 +15,10 @@ import type {
 interface ImageGalleryProps {
   images: GalleryItem[] | QuoteImageResource[];
   selectedImage?: string | null;
-  onSelect: (imageUrl: string) => void;
+  onSelect: (image: GalleryItem) => void;
   onUpload: (result: CloudinaryUploadResult) => void;
   onDelete?: (publicId: string) => void;
+  onDeselect?: (imageId: string) => void;
   disabled?: boolean;
 }
 
@@ -27,6 +28,7 @@ export function ImageGallery({
   onSelect,
   onUpload,
   onDelete,
+  onDeselect,
   disabled = false,
 }: ImageGalleryProps) {
   const [uploading, setUploading] = useState(false);
@@ -71,8 +73,8 @@ export function ImageGallery({
       {/* Image Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {images.map((image) => {
-          const publicId = getPublicId(image);
           const url = getUrl(image);
+          const publicId = getPublicId(image);
 
           return (
             <div
@@ -103,12 +105,18 @@ export function ImageGallery({
               <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 bg-black/50 transition-opacity">
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant={selectedImage === url ? "destructive" : "secondary"}
                   size="sm"
-                  onClick={() => onSelect(url)}
+                  onClick={() => {
+                    if (selectedImage === url && onDeselect) {
+                      onDeselect('publicId' in image ? image.id : image.public_id);
+                    } else {
+                      onSelect(image as GalleryItem);
+                    }
+                  }}
                   disabled={disabled}
                 >
-                  Select
+                  {selectedImage === url ? "Remove" : "Select"}
                 </Button>
                 {onDelete && (
                   <Button
@@ -119,6 +127,7 @@ export function ImageGallery({
                     disabled={disabled}
                   >
                     <X className="h-4 w-4" />
+                    <span className="sr-only">Delete image</span>
                   </Button>
                 )}
               </div>

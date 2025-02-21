@@ -16,8 +16,10 @@ interface QuoteGalleryModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (images: GalleryItem[]) => void;
+  onDeselect?: (imageId: string) => void; // Add this prop
   maxSelectable?: number;
   currentlySelected?: string[];
+  selectedImage?: string | null;
   title?: string;
   description?: string;
 }
@@ -26,8 +28,10 @@ export function QuoteGalleryModal({
   isOpen,
   onClose,
   onSelect,
+  onDeselect,
   maxSelectable = 1,
   currentlySelected = [],
+  selectedImage,
   title = "Quote Gallery",
   description = "Select images for your quote"
 }: QuoteGalleryModalProps) {
@@ -91,7 +95,9 @@ export function QuoteGalleryModal({
             error={error}
             maxSelectable={maxSelectable}
             currentlySelected={currentlySelected}
+            selectedImage={selectedImage}
             onSelect={(image) => handleSelect([image])}
+            onDeselect={onDeselect}
             isMultiSelect={maxSelectable > 1}
           />
         </div>

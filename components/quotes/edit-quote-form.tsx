@@ -509,12 +509,12 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
           description="Select images from the gallery to use as quote backgrounds"
         />
 
-        {selectedImage && (
+        {selectedImage.imageUrl && (
           <div className="mt-4">
             <h4 className="text-sm font-medium mb-2">Selected Background</h4>
             <div className="relative aspect-[1.91/1] w-full max-w-xl mx-auto overflow-hidden rounded-lg border">
               <CldImage
-                src={selectedImage}
+                src={selectedImage.publicId!} // Use publicId for CldImage
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
                 alt="Selected background"
