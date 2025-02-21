@@ -95,11 +95,31 @@ export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteRespo
         backgroundImage: validatedData.data.backgroundImage
       });
 
-      // If gallery images are provided, update them separately
-      if (validatedData.data.galleryImages) {
+      // If gallery images are provided, fetch full gallery items first
+      if (validatedData.data.galleryImages?.length) {
+        const galleryItems = await Promise.all(
+          validatedData.data.galleryImages.map(async (img) => {
+            const galleryItem = await db.gallery.findUnique({
+              where: { id: img.id }
+            });
+            if (!galleryItem) {
+              throw new AppError(
+                `Gallery item not found: ${img.id}`,
+                "GALLERY_NOT_FOUND",
+                404
+              );
+            }
+            return {
+              ...galleryItem,
+              isActive: img.isActive,
+              isBackground: img.isBackground
+            };
+          })
+        );
+
         await quoteService.updateGalleryImages(
           existingQuote.id,
-          validatedData.data.galleryImages,
+          galleryItems,
           validatedData.data.backgroundImage
         );
       }

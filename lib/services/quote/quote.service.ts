@@ -372,7 +372,7 @@ class QuoteServiceImpl implements QuoteService {
 
   async updateGalleryImages(
     quoteId: string, 
-    images: GalleryItem[], 
+    images: (GalleryItem | { id: string; isActive: boolean; isBackground: boolean })[], 
     backgroundImage?: string | null
   ): Promise<Quote> {
     try {
