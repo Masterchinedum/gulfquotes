@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { updateQuoteSchema } from "@/schemas/quote";
 import { quoteService } from "@/lib/services/quote/quote.service";
 import { AppError } from "@/lib/api-error";
-import db from "@/lib/prisma"; // Add this import
+// import db from "@/lib/prisma"; // Add this import
 import type { QuoteResponse, UpdateQuoteResponse, QuoteErrorCode } from "@/types/api/quotes";
 import { formatZodError } from "@/lib/api-error";
 
@@ -111,6 +111,14 @@ export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteRespo
 
       // Fetch the updated quote with all relationships
       const finalQuote = await quoteService.getBySlug(updatedQuote.slug);
+      if (!finalQuote) {
+        throw new AppError(
+          "Failed to retrieve updated quote",
+          "NOT_FOUND",
+          404
+        );
+      }
+
       return NextResponse.json({ data: finalQuote });
 
     } catch (error) {
