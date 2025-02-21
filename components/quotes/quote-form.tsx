@@ -22,6 +22,13 @@ import { QuoteGalleryModal } from "@/components/quotes/quote-gallery-modal";
 import { ImagePlus } from "lucide-react";
 import { QuoteImageUpload } from "@/components/quotes/quote-image-upload";
 
+// Add new interface for image state
+interface SelectedImageState {
+  imageUrl: string | null;
+  publicId: string | null;
+  isBackground: boolean;
+}
+
 interface QuoteFormProps {
   categories: Category[];
   authorProfiles: AuthorProfile[];
@@ -37,11 +44,24 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
   const { toast } = useToast();
   const [selectedTags, setSelectedTags] = useState<Tag[]>(initialData?.tags || []);
   const [charCount, setCharCount] = useState(initialData?.content?.length || 0);
-  const [galleryImages, setGalleryImages] = useState<GalleryItem[]>(initialData?.galleryImages || []);
-  const [selectedImage, setSelectedImage] = useState<string | null>(initialData?.backgroundImage || null);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Update state definitions
+  const [selectedImage, setSelectedImage] = useState<SelectedImageState>({
+    imageUrl: initialData?.backgroundImage || null,
+    publicId: initialData?.galleryImages?.find(g => g.url === initialData.backgroundImage)?.publicId || null,
+    isBackground: !!initialData?.backgroundImage
+  });
+
+  const [galleryImages, setGalleryImages] = useState<GalleryItem[]>(
+    initialData?.galleryImages?.map(img => ({
+      ...img,
+      isActive: img.url === initialData?.backgroundImage,
+      isBackground: img.url === initialData?.backgroundImage
+    })) || []
+  );
 
   const form = useForm<CreateQuoteInput>({
     resolver: zodResolver(createQuoteSchema),
@@ -64,10 +84,11 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
         },
         body: JSON.stringify({
           ...data,
-          backgroundImage: selectedImage,
+          backgroundImage: selectedImage.imageUrl,
           galleryImages: galleryImages.map(img => ({
             id: img.id,
-            isActive: img.url === selectedImage
+            isActive: img.url === selectedImage.imageUrl,
+            isBackground: img.url === selectedImage.imageUrl
           })),
           tagIds: selectedTags.map(tag => tag.id)
         }),
@@ -108,8 +129,12 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
     setGalleryImages(prev => [...prev, ...newImages]);
 
     // Set first image as background if none selected
-    if (!selectedImage && newImages.length > 0) {
-      setSelectedImage(newImages[0].url);
+    if (!selectedImage.imageUrl && newImages.length > 0) {
+      setSelectedImage({
+        imageUrl: newImages[0].url,
+        publicId: newImages[0].publicId,
+        isBackground: true
+      });
       form.setValue('backgroundImage', newImages[0].url);
     }
   };
@@ -129,11 +154,53 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
     }
   };
 
-  // Add upload handler
+  // Update image selection handler
+  const handleImageSelect = (image: GalleryItem) => {
+    setSelectedImage({
+      imageUrl: image.url,
+      publicId: image.publicId,
+      isBackground: true
+    });
+    
+    form.setValue('backgroundImage', image.url);
+
+    setGalleryImages(prev => 
+      prev.map(img => ({
+        ...img,
+        isActive: img.id === image.id,
+        isBackground: img.url === image.url
+      }))
+    );
+  };
+
+  // Add image deselection handler
+  const handleImageDeselect = (imageId: string) => {
+    const image = galleryImages.find(img => img.id === imageId);
+    if (!image) return;
+
+    if (image.url === selectedImage.imageUrl) {
+      setSelectedImage({
+        imageUrl: null,
+        publicId: null,
+        isBackground: false
+      });
+      form.setValue('backgroundImage', null);
+    }
+
+    setGalleryImages(prev =>
+      prev.map(img => ({
+        ...img,
+        isActive: img.id === imageId ? false : img.isActive,
+        isBackground: img.id === imageId ? false : img.isBackground
+      }))
+    );
+  };
+
+  // Update upload handler
   const handleImageUpload = async (result: CloudinaryUploadResult) => {
     if (result.event === "success" && result.info && typeof result.info !== 'string') {
-      setIsUploading(false); // Reset upload state on success
-
+      setIsUploading(false);
+      
       const newImage: GalleryItem = {
         id: result.info.public_id,
         url: result.info.secure_url,
@@ -145,19 +212,24 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
         isGlobal: true,
         title: '',
         createdAt: new Date(),
-        usageCount: 0
+        usageCount: 0,
+        isActive: !selectedImage.imageUrl,
+        isBackground: !selectedImage.imageUrl
       };
 
       setGalleryImages(prev => [...prev, newImage]);
 
       // Auto-select as background if none selected
-      if (!selectedImage) {
-        setSelectedImage(newImage.url);
+      if (!selectedImage.imageUrl) {
+        setSelectedImage({
+          imageUrl: newImage.url,
+          publicId: newImage.publicId,
+          isBackground: true
+        });
         form.setValue('backgroundImage', newImage.url);
       }
-    } else {
-      setIsUploading(false); // Reset upload state on failure
     }
+    setIsUploading(false);
   };
 
   // Rest of your component remains the same...
@@ -362,12 +434,10 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
               {galleryImages.map((image) => (
                 <div
                   key={image.id}
-                  className={`relative aspect-[1.91/1] overflow-hidden rounded-lg border cursor-pointer
-                    ${selectedImage === image.url ? 'ring-2 ring-primary' : ''}`}
-                  onClick={() => {
-                    setSelectedImage(image.url);
-                    form.setValue('backgroundImage', image.url);
-                  }}
+                  className={cn(
+                    "group relative aspect-[1.91/1] overflow-hidden rounded-lg border cursor-pointer",
+                    selectedImage.imageUrl === image.url && "ring-2 ring-primary"
+                  )}
                 >
                   <CldImage
                     src={image.publicId}
@@ -376,11 +446,31 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
                     alt={image.altText || "Gallery image"}
                     className="object-cover"
                   />
+                  
+                  {/* Update deselection button with proper handler */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/50 transition-opacity">
+                    <Button
+                      type="button"
+                      variant={selectedImage.imageUrl === image.url ? "destructive" : "secondary"}
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (selectedImage.imageUrl === image.url) {
+                          handleImageDeselect(image.id);
+                        } else {
+                          handleImageSelect(image);
+                        }
+                      }}
+                      disabled={isSubmitting}
+                    >
+                      {selectedImage.imageUrl === image.url ? "Remove" : "Select"}
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
             <Button
-              type="button"
+              type="button" 
               variant="outline"
               onClick={() => setIsGalleryOpen(true)}
               disabled={isSubmitting}

@@ -197,38 +197,35 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
   };
 
   // Handle image deletion
-  const handleImageDelete = async (publicId: string) => {
+  const handleImageDelete = async (imageId: string) => {
     try {
-      const image = images.find(img => img.public_id === publicId);
+      const image = galleryImages.find(img => img.id === imageId);
       if (!image) return;
 
-      if (image.context?.isGlobal) {
-        const response = await fetch(`/api/quotes/${quote.slug}/images`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageId: publicId }),
-        });
+      const response = await fetch(`/api/quotes/${quote.slug}/images`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          imageId,
+          isGlobal: image.isGlobal 
+        }),
+      });
 
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Failed to remove image');
-        }
-      } else {
-        const response = await fetch(`/api/quotes/${quote.slug}/images`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ publicId }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Failed to delete image');
-        }
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete image');
       }
 
-      setImages(prev => prev.filter(img => img.public_id !== publicId));
-      if (selectedImage === image.secure_url) {
-        setSelectedImage(null);
+      // Update state after successful deletion
+      setGalleryImages(prev => prev.filter(img => img.id !== imageId));
+
+      // Clear selected image if it was deleted
+      if (image.url === selectedImage.imageUrl) {
+        setSelectedImage({
+          imageUrl: null,
+          publicId: null,
+          isBackground: false
+        });
         form.setValue('backgroundImage', null);
       }
 
@@ -473,11 +470,12 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
           />
           <div className="flex items-center justify-between gap-4">
             <ImageGallery
-              images={images}
-              selectedImage={selectedImage}
+              images={galleryImages}
+              selectedImage={selectedImage.imageUrl}
               onSelect={handleImageSelect}
+              onDeselect={handleImageDeselect}
+              onDelete={handleImageDelete} // Add this line
               onUpload={handleImageUpload}
-              onDelete={handleImageDelete}
               disabled={isSubmitting || isUploading}
             />
             <Button
@@ -496,8 +494,10 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
           isOpen={isGalleryOpen}
           onClose={() => setIsGalleryOpen(false)}
           onSelect={handleGallerySelect}
-          maxSelectable={30 - images.length}
-          currentlySelected={images.map(img => img.public_id)}
+          onDeselect={handleImageDeselect}
+          maxSelectable={30 - galleryImages.length}
+          currentlySelected={galleryImages.map(img => img.publicId)}
+          selectedImage={selectedImage.imageUrl}
           title="Quote Background Gallery"
           description="Select images from the gallery to use as quote backgrounds"
         />

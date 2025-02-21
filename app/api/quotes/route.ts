@@ -4,7 +4,7 @@ import { createQuoteSchema } from "@/schemas/quote";
 import { CreateQuoteResponse, QuotesResponse, QuoteErrorCode } from "@/types/api/quotes";
 import { formatZodError, AppError } from "@/lib/api-error";
 import { quoteService } from "@/lib/services/quote/quote.service";
-import type { QuoteImageData } from "@/types/cloudinary"; // Add this import
+
 
 export async function POST(req: Request): Promise<NextResponse<CreateQuoteResponse>> {
   try {
@@ -40,33 +40,15 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
     }
 
     try {
-      const transformedImages: QuoteImageData[] = validatedData.data.images?.map(img => ({
-        id: img.id, // Add the required id field
-        url: img.url,
-        publicId: img.publicId,
-        isActive: img.isActive,
-        secure_url: img.url,
-        public_id: img.publicId,
-        format: 'webp', // Default format
-        width: 1200, // Default width for social sharing
-        height: 630, // Default height for social sharing
-        resource_type: 'image' as const, // Ensure this is a literal type
-        created_at: new Date().toISOString(),
-        bytes: 0, // This will be updated by Cloudinary
-        folder: 'quote-images',
-        // Add the new required fields
-        isGlobal: false, // New quotes start as non-global
-        usageCount: 0, // New images start with 0 usage count
-        title: undefined,
-        description: undefined,
-        altText: undefined
-      })) || [];
-
+      // Create quote with gallery images
       const quote = await quoteService.create({
         ...validatedData.data,
         authorId: session.user.id,
-        images: transformedImages,
-        backgroundImage: validatedData.data.backgroundImage
+        galleryImages: validatedData.data.galleryImages?.map(img => ({
+          id: img.id,
+          isActive: img.id === validatedData.data.backgroundImage,
+          isBackground: img.id === validatedData.data.backgroundImage
+        })) || []
       });
 
       return NextResponse.json({ data: quote });

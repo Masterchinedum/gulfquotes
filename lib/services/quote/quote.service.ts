@@ -370,6 +370,120 @@ class QuoteServiceImpl implements QuoteService {
     }
   }
 
+  async updateGalleryImages(
+    quoteId: string, 
+    images: GalleryItem[], 
+    backgroundImage?: string | null
+  ): Promise<Quote> {
+    try {
+      return await db.$transaction(async (tx) => {
+        // Get existing gallery associations
+        const existingAssociations = await tx.quoteToGallery.findMany({
+          where: { quoteId },
+          include: { gallery: true }
+        });
+
+        // Calculate images to remove and add
+        const existingIds = existingAssociations.map(a => a.galleryId);
+        const newIds = images.map(i => i.id);
+        const toRemove = existingIds.filter(id => !newIds.includes(id));
+        const toAdd = newIds.filter(id => !existingIds.includes(id));
+
+        // Remove old associations and decrement usage counts
+        if (toRemove.length > 0) {
+          await Promise.all([
+            tx.quoteToGallery.deleteMany({
+              where: { 
+                quoteId,
+                galleryId: { in: toRemove }
+              }
+            }),
+            tx.gallery.updateMany({
+              where: { id: { in: toRemove } },
+              data: { usageCount: { decrement: 1 } }
+            })
+          ]);
+        }
+
+        // Add new associations and increment usage counts
+        if (toAdd.length > 0) {
+          await Promise.all([
+            ...toAdd.map(galleryId =>
+              tx.quoteToGallery.create({
+                data: {
+                  quoteId,
+                  galleryId,
+                  isActive: backgroundImage ? galleryId === backgroundImage : false
+                }
+              })
+            ),
+            tx.gallery.updateMany({
+              where: { id: { in: toAdd } },
+              data: { usageCount: { increment: 1 } }
+            })
+          ]);
+        }
+
+        // Update background image if specified
+        if (backgroundImage !== undefined) {
+          // Reset all active states
+          await tx.quoteToGallery.updateMany({
+            where: { quoteId },
+            data: { isActive: false }
+          });
+
+          if (backgroundImage) {
+            // Set new background image
+            await tx.quoteToGallery.update({
+              where: {
+                quoteId_galleryId: { 
+                  quoteId, 
+                  galleryId: backgroundImage 
+                }
+              },
+              data: { isActive: true }
+            });
+
+            const gallery = await tx.gallery.findUnique({
+              where: { id: backgroundImage }
+            });
+
+            await tx.quote.update({
+              where: { id: quoteId },
+              data: { backgroundImage: gallery?.url || null }
+            });
+          } else {
+            // Clear background image
+            await tx.quote.update({
+              where: { id: quoteId },
+              data: { backgroundImage: null }
+            });
+          }
+        }
+
+        return tx.quote.findUniqueOrThrow({
+          where: { id: quoteId },
+          include: {
+            category: true,
+            authorProfile: true,
+            gallery: {
+              include: {
+                gallery: true
+              }
+            }
+          }
+        });
+      });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(
+        "Failed to update quote gallery images",
+        "GALLERY_QUOTE_OPERATION_FAILED",
+        500
+      );
+    }
+  }
+
   // Add the missing methods from QuoteService interface
   async addImages(quoteId: string, images: QuoteImageData[]): Promise<Quote> {
     return addQuoteImages(quoteId, images);
