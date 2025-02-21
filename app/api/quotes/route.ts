@@ -40,18 +40,45 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
     }
 
     try {
-      // Create quote with gallery images
+      // Step 1: Create the quote first
       const quote = await quoteService.create({
         ...validatedData.data,
-        authorId: session.user.id,
-        galleryImages: validatedData.data.galleryImages?.map(img => ({
-          id: img.id,
-          isActive: img.id === validatedData.data.backgroundImage,
-          isBackground: img.id === validatedData.data.backgroundImage
-        }))
+        authorId: session.user.id
       });
 
-      return NextResponse.json({ data: quote });
+      // Step 2: If there are gallery images, add them
+      if (validatedData.data.gallery?.create?.length) {
+        await quoteService.addGalleryImages(
+          quote.id,
+          validatedData.data.gallery.create.map(img => ({
+            id: img.galleryId,
+            isActive: false,
+            isBackground: false
+          }))
+        );
+      }
+
+      // Step 3: If there's a background image, set it
+      if (validatedData.data.backgroundImage) {
+        await quoteService.setBackgroundImage(quote.id, validatedData.data.backgroundImage);
+      }
+
+      // Step 4: Add tags if present
+      if (validatedData.data.tags?.connect?.length) {
+        await db.quote.update({
+          where: { id: quote.id },
+          data: {
+            tags: {
+              connect: validatedData.data.tags.connect
+            }
+          }
+        });
+      }
+
+      // Step 5: Fetch the final quote with all relationships
+      const finalQuote = await quoteService.getById(quote.id);
+
+      return NextResponse.json({ data: finalQuote });
 
     } catch (error) {
       if (error instanceof AppError) {

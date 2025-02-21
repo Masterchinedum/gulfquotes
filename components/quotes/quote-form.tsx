@@ -130,12 +130,17 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
         body: JSON.stringify({
           ...data,
           backgroundImage: selectedImage.imageUrl,
-          galleryImages: galleryImages.map(img => ({
-            id: img.id,
-            isActive: img.url === selectedImage.imageUrl,
-            isBackground: img.url === selectedImage.imageUrl
-          })),
-          tagIds: selectedTags.map(tag => tag.id)
+          // Format tags to match Prisma's connect format
+          tags: {
+            connect: selectedTags.map(tag => ({ id: tag.id }))
+          },
+          // Format gallery to match Prisma's create format
+          gallery: {
+            create: galleryImages.map(img => ({
+              galleryId: img.id,
+              isActive: img.url === selectedImage.imageUrl
+            }))
+          }
         }),
       });
 
