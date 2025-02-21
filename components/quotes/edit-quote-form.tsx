@@ -154,14 +154,17 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
         bytes: result.info.bytes,
         isGlobal: true,
         title: '',
+        description: '', // Add missing required property
+        altText: '',    // Add missing required property
         createdAt: new Date(),
+        updatedAt: new Date(), // Add missing required property
         usageCount: 0
       };
 
       const newImage: GalleryItem = {
         ...baseGalleryItem,
-        isActive: !selectedImage.imageUrl, // Make active if no image selected
-        isBackground: !selectedImage.imageUrl // Make background if no image selected
+        isActive: !selectedImage.imageUrl,
+        isBackground: !selectedImage.imageUrl
       };
 
       setGalleryImages(prev => [...prev, newImage]);

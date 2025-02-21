@@ -10,18 +10,21 @@ import type { CloudinaryUploadResult } from "@/types/cloudinary";
 interface QuoteImageUploadProps {
   onUploadComplete: (result: CloudinaryUploadResult) => void;
   disabled?: boolean;
+  isUploading?: boolean; // Add this prop
   maxFiles?: number;
 }
 
 export function QuoteImageUpload({
   onUploadComplete,
   disabled = false,
+  isUploading = false, // Add default value
   maxFiles = 30
 }: QuoteImageUploadProps) {
-  const [uploading, setUploading] = useState(false);
+  const [localUploading, setLocalUploading] = useState(false);
+  const isLoading = localUploading || isUploading; // Combine both upload states
 
   const handleUploadSuccess = useCallback((result: CloudinaryUploadResult) => {
-    setUploading(false);
+    setLocalUploading(false);
     onUploadComplete(result);
   }, [onUploadComplete]);
 
@@ -38,19 +41,19 @@ export function QuoteImageUpload({
             isGlobal: 'true'
           }
         }}
-        disabled={disabled || uploading}
+        disabled={disabled || isLoading}
       >
         {({ open }) => (
           <Button
             type="button"
             variant="outline"
             onClick={() => {
-              setUploading(true);
+              setLocalUploading(true);
               open();
             }}
-            disabled={disabled || uploading}
+            disabled={disabled || isLoading}
           >
-            {uploading ? (
+            {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Uploading...
