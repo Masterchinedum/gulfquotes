@@ -150,26 +150,25 @@ class GalleryServiceImpl implements GalleryService {
   }
 
   async getById(id: string): Promise<GalleryItem | null> {
-    return db.gallery.findUnique({
-      where: { id },
-      include: {
-        _count: {
-          select: { quotes: true }
+    try {
+      const gallery = await db.gallery.findUnique({
+        where: { id },
+        include: {
+          _count: {
+            select: { quotes: true }
+          }
         }
-      }
-    });
-  }
+      });
 
-  public async getById(id: string) {
-    const category = await db.category.findUnique({
-      where: { id }
-    });
-  
-    if (!category) {
-      throw new AppError("Category not found", "NOT_FOUND", 404);
+      if (!gallery) {
+        throw new AppError("Gallery item not found", "GALLERY_NOT_FOUND", 404);
+      }
+
+      return gallery;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError("Failed to fetch gallery item", "GALLERY_FETCH_FAILED", 500);
     }
-  
-    return category;
   }
 
   async list(options: GalleryListOptions = {}): Promise<{
