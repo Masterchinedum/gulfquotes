@@ -20,7 +20,8 @@ export type CategoryErrorCode =
   | "DUPLICATE_SLUG"
   | "DUPLICATE_CATEGORY"
   | "INTERNAL_ERROR"
-  | "BAD_REQUEST";  // Add this line
+  | "BAD_REQUEST"
+  | "CATEGORY_IN_USE";  // Add this new error code
 
 // Category specific API error
 export interface CategoryApiError extends ApiError {

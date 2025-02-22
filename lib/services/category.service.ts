@@ -123,17 +123,36 @@ class CategoryService {
    * Deletes a category by ID
    */
   public async deleteCategory(id: string): Promise<void> {
-    const existingCategory = await db.category.findUnique({
-      where: { id }
-    });
+    try {
+      const existingCategory = await db.category.findUnique({
+        where: { id },
+        include: {
+          _count: {
+            select: { quotes: true }
+          }
+        }
+      });
 
-    if (!existingCategory) {
-      throw new AppError("Category not found", "NOT_FOUND", 404);
+      if (!existingCategory) {
+        throw new AppError("Category not found", "NOT_FOUND", 404);
+      }
+
+      // Check if category has associated quotes
+      if (existingCategory._count.quotes > 0) {
+        throw new AppError(
+          "Cannot delete category that is in use. Please update or remove all quotes using this category first.",
+          "CATEGORY_IN_USE",
+          400
+        );
+      }
+
+      await db.category.delete({
+        where: { id }
+      });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError("Failed to delete category", "INTERNAL_ERROR", 500);
     }
-
-    await db.category.delete({
-      where: { id }
-    });
   }
 }
 

@@ -120,6 +120,7 @@ export async function DELETE(
         { status: error.statusCode }
       );
     }
+    console.error('[DELETE_CATEGORY]', error);
     return NextResponse.json(
       { error: { code: "INTERNAL_ERROR" as CategoryErrorCode, message: "Internal server error" } },
       { status: 500 }

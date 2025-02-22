@@ -34,24 +34,32 @@ export function CategoryList({ categories, onEdit }: CategoryListProps) {
         method: "DELETE",
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error?.message || "Failed to delete category");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: data.error?.message || "Failed to delete category"
+        });
+        return;
       }
 
       toast({
         title: "Success",
         description: "Category deleted successfully",
       });
+
       // Refresh the page or update the list
       window.location.reload();
 
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to delete category";
+      // Properly type and use the error
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
       toast({
-        title: "Error",
-        description: message,
         variant: "destructive",
+        title: "Error",
+        description: errorMessage
       });
     } finally {
       setIsLoading(null);
