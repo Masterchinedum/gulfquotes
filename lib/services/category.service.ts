@@ -1,38 +1,120 @@
 // lib/services/category.service.ts
 import db from "@/lib/prisma";
-import { categorySchema, CategoryInput } from "@/schemas/category";
+import { categorySchema, CategoryInput, CategoryUpdateInput } from "@/schemas/category";
 import { slugify } from "@/lib/utils";
+import { AppError } from "@/lib/api-error";
 
 /**
  * CategoryService handles business logic for category operations.
  */
 class CategoryService {
   /**
+   * Generates and validates a unique slug for a category
+   */
+  private async generateUniqueSlug(name: string, excludeId?: string): Promise<string> {
+    const baseSlug = slugify(name);
+    const existingCategory = await db.category.findFirst({
+      where: {
+        slug: baseSlug,
+        id: excludeId ? { not: excludeId } : undefined,
+      },
+    });
+
+    if (!existingCategory) {
+      return baseSlug;
+    }
+
+    throw new AppError("Category with similar slug already exists", "DUPLICATE_SLUG", 400);
+  }
+
+  /**
+   * Validates slug uniqueness
+   */
+  private async validateSlug(slug: string, excludeId?: string): Promise<void> {
+    const existingCategory = await db.category.findFirst({
+      where: {
+        slug,
+        id: excludeId ? { not: excludeId } : undefined,
+      },
+    });
+
+    if (existingCategory) {
+      throw new AppError("Category with this slug already exists", "DUPLICATE_SLUG", 400);
+    }
+  }
+
+  /**
    * Creates a new category after validating input and ensuring uniqueness.
-   * @param data - The category data.
-   * @returns The created category.
-   * @throws Error if validation fails or category already exists.
    */
   public async createCategory(data: CategoryInput) {
-    // Validate the incoming data using the schema
     const validatedData = categorySchema.parse(data);
+    let slug: string;
 
-    // Generate a slug from the category name
-    const slug = slugify(validatedData.name);
+    if (validatedData.autoGenerateSlug || !validatedData.slug) {
+      slug = await this.generateUniqueSlug(validatedData.name);
+    } else {
+      slug = validatedData.slug;
+      await this.validateSlug(slug);
+    }
 
-    // Check for an existing category with the same name
     const existingCategory = await db.category.findUnique({
       where: { name: validatedData.name },
     });
 
     if (existingCategory) {
-      throw new Error("Category already exists.");
+      throw new AppError("Category already exists", "DUPLICATE_CATEGORY", 400);
     }
 
-    // Create the new category in the database including the slug
-    const category = await db.category.create({
-      data: { name: validatedData.name, slug },
+    return await db.category.create({
+      data: {
+        name: validatedData.name,
+        slug,
+      },
     });
+  }
+
+  /**
+   * Updates an existing category
+   */
+  public async updateCategory(id: string, data: CategoryUpdateInput) {
+    const existingCategory = await db.category.findUnique({
+      where: { id },
+    });
+
+    if (!existingCategory) {
+      throw new AppError("Category not found", "NOT_FOUND", 404);
+    }
+
+    const validatedData = categorySchema.parse(data);
+    let slug: string;
+
+    if (validatedData.autoGenerateSlug || !validatedData.slug) {
+      slug = await this.generateUniqueSlug(validatedData.name, id);
+    } else {
+      slug = validatedData.slug;
+      await this.validateSlug(slug, id);
+    }
+
+    return await db.category.update({
+      where: { id },
+      data: {
+        name: validatedData.name,
+        slug,
+      },
+    });
+  }
+
+  /**
+   * Retrieves a category by its ID
+   */
+  public async getById(id: string) {
+    const category = await db.category.findUnique({
+      where: { id }
+    });
+
+    if (!category) {
+      throw new AppError("Category not found", "NOT_FOUND", 404);
+    }
 
     return category;
   }

@@ -160,6 +160,18 @@ class GalleryServiceImpl implements GalleryService {
     });
   }
 
+  public async getById(id: string) {
+    const category = await db.category.findUnique({
+      where: { id }
+    });
+  
+    if (!category) {
+      throw new AppError("Category not found", "NOT_FOUND", 404);
+    }
+  
+    return category;
+  }
+
   async list(options: GalleryListOptions = {}): Promise<{
     items: GalleryItem[];
     total: number;
