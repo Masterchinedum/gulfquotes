@@ -1,5 +1,6 @@
 import db from "@/lib/prisma";
-import type { ListQuotesParams, ListQuotesResult } from "../quote/types";
+import type { ListQuotesResult } from "../quote/types";
+import type { ListQuotesParams } from "@/types/api/quotes";
 import { quoteFilterUtils } from "./utils/quote-filter.utils";
 import { quoteSortUtils } from "./utils/quote-sort.utils";
 
