@@ -83,7 +83,8 @@ export type CategoryErrorCode =
   | BaseErrorCode
   | "CATEGORY_NOT_FOUND"
   | "DUPLICATE_CATEGORY"
-  | "INVALID_CATEGORY_DATA";
+  | "INVALID_CATEGORY_DATA"
+  | "CATEGORY_IN_USE";  // Add this line
 
 // Add new image-specific error codes
 export type ImageErrorCode =
@@ -154,7 +155,7 @@ export type AppErrorCode =
   | "GALLERY_IN_USE"
   | QuoteErrorCode 
   | AuthorProfileErrorCode 
-  | CategoryErrorCode;
+  | CategoryErrorCode;  // This will include CATEGORY_IN_USE
 
 export interface QuoteApiError extends ApiError {
   code: QuoteErrorCode;

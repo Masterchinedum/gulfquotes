@@ -16,6 +16,7 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast"; // Add this import
 
 // Update the Zod schema to match our category schema
 const categorySchema = z.object({
@@ -31,7 +32,12 @@ const categorySchema = z.object({
 
 export type CategoryInput = z.infer<typeof categorySchema>;
 
-export function CategoryForm() {
+interface CategoryFormProps {
+  onSuccess?: () => void;
+}
+
+export function CategoryForm({ onSuccess }: CategoryFormProps) {
+  const { toast } = useToast();
   const methods = useForm<CategoryInput>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
@@ -81,15 +87,27 @@ export function CategoryForm() {
       });
 
       if (response.ok) {
-        setServerSuccess("Category created successfully!");
+        toast({
+          title: "Success",
+          description: "Category created successfully!"
+        });
         reset();
+        onSuccess?.(); // Call the success callback if provided
       } else {
         const errorData = await response.json();
-        setServerError("Failed to create category: " + (errorData?.error || 'Unknown error'));
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: errorData.error?.message || "Failed to create category"
+        });
       }
-    } catch (error: unknown) {
+    } catch (error) {
       console.error(error);
-      setServerError("Failed to create category. Please try again.");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred"
+      });
     }
   };
 

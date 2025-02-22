@@ -1,4 +1,4 @@
-import { ApiError, AppErrorCode } from "@/types/api/quotes";
+import { ApiError, AppErrorCode} from "@/types/api/quotes";
 import { ZodError } from "zod";
 
 export class AppError extends Error {
