@@ -2,7 +2,6 @@ import { Quote, AuthorProfile, Category } from "@prisma/client";
 import type { QuoteImageResource } from "@/types/cloudinary";
 import type { MediaLibraryItem } from "@/types/cloudinary";
 import { CreateQuoteInput, UpdateQuoteInput } from "@/schemas/quote";
-import { ListQuotesParams } from "@/types/api/quotes";
 
 export interface ListQuotesResult {
   items: Array<Quote & {
@@ -13,15 +12,6 @@ export interface ListQuotesResult {
   hasMore: boolean;
   page: number;
   limit: number;
-}
-
-export interface ListQuotesParams {
-  page?: number;
-  limit?: number;
-  categoryId?: string;
-  authorProfileId?: string;
-  search?: string;
-  sortBy?: 'recent' | 'popular' | 'length' | 'alphabetical'; // Add the sort parameter
 }
 
 export interface QuoteImageData extends Omit<QuoteImageResource, 'context'> {
@@ -44,7 +34,7 @@ export interface QuoteImageData extends Omit<QuoteImageResource, 'context'> {
 }
 
 export interface QuoteService {
-  list(params: ListQuotesParams): Promise<ListQuotesResult>;
+  list(params: import('@/types/api/quotes').ListQuotesParams): Promise<ListQuotesResult>;
   create(data: CreateQuoteInput & { authorId: string; images?: QuoteImageData[] }): Promise<Quote>;
   getById(id: string): Promise<Quote | null>;
   getBySlug(slug: string): Promise<Quote | null>;

@@ -1,6 +1,5 @@
 import type { Quote, Prisma } from "@prisma/client";
-
-type SortOption = 'recent' | 'popular' | 'length' | 'alphabetical';
+import type { SortOption } from "@/lib/services/quote/types";
 
 export const quoteSortUtils = {
   /**
@@ -35,7 +34,6 @@ export const quoteSortUtils = {
           b.createdAt.getTime() - a.createdAt.getTime()
         );
       case 'popular':
-        // Using updatedAt for now
         return sortedQuotes.sort((a, b) => 
           b.updatedAt.getTime() - a.updatedAt.getTime()
         );
