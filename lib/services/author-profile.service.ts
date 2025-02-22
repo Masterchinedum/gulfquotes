@@ -222,7 +222,9 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
 
   async getBySlug(slug: string): Promise<AuthorProfile & { images: { id: string; url: string; }[] }> {
     const authorProfile = await db.authorProfile.findUnique({
-      where: { slug },
+      where: { 
+        slug: decodeURIComponent(slug) // Decode the URL-encoded slug
+      },
       include: {
         images: {
           select: {
