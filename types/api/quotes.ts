@@ -1,5 +1,5 @@
 import type { Quote, Category, AuthorProfile } from "@prisma/client";
-import type { QuoteImageData } from "@/lib/services/quote/types";
+import type { QuoteImageData, SortOption } from "@/lib/services/quote/types";
 
 // Response Types
 export interface ApiResponse<T> {
@@ -65,7 +65,9 @@ export interface QuoteIncludeParams {
 export interface ListQuotesParams extends 
   QuoteFilterParams, 
   QuotePaginationParams,
-  QuoteIncludeParams {}
+  QuoteIncludeParams {
+  sortBy?: SortOption; // Add sortBy property
+}
 
 // Base error codes that can be shared across different features
 export type BaseErrorCode = 

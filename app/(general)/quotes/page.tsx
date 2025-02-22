@@ -53,7 +53,7 @@ export default async function QuotesPage({ searchParams }: PageProps) {
       categoryId: params.category,
       authorProfileId: params.author,
       search: params.search,
-      sortBy: params.sort as 'recent' | 'popular' | 'length' | 'alphabetical', // Change sort to sortBy
+      sortBy: params.sort as 'recent' | 'popular' | 'length' | 'alphabetical'
     });
 
     return (

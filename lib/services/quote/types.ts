@@ -33,6 +33,8 @@ export interface QuoteImageData extends Omit<QuoteImageResource, 'context'> {
   usageCount?: number;
 }
 
+export type SortOption = 'recent' | 'popular' | 'length' | 'alphabetical';
+
 export interface QuoteService {
   list(params: import('@/types/api/quotes').ListQuotesParams): Promise<ListQuotesResult>;
   create(data: CreateQuoteInput & { authorId: string; images?: QuoteImageData[] }): Promise<Quote>;
