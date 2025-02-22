@@ -81,3 +81,48 @@ export async function PATCH(
     );
   }
 }
+
+// DELETE - Delete category
+export async function DELETE(
+  req: Request
+): Promise<NextResponse<CategoryResponse>> {
+  try {
+    // Authentication & authorization
+    const session = await auth();
+    if (!session?.user || session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: { code: "UNAUTHORIZED" as CategoryErrorCode, message: "Not authorized" } },
+        { status: 401 }
+      );
+    }
+
+    // Extract ID from URL
+    const id = req.url.split('/categories/')[1];
+    if (!id) {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST" as CategoryErrorCode, message: "Category ID is required" } },
+        { status: 400 }
+      );
+    }
+
+    // Delete category
+    await categoryService.deleteCategory(id);
+    
+    return NextResponse.json({ 
+      data: null,
+      message: "Category deleted successfully" 
+    });
+
+  } catch (error) {
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        { error: { code: error.code as CategoryErrorCode, message: error.message } },
+        { status: error.statusCode }
+      );
+    }
+    return NextResponse.json(
+      { error: { code: "INTERNAL_ERROR" as CategoryErrorCode, message: "Internal server error" } },
+      { status: 500 }
+    );
+  }
+}

@@ -33,7 +33,8 @@ export default function CategoriesPage() {
       const response = await fetch("/api/categories");
       if (response.ok) {
         const data = await response.json();
-        setCategories(data.items || []);
+
+        setCategories(data.data.items || []); // Add .data here
       }
     } catch (error) {
       console.error("Failed to fetch categories:", error);

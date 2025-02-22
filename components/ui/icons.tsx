@@ -11,6 +11,7 @@ export const Icons = {
   spinner: Loader2,
   quote: QuoteIcon,
   pencil: Pencil,
+  edit: Pencil, 
   trash: Trash,
   plus: Plus,
   more: MoreVertical,
