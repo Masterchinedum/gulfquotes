@@ -1,4 +1,4 @@
-import type { Quote } from "@prisma/client";
+import type { Quote, Prisma } from "@prisma/client";
 
 type SortOption = 'recent' | 'popular' | 'length' | 'alphabetical';
 
