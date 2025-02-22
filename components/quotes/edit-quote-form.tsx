@@ -17,12 +17,12 @@ import { Icons } from "@/components/ui/icons";
 import { slugify } from "@/lib/utils";
 import type { UpdateQuoteInput } from "@/schemas/quote";
 import type { GalleryItem } from "@/types/gallery";
-import type { CloudinaryUploadResult } from "@/types/cloudinary";
+// import type { CloudinaryUploadResult } from "@/types/cloudinary";
 import { TagInput } from "@/components/forms/TagInput";
 import { TagManagementModal } from "@/components/forms/TagManagementModal";
 import { QuoteGalleryModal } from "@/components/quotes/quote-gallery-modal";
 import { ImagePlus } from "lucide-react";
-import { QuoteImageUpload } from "@/components/quotes/quote-image-upload";
+// import { QuoteImageUpload } from "@/components/quotes/quote-image-upload";
 import { QuoteImageGallery } from "@/components/quotes/quote-image-gallery";
 
 interface SelectedImageState {
@@ -53,7 +53,7 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
   const [charCount, setCharCount] = useState(quote.content.length);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  // const [isUploading, setIsUploading] = useState(false);
 
   // Update the image state initialization
   const [selectedImage, setSelectedImage] = useState<SelectedImageState>({
@@ -145,6 +145,7 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
     }
   };
 
+  /*
   const handleImageUpload = async (result: CloudinaryUploadResult) => {
     if (result.event === "success" && result.info && typeof result.info !== 'string') {
       setIsUploading(false);
@@ -181,6 +182,7 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
     }
     setIsUploading(false);
   };
+  */
 
   const handleImageSelect = (image: GalleryItem) => {
     setSelectedImage({
@@ -444,6 +446,7 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
             </div>
           </div>
 
+          {/*
           <div className="p-6 border-b bg-muted/50">
             <div className="space-y-3">
               <h4 className="text-sm font-medium">Quick Upload</h4>
@@ -455,15 +458,16 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
               />
             </div>
           </div>
+          */}
 
           <div className="p-6">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              {/* <div className="flex items-center justify-between">
                 <h4 className="text-sm font-medium">Selected Images</h4>
                 <p className="text-sm text-muted-foreground">
                   {galleryImages.length} of 30 images
                 </p>
-              </div>
+              </div> */}
 
               <QuoteImageGallery
                 items={galleryImages}
@@ -473,7 +477,7 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
                 onSelect={handleImageSelect}
                 onDeselect={handleImageDeselect}
                 isBackground={true}
-                disabled={isSubmitting || isUploading}
+                disabled={isSubmitting}
               />
 
               {selectedImage.imageUrl && (

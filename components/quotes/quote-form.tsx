@@ -16,12 +16,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Icons } from "@/components/ui/icons";
 import { slugify } from "@/lib/utils";
 import type { GalleryItem } from "@/types/gallery";
-import type { CloudinaryUploadResult } from "@/types/cloudinary"; // Add this import
+// import type { CloudinaryUploadResult } from "@/types/cloudinary"; // Add this import
 import { TagInput } from "@/components/forms/TagInput";
 import { TagManagementModal } from "@/components/forms/TagManagementModal";
 import { QuoteGalleryModal } from "@/components/quotes/quote-gallery-modal";
 import { ImagePlus } from "lucide-react";
-import { QuoteImageUpload } from "@/components/quotes/quote-image-upload";
+// import { QuoteImageUpload } from "@/components/quotes/quote-image-upload";
 import { QuoteImageGallery } from "@/components/quotes/quote-image-gallery";
 import type { QuoteFormData } from "@/schemas/quote";
 import { z } from "zod";
@@ -48,7 +48,7 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
   const [charCount, setCharCount] = useState(initialData?.content?.length || 0);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  // const [isUploading, setIsUploading] = useState(false);
 
   // Update the image state initialization
   const [selectedImage, setSelectedImage] = useState<SelectedImageState>(() => {
@@ -248,7 +248,7 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
     setGalleryImages(prev => prev.filter(img => img.id !== imageId));
   };
 
-  // Update upload handler
+  /*
   const handleImageUpload = async (result: CloudinaryUploadResult) => {
     if (result.event === "success" && result.info && typeof result.info !== 'string') {
       setIsUploading(false);
@@ -286,6 +286,7 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
     }
     setIsUploading(false);
   };
+  */
 
   // Rest of your component remains the same...
   return (
@@ -498,7 +499,7 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
             </div>
           </div>
 
-          {/* Upload Section */}
+          {/* 
           <div className="p-6 border-b bg-muted/50">
             <div className="space-y-3">
               <h4 className="text-sm font-medium">Quick Upload</h4>
@@ -510,16 +511,17 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
               />
             </div>
           </div>
+          */}
 
           {/* Selected Images Section */}
           <div className="p-6">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              {/* <div className="flex items-center justify-between">
                 <h4 className="text-sm font-medium">Selected Images</h4>
                 <p className="text-sm text-muted-foreground">
                   {galleryImages.length} of 30 images
                 </p>
-              </div>
+              </div> */}
 
               {/* Gallery Grid */}
               <QuoteImageGallery
@@ -528,9 +530,9 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
                 currentlySelected={galleryImages.map(img => img.publicId)}
                 maxSelectable={30}
                 onSelect={handleImageSelect}
-                onDeselect={handleImageDeselect} // Make sure this is connected
+                onDeselect={handleImageDeselect}
                 isBackground={true}
-                disabled={isSubmitting || isUploading}
+                disabled={isSubmitting}
               />
 
               {/* Selected Background Preview */}
