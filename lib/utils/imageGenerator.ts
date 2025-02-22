@@ -1,5 +1,11 @@
 // lib/utils/imageGenerator.ts
 import { createCanvas, loadImage, registerFont } from 'canvas';
+import path from 'path';
+
+// Register Inter font
+registerFont(path.join(process.cwd(), 'public/fonts/Inter-Regular.ttf'), { 
+  family: 'Inter' 
+});
 
 interface GenerateQuoteImageOptions {
   content: string;
