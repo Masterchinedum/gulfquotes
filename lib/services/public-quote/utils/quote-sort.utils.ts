@@ -11,7 +11,9 @@ export const quoteSortUtils = {
       case 'recent':
         return { createdAt: 'desc' };
       case 'popular':
-        return { likes: 'desc' };
+        // Using updatedAt as a temporary replacement for likes
+        // TODO: Implement proper popularity sorting when likes feature is added
+        return { updatedAt: 'desc' };
       case 'length':
         return { content: 'asc' };
       case 'alphabetical':
@@ -31,6 +33,11 @@ export const quoteSortUtils = {
       case 'recent':
         return sortedQuotes.sort((a, b) => 
           b.createdAt.getTime() - a.createdAt.getTime()
+        );
+      case 'popular':
+        // Using updatedAt for now
+        return sortedQuotes.sort((a, b) => 
+          b.updatedAt.getTime() - a.updatedAt.getTime()
         );
       case 'length':
         return sortedQuotes.sort((a, b) => 
