@@ -5,6 +5,8 @@ import { Metadata } from "next";
 import { Shell } from "@/components/shells/shell";
 import { getQuoteBySlug } from "@/actions/quote";
 import { notFound } from "next/navigation";
+import { QuoteText } from "./components/QuoteText";
+import { QuoteImage } from "./components/QuoteImage";
 
 interface QuotePageProps {
   params: {
@@ -61,15 +63,15 @@ export default async function QuotePage({ params }: QuotePageProps) {
 
           {/* Quote content area - we'll add components in next steps */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Image version will go here */}
-            <div className="border rounded-lg p-6">
-              <p className="text-muted-foreground text-sm">Image version coming soon...</p>
-            </div>
-
-            {/* Text version will go here */}
-            <div className="border rounded-lg p-6">
-              <p className="text-muted-foreground text-sm">Text version coming soon...</p>
-            </div>
+            <QuoteImage
+              content={quote.content}
+              author={quote.authorProfile.name}
+              backgroundImage={quote.backgroundImage}
+            />
+            <QuoteText
+              content={quote.content}
+              author={quote.authorProfile.name}
+            />
           </div>
 
           {/* Metadata and actions */}
