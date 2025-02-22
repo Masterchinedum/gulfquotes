@@ -6,13 +6,21 @@ import { ListQuotesParams } from "@/types/api/quotes";
 
 export interface ListQuotesResult {
   items: Array<Quote & {
-    authorProfile: AuthorProfile;
+    authorProfile: AuthorProfile & { image?: string | null };
     category: Category;
   }>;
   total: number;
   hasMore: boolean;
   page: number;
   limit: number;
+}
+
+export interface ListQuotesParams {
+  page?: number;
+  limit?: number;
+  categoryId?: string;
+  authorProfileId?: string;
+  search?: string;
 }
 
 export interface QuoteImageData extends Omit<QuoteImageResource, 'context'> {
