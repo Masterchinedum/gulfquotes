@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { quoteTextUtils } from "@/lib/services/public-quote/utils/quote-text.utils";
+import { quoteImageUtils } from "@/lib/services/public-quote/utils/quote-image.utils";
 
 interface QuoteCardProps {
   quote: {
@@ -26,9 +28,16 @@ interface QuoteCardProps {
 }
 
 export function QuoteCard({ quote }: QuoteCardProps) {
-  // Calculate text length to adjust styling
-  const textLength = quote.content.length;
+  // Use text utils for font sizing
+  const textClass = quoteTextUtils.getTextClass(quote.content.length);
   
+  // Use image utils for background
+  const optimizedBgImage = quote.backgroundImage ? 
+    quoteImageUtils.getOptimizedUrl(quote.backgroundImage, {
+      aspectRatio: '16:10',
+      quality: 90
+    }) : null;
+
   return (
     <div className="space-y-4 group/card">
       <Link href={`/quotes/${quote.slug}`}>
@@ -40,10 +49,10 @@ export function QuoteCard({ quote }: QuoteCardProps) {
           "bg-gradient-to-br from-card to-muted/80"
         )}>
           {/* Background Image with Fade Effect */}
-          {quote.backgroundImage ? (
+          {optimizedBgImage ? (
             <div className="absolute inset-0">
               <Image
-                src={quote.backgroundImage}
+                src={optimizedBgImage}
                 alt={`Background for quote: ${quote.content.substring(0, 50)}...`}
                 fill
                 className={cn(
@@ -75,10 +84,7 @@ export function QuoteCard({ quote }: QuoteCardProps) {
             )}>
               <blockquote className={cn(
                 // Dynamic text sizing based on content length
-                textLength > 300 ? "text-sm md:text-base" :
-                textLength > 200 ? "text-base md:text-lg" :
-                textLength > 100 ? "text-lg md:text-xl" :
-                "text-xl md:text-2xl lg:text-3xl",
+                textClass,
                 "font-medium",
                 "text-white leading-relaxed",
                 "line-clamp-none", // Remove line clamp
