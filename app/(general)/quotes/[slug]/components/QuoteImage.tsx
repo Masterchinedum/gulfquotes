@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Share2, Download } from "lucide-react";
 import { QuoteBgSelector } from "./QuoteBgSelector";
+import { quoteImageGenerator } from "@/lib/utils/imageGenerator";
 import type { GalleryItem } from "@/types/gallery";
 
 interface QuoteImageProps {
@@ -27,11 +28,32 @@ export function QuoteImage({
   const [selectedBg, setSelectedBg] = useState(backgroundImage);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleDownload = () => {
-    // TODO: Implement download functionality
-    setIsGenerating(true);
-    // Add download logic here
-    setIsGenerating(false);
+  const handleDownload = async () => {
+    try {
+      setIsGenerating(true);
+      
+      const imageBuffer = await quoteImageGenerator.generate({
+        content,
+        author,
+        siteName,
+        backgroundUrl: selectedBg
+      });
+
+      // Convert buffer to blob and create download link
+      const blob = new Blob([imageBuffer], { type: 'image/png' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `quote-${author.toLowerCase().replace(/\s+/g, '-')}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to generate image:', error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleShare = () => {
