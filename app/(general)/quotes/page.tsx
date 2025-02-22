@@ -3,11 +3,12 @@ import { Shell } from "@/components/shells/shell";
 import { QuoteGrid } from "./components/quote-grid";
 import { QuoteError } from "./components/quote-error";
 import { QuoteEmpty } from "./components/quote-empty";
-import { QuotePagination } from "./components/quote-pagination";
+// import { QuotePagination } from "./components/quote-pagination";
 import { QuoteFiltersWrapper } from "./components/quote-filters-wrapper";
 import { QuoteListSkeleton } from "./components/quote-list-skeleton";
 import { publicQuoteService } from "@/lib/services/public-quote/public-quote.service";
 import { notFound } from "next/navigation";
+import { QuotePaginationWrapper } from "./components/quote-pagination-wrapper";
 
 // Custom search params interface to avoid clashing with Next.js types
 interface CustomSearchParams {
@@ -102,7 +103,7 @@ export default async function QuotesPage({ searchParams }: PageProps) {
 
             {/* Pagination */}
             {result.hasMore && (
-              <QuotePagination
+              <QuotePaginationWrapper
                 currentPage={params.page}
                 hasMore={result.hasMore}
               />
