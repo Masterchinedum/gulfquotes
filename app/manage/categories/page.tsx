@@ -34,7 +34,7 @@ export default function CategoriesPage() {
       if (response.ok) {
         const data = await response.json();
 
-        setCategories(data.data.items || []); // Add .data here
+        setCategories(data.data.items || []);
       }
     } catch (error) {
       console.error("Failed to fetch categories:", error);
@@ -49,12 +49,12 @@ export default function CategoriesPage() {
 
   const handleModalClose = () => {
     setSelectedCategory(null);
-    fetchCategories(); // Refresh the list after edit
+    fetchCategories();
   };
 
   const handleCreateSuccess = () => {
     setIsCreateModalOpen(false);
-    fetchCategories(); // Refresh the list after creation
+    fetchCategories(); 
   };
 
   if (isLoading) {

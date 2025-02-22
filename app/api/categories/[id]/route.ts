@@ -108,9 +108,10 @@ export async function DELETE(
     // Delete category
     await categoryService.deleteCategory(id);
     
+    // Return response matching CategoryResponse type
     return NextResponse.json({ 
-      data: null,
-      message: "Category deleted successfully" 
+      data: undefined,
+      error: undefined
     });
 
   } catch (error) {
