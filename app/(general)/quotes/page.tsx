@@ -58,7 +58,7 @@ export default async function QuotesPage({ searchParams }: PageProps) {
 
     return (
       <Shell>
-        <div className="container py-8 space-y-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
           {/* Header */}
           <div className="space-y-2">
             <h1 className="text-3xl font-bold tracking-tight">Quotes</h1>
