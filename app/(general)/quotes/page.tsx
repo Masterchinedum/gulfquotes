@@ -9,14 +9,17 @@ import { QuoteListSkeleton } from "./components/quote-list-skeleton";
 import { publicQuoteService } from "@/lib/services/public-quote/public-quote.service";
 import { notFound } from "next/navigation";
 
-interface QuotesPageProps {
-  searchParams: {
-    page?: string;
-    category?: string;
-    author?: string;
-    search?: string;
-    sort?: string;
-  };
+// Custom search params interface to avoid clashing with Next.js types
+interface CustomSearchParams {
+  page?: string;
+  category?: string;
+  author?: string;
+  search?: string;
+  sort?: 'recent' | 'popular' | 'length' | 'alphabetical';  // Add type for sort
+}
+
+interface PageProps {
+  searchParams: Promise<CustomSearchParams>;
 }
 
 interface QuoteError {
@@ -32,14 +35,14 @@ function isQuoteError(error: unknown): error is QuoteError {
   );
 }
 
-export default async function QuotesPage({ searchParams }: QuotesPageProps) {
-  // Wait for searchParams to be ready
+export default async function QuotesPage({ searchParams }: PageProps) {
+  // Await the searchParams promise before using it
   const params = {
-    page: Number(await searchParams?.page) || 1,
-    category: await searchParams?.category || "",
-    author: await searchParams?.author || "",
-    search: await searchParams?.search || "",
-    sort: await searchParams?.sort || "recent",
+    page: Number((await searchParams)?.page) || 1,
+    category: (await searchParams)?.category || "",
+    author: (await searchParams)?.author || "",
+    search: (await searchParams)?.search || "",
+    sort: (await searchParams)?.sort || "recent",
   };
 
   try {
@@ -49,7 +52,7 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
       categoryId: params.category,
       authorProfileId: params.author,
       search: params.search,
-      sort: params.sort,
+      sortBy: params.sort as 'recent' | 'popular' | 'length' | 'alphabetical', // Change sort to sortBy
     });
 
     return (

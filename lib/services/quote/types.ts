@@ -21,6 +21,7 @@ export interface ListQuotesParams {
   categoryId?: string;
   authorProfileId?: string;
   search?: string;
+  sortBy?: 'recent' | 'popular' | 'length' | 'alphabetical'; // Add the sort parameter
 }
 
 export interface QuoteImageData extends Omit<QuoteImageResource, 'context'> {
