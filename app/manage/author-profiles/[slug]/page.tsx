@@ -5,10 +5,11 @@ import { redirect } from "next/navigation";
 import { authorProfileService } from "@/lib/services/author-profile.service";
 import { EditForm } from "./components/form/edit-form";
 import { NotFound } from "./components/error/not-found";
-import { ErrorState } from "./components/error/error";
+// import { ErrorState } from "./components/error/error";
 import Loading from "./components/loading/loading";
 import { Shell } from "@/components/shells/shell";
 import { Suspense } from "react";
+import { ErrorBoundary } from "./components/error/error-boundary";
 
 export const metadata = {
   title: "Edit Author Profile - Quoticon",
@@ -75,10 +76,7 @@ export default async function EditAuthorProfilePage({
       <Shell>
         <div className="flex flex-col gap-8 p-8">
           <div className="mx-auto w-full max-w-6xl">
-            <ErrorState 
-              message="Something went wrong loading the author profile." 
-              onRetry={() => window.location.reload()}
-            />
+            <ErrorBoundary message="Something went wrong loading the author profile." />
           </div>
         </div>
       </Shell>
