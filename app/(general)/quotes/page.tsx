@@ -1,13 +1,13 @@
 import { Suspense } from "react";
 import { Shell } from "@/components/shells/shell";
-import { QuoteCard } from "./components/quote-card";
-import { QuoteListSkeleton } from "./components/quote-list-skeleton";
-import { QuoteFilters } from "./components/quote-filters";
 import { QuoteGrid } from "./components/quote-grid";
+import { QuoteFilters } from "./components/quote-filters";
 import { QuoteError } from "./components/quote-error";
 import { QuoteEmpty } from "./components/quote-empty";
+import { QuotePagination } from "./components/quote-pagination";
+import { QuoteListSkeleton } from "./components/quote-list-skeleton";
 import { publicQuoteService } from "@/lib/services/public-quote/public-quote.service";
-import { motion } from "framer-motion";
+import { notFound } from "next/navigation";
 
 interface QuotesPageProps {
   searchParams: {
@@ -15,65 +15,117 @@ interface QuotesPageProps {
     category?: string;
     author?: string;
     search?: string;
+    sort?: string;
   };
 }
 
+interface QuoteError {
+  code?: string;
+  message: string;
+}
+
+function isQuoteError(error: unknown): error is QuoteError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    ("code" in error || "message" in error)
+  );
+}
+
 export default async function QuotesPage({ searchParams }: QuotesPageProps) {
-  const page = Number(searchParams.page) || 1;
-  const limit = 12; // Number of quotes per page
+  // Wait for searchParams to be ready
+  const params = {
+    page: Number(await searchParams?.page) || 1,
+    category: await searchParams?.category || "",
+    author: await searchParams?.author || "",
+    search: await searchParams?.search || "",
+    sort: await searchParams?.sort || "recent",
+  };
 
   try {
-    // Fetch quotes with filters and pagination
     const result = await publicQuoteService.list({
-      page,
-      limit,
-      categoryId: searchParams.category,
-      authorProfileId: searchParams.author,
-      search: searchParams.search,
+      page: params.page,
+      limit: 12,
+      categoryId: params.category,
+      authorProfileId: params.author,
+      search: params.search,
+      sort: params.sort,
     });
 
     return (
       <Shell>
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="container py-8 space-y-10"
-        >
-          {/* Header with animation */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="space-y-2"
-          >
+        <div className="container py-8 space-y-10">
+          {/* Header */}
+          <div className="space-y-2">
             <h1 className="text-3xl font-bold tracking-tight">Quotes</h1>
             <p className="text-muted-foreground">
               Discover and share inspirational quotes from our collection
             </p>
-          </motion.div>
+          </div>
 
           {/* Filters */}
-          <QuoteFilters />
+          <QuoteFilters 
+            initialFilters={{
+              search: params.search || "",
+              category: params.category || "",
+              author: params.author || "",
+              sort: params.sort || "recent"
+            }}
+          />
 
           {/* Content */}
           <Suspense fallback={<QuoteListSkeleton />}>
             {result.items.length > 0 ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-              >
-                <QuoteGrid quotes={result.items} />
-              </motion.div>
+              <QuoteGrid
+                quotes={result.items.map((quote) => ({
+                  id: quote.id,
+                  slug: quote.slug,
+                  content: quote.content,
+                  backgroundImage: quote.backgroundImage,
+                  author: {
+                    name: quote.authorProfile.name,
+                    image: quote.authorProfile.image,
+                    slug: quote.authorProfile.slug,
+                  },
+                  category: {
+                    name: quote.category.name,
+                    slug: quote.category.slug,
+                  },
+                }))}
+              />
             ) : (
               <QuoteEmpty />
             )}
+
+            {/* Pagination */}
+            {result.hasMore && (
+              <QuotePagination
+                currentPage={params.page}
+                hasMore={result.hasMore}
+              />
+            )}
           </Suspense>
-        </motion.div>
+        </div>
       </Shell>
     );
   } catch (error) {
-    return <QuoteError message="Failed to load quotes" onRetry={() => window.location.reload()} />;
+    console.error("Failed to load quotes:", error);
+    
+    if (isQuoteError(error) && error.code === "NOT_FOUND") {
+      notFound();
+    }
+
+    return (
+      <Shell>
+        <QuoteError
+          message={
+            isQuoteError(error) 
+              ? error.message 
+              : "Failed to load quotes. Please try again later."
+          }
+          onRetry={() => window.location.reload()}
+        />
+      </Shell>
+    );
   }
 }

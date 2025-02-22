@@ -1,39 +1,58 @@
+'use client';
+
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface QuoteFiltersProps {
-  onSearch: (searchTerm: string) => void;
-  onFilter: (filters: { category?: string; author?: string }) => void;
-  onSort?: (sortOption: string) => void;
+  initialFilters: {
+    search: string;
+    category: string;
+    author: string;
+    sort: string;
+  };
 }
 
-export function QuoteFilters({ onSearch, onFilter, onSort }: QuoteFiltersProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [category, setCategory] = useState("");
-  const [author, setAuthor] = useState("");
-  const [sortBy, setSortBy] = useState<string>("recent");
+export function QuoteFilters({ initialFilters }: QuoteFiltersProps) {
+  const router = useRouter();
+  const [searchTerm, setSearchTerm] = useState(initialFilters.search);
+  const [category, setCategory] = useState(initialFilters.category);
+  const [author, setAuthor] = useState(initialFilters.author);
+  const [sortBy, setSortBy] = useState(initialFilters.sort);
+
+  const updateUrl = (params: Record<string, string>) => {
+    const url = new URL(window.location.href);
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        url.searchParams.set(key, value);
+      } else {
+        url.searchParams.delete(key);
+      }
+    });
+    url.searchParams.delete("page"); // Reset page when filtering
+    router.push(url.pathname + url.search);
+  };
 
   const handleSearch = () => {
     if (!searchTerm.trim()) return;
-    onSearch(searchTerm);
+    updateUrl({ search: searchTerm });
   };
 
   const handleFilter = () => {
     if (!category && !author) return;
-    onFilter({ 
-      category: category.trim() || undefined,
-      author: author.trim() || undefined 
+    updateUrl({ 
+      category: category.trim(),
+      author: author.trim()
     });
   };
 
   const handleSort = (value: string) => {
     setSortBy(value);
-    onSort?.(value);
+    updateUrl({ sort: value });
   };
 
-  // Handle Enter key press for search and filter inputs
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleSearch();
@@ -69,19 +88,17 @@ export function QuoteFilters({ onSearch, onFilter, onSort }: QuoteFiltersProps) 
         />
       </div>
 
-      {onSort && (
-        <Select value={sortBy} onValueChange={handleSort}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="recent">Most Recent</SelectItem>
-            <SelectItem value="popular">Most Popular</SelectItem>
-            <SelectItem value="length">Length</SelectItem>
-            <SelectItem value="alphabetical">A-Z</SelectItem>
-          </SelectContent>
-        </Select>
-      )}
+      <Select value={sortBy} onValueChange={handleSort}>
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Sort by" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="recent">Most Recent</SelectItem>
+          <SelectItem value="popular">Most Popular</SelectItem>
+          <SelectItem value="length">Length</SelectItem>
+          <SelectItem value="alphabetical">A-Z</SelectItem>
+        </SelectContent>
+      </Select>
 
       <div className="flex gap-2">
         <Button 
