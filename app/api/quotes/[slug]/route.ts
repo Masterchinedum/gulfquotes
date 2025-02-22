@@ -81,7 +81,6 @@ export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteRespo
 
     try {
       const finalQuote = await db.$transaction(async (tx) => {
-        console.log("[QUOTE_PATCH] Updating basic quote data");
         const updatedQuote = await tx.quote.update({
           where: { id: existingQuote.id },
           data: {

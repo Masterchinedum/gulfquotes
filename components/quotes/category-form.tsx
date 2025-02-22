@@ -40,7 +40,6 @@ export function CategoryForm() {
 
   // Handle form submission for creating a category
   const onSubmit = async (data: CategoryInput) => {
-    console.log("Submitted category data:", data);
     setServerError(null);
     setServerSuccess(null);
 
