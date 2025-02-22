@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,36 +12,23 @@ interface QuoteFiltersProps {
     author: string;
     sort: string;
   };
+  onUpdate: (params: Record<string, string>) => void;
 }
 
-export function QuoteFilters({ initialFilters }: QuoteFiltersProps) {
-  const router = useRouter();
+export function QuoteFilters({ initialFilters, onUpdate }: QuoteFiltersProps) {
   const [searchTerm, setSearchTerm] = useState(initialFilters.search);
   const [category, setCategory] = useState(initialFilters.category);
   const [author, setAuthor] = useState(initialFilters.author);
   const [sortBy, setSortBy] = useState(initialFilters.sort);
 
-  const updateUrl = (params: Record<string, string>) => {
-    const url = new URL(window.location.href);
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) {
-        url.searchParams.set(key, value);
-      } else {
-        url.searchParams.delete(key);
-      }
-    });
-    url.searchParams.delete("page"); // Reset page when filtering
-    router.push(url.pathname + url.search);
-  };
-
   const handleSearch = () => {
     if (!searchTerm.trim()) return;
-    updateUrl({ search: searchTerm });
+    onUpdate({ search: searchTerm });
   };
 
   const handleFilter = () => {
     if (!category && !author) return;
-    updateUrl({ 
+    onUpdate({ 
       category: category.trim(),
       author: author.trim()
     });
@@ -50,7 +36,7 @@ export function QuoteFilters({ initialFilters }: QuoteFiltersProps) {
 
   const handleSort = (value: string) => {
     setSortBy(value);
-    updateUrl({ sort: value });
+    onUpdate({ sort: value });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {

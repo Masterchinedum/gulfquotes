@@ -1,10 +1,10 @@
 import { Suspense } from "react";
 import { Shell } from "@/components/shells/shell";
 import { QuoteGrid } from "./components/quote-grid";
-import { QuoteFilters } from "./components/quote-filters";
 import { QuoteError } from "./components/quote-error";
 import { QuoteEmpty } from "./components/quote-empty";
 import { QuotePagination } from "./components/quote-pagination";
+import { QuoteFiltersWrapper } from "./components/quote-filters-wrapper";
 import { QuoteListSkeleton } from "./components/quote-list-skeleton";
 import { publicQuoteService } from "@/lib/services/public-quote/public-quote.service";
 import { notFound } from "next/navigation";
@@ -64,12 +64,12 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
           </div>
 
           {/* Filters */}
-          <QuoteFilters 
+          <QuoteFiltersWrapper 
             initialFilters={{
-              search: params.search || "",
-              category: params.category || "",
-              author: params.author || "",
-              sort: params.sort || "recent"
+              search: params.search,
+              category: params.category,
+              author: params.author,
+              sort: params.sort
             }}
           />
 
