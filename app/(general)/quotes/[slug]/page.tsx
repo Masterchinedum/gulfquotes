@@ -67,6 +67,7 @@ export default async function QuotePage({ params }: QuotePageProps) {
               content={quote.content}
               author={quote.authorProfile.name}
               backgroundImage={quote.backgroundImage}
+              galleryImages={quote.gallery.map(g => g.gallery)}
             />
             <QuoteText
               content={quote.content}
