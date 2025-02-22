@@ -118,6 +118,23 @@ class CategoryService {
 
     return category;
   }
+
+  /**
+   * Deletes a category by ID
+   */
+  public async deleteCategory(id: string): Promise<void> {
+    const existingCategory = await db.category.findUnique({
+      where: { id }
+    });
+
+    if (!existingCategory) {
+      throw new AppError("Category not found", "NOT_FOUND", 404);
+    }
+
+    await db.category.delete({
+      where: { id }
+    });
+  }
 }
 
 const categoryService = new CategoryService();
