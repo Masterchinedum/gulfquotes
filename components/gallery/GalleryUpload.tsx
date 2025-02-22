@@ -42,9 +42,6 @@ export function GalleryUpload({ onUploadComplete, disabled = false }: GalleryUpl
     setUploading(false);
     if (result.event !== "success" || !result.info) return;
 
-    // Add console.log for debugging
-    console.log('Upload result:', result);
-
     // Type guard for CloudinaryUploadWidgetInfo
     if (typeof result.info === 'string') return;
 
@@ -83,11 +80,8 @@ export function GalleryUpload({ onUploadComplete, disabled = false }: GalleryUpl
               type="button"
               variant="outline"
               onClick={() => {
-                console.log('Button clicked');
                 setUploading(true);
-                console.log('Uploading state set');
                 open();
-                console.log('Open called');
               }}
               disabled={disabled || uploading}
               className="w-full max-w-xs"

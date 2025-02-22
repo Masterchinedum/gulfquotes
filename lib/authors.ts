@@ -61,18 +61,11 @@ export async function fetchAuthors({
   const skip = (page - 1) * limit
   const whereConditions = buildWhereConditions(search, letter)
 
-  // Log where conditions
-  console.log("[FETCH_AUTHORS] Where conditions:", whereConditions)
-
   const [items, total] = await Promise.all([
     fetchAuthorItems(whereConditions, skip, limit),
     countAuthors(whereConditions)
   ])
 
-  // Log results
-  console.log("[FETCH_AUTHORS] Results:", { itemsCount: items.length, total })
-
-  // Return with the correct structure matching AuthorsResponse
   return {
     data: {
       items: formatAuthors(items),
