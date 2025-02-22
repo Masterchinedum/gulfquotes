@@ -5,13 +5,15 @@ import { useState } from "react";
 import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Share2, Download } from "lucide-react";
+import { QuoteBgSelector } from "./QuoteBgSelector";
+import type { GalleryItem } from "@/types/gallery";
 
 interface QuoteImageProps {
   content: string;
   author: string;
   backgroundImage: string | null;
+  galleryImages: GalleryItem[];
   siteName?: string;
 }
 
@@ -19,13 +21,17 @@ export function QuoteImage({
   content, 
   author, 
   backgroundImage,
+  galleryImages,
   siteName = "Quoticon"
 }: QuoteImageProps) {
   const [selectedBg, setSelectedBg] = useState(backgroundImage);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  // We'll implement these functions in the next phase
   const handleDownload = () => {
     // TODO: Implement download functionality
+    setIsGenerating(true);
+    // Add download logic here
+    setIsGenerating(false);
   };
 
   const handleShare = () => {
@@ -33,7 +39,7 @@ export function QuoteImage({
   };
 
   return (
-    <Card className="p-6 space-y-4">
+    <Card className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Image Version</h2>
         <div className="flex items-center gap-2">
@@ -49,9 +55,10 @@ export function QuoteImage({
             variant="ghost"
             size="sm"
             onClick={handleDownload}
+            disabled={isGenerating}
           >
             <Download className="h-4 w-4 mr-2" />
-            Download
+            {isGenerating ? "Generating..." : "Download"}
           </Button>
         </div>
       </div>
@@ -80,23 +87,12 @@ export function QuoteImage({
       </div>
 
       {/* Background Selection */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Background Style</label>
-        <Select
-          value={selectedBg || "default"}
-          onValueChange={(value) => setSelectedBg(value === "default" ? null : value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select background" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="default">Default Gradient</SelectItem>
-            {backgroundImage && (
-              <SelectItem value={backgroundImage}>Custom Background</SelectItem>
-            )}
-          </SelectContent>
-        </Select>
-      </div>
+      <QuoteBgSelector
+        currentBackground={selectedBg}
+        galleryImages={galleryImages}
+        onSelect={setSelectedBg}
+        disabled={isGenerating}
+      />
     </Card>
   );
 }
