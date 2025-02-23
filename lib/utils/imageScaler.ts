@@ -148,29 +148,54 @@ export class ImageScaler {
     const canvas = createCanvas(scaledWidth, scaledHeight);
     const ctx = canvas.getContext('2d');
 
-    // Enable text quality preservation
+    // Enable high-quality rendering
+    ctx.imageSmoothingEnabled = true;
+    
+    // Use a larger intermediate canvas for text preservation
     if (preserveText) {
-      ctx.textRendering = 'geometricPrecision';
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
+      const scale = 2;
+      const tempCanvas = createCanvas(scaledWidth * scale, scaledHeight * scale);
+      const tempCtx = tempCanvas.getContext('2d');
+      
+      tempCtx.imageSmoothingEnabled = true;
+      
+      // Load and draw source image at higher resolution
+      const image = await loadImage(sourceBuffer);
+      tempCtx.drawImage(image, 0, 0, scaledWidth * scale, scaledHeight * scale);
+      
+      // Scale back down with high quality
+      ctx.drawImage(
+        tempCanvas, 
+        0, 0, scaledWidth * scale, scaledHeight * scale,
+        0, 0, scaledWidth, scaledHeight
+      );
+    } else {
+      // Load and draw source image normally
+      const image = await loadImage(sourceBuffer);
+      this.drawOptimizedImage(ctx, image, scaledWidth, scaledHeight);
     }
-
-    // Load and draw source image
-    const image = await loadImage(sourceBuffer);
-    this.drawOptimizedImage(ctx, image, scaledWidth, scaledHeight);
 
     // Determine optimal compression settings
     const compressionOptions = this.getCompressionOptions(format, quality, preserveText);
 
-    // Return optimized buffer
-    return canvas.toBuffer(`image/${format}`, compressionOptions);
+    // Return optimized buffer with correct mime type
+    switch (format) {
+      case 'png':
+        return canvas.toBuffer('image/png', compressionOptions);
+      case 'jpeg':
+        return canvas.toBuffer('image/jpeg', compressionOptions);
+      case 'webp':
+        return canvas.toBuffer('image/webp', compressionOptions);
+      default:
+        return canvas.toBuffer('image/png', compressionOptions);
+    }
   }
 
   /**
    * Draw image with optimal quality settings
    */
   private drawOptimizedImage(
-    ctx: CanvasRenderingContext2D,
+    ctx: import('canvas').CanvasRenderingContext2D,  // Update type to use canvas package type
     image: import('canvas').Image,
     targetWidth: number,
     targetHeight: number

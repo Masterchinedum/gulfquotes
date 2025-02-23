@@ -59,7 +59,7 @@ class ImageProcessor extends EventEmitter {
   private readonly MAX_MEMORY_USAGE = 1024 * 1024 * 512; // 512MB
   private activeProcessing: number;
   private currentMemoryUsage: number;
-  private cleanupInterval: NodeJS.Timer;
+  private cleanupInterval: ReturnType<typeof setInterval>; // Update type
 
   constructor() {
     super();
@@ -274,12 +274,23 @@ class ImageProcessor extends EventEmitter {
       const canvas = createCanvas(image.width, image.height);
       const ctx = canvas.getContext('2d');
       
-      // Enable high-quality rendering
+      // Enable image smoothing
       ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
       
-      // Draw the image
-      ctx.drawImage(image, 0, 0, image.width, image.height);
+      // Draw the image with better quality by using a larger intermediate canvas
+      const scale = 2; // Use 2x scale for better quality
+      const tempCanvas = createCanvas(image.width * scale, image.height * scale);
+      const tempCtx = tempCanvas.getContext('2d');
+      
+      tempCtx.imageSmoothingEnabled = true;
+      tempCtx.drawImage(image, 0, 0, image.width * scale, image.height * scale);
+      
+      // Scale back down to original size
+      ctx.drawImage(
+        tempCanvas, 
+        0, 0, image.width * scale, image.height * scale,
+        0, 0, image.width, image.height
+      );
       
       // Return as PNG with maximum quality
       return canvas.toBuffer('image/png', {
@@ -291,7 +302,7 @@ class ImageProcessor extends EventEmitter {
       console.error('Error during image conversion:', error);
       throw new AppError(
         'Failed to convert to static image',
-        'IMAGE_UPLOAD_FAILED', // Change this too
+        'IMAGE_UPLOAD_FAILED',
         500
       );
     }
@@ -419,8 +430,8 @@ class ImageProcessor extends EventEmitter {
     // Clear completed tasks
     this.clearCompletedTasks();
 
-    // Clear expired cache entries
-    await imageCache.cleanup();
+    // Clear cache entirely instead of cleanup
+    imageCache.clear();
 
     // Force garbage collection if available
     if (global.gc) {
@@ -467,7 +478,9 @@ class ImageProcessor extends EventEmitter {
    * Cleanup on process exit
    */
   dispose(): void {
-    clearInterval(this.cleanupInterval);
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+    }
     this.queue.clear();
     this.batchQueues.clear();
     this.removeAllListeners();
