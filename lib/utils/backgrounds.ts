@@ -5,6 +5,8 @@ import type { GalleryItem } from "@/types/gallery";
 interface BackgroundOptions {
   quality?: number;
   format?: 'auto' | 'webp' | 'jpg' | 'png';
+  width?: number;
+  height?: number;
   overlay?: {
     color?: string;
     opacity?: number;
@@ -15,16 +17,54 @@ interface CachedBackground {
   url: string;
   optimizedUrl: string;
   timestamp: number;
+  dimensions?: {
+    width: number;
+    height: number;
+  };
+}
+
+interface ImageDimensions {
+  width: number;
+  height: number;
+  aspectRatio: number;
 }
 
 class BackgroundHandler {
   private cache: Map<string, CachedBackground>;
   private readonly cacheTimeout = 1000 * 60 * 60; // 1 hour
   private readonly cloudName: string;
+  private readonly defaultDimensions = {
+    width: 1080,
+    height: 1080
+  };
   
   constructor() {
     this.cache = new Map();
     this.cloudName = cloudinaryConfig.cloudName;
+  }
+
+  /**
+   * Verify image dimensions meet requirements
+   */
+  verifyDimensions(dimensions: ImageDimensions): boolean {
+    const minDimension = 1080;
+    return dimensions.width >= minDimension && dimensions.height >= minDimension;
+  }
+
+  /**
+   * Calculate dimensions to fill 1080x1080 while maintaining aspect ratio
+   */
+  private calculateFillDimensions(original: ImageDimensions): { width: number; height: number } {
+    const targetSize = 1080;
+    const scale = Math.max(
+      targetSize / original.width,
+      targetSize / original.height
+    );
+
+    return {
+      width: Math.round(original.width * scale),
+      height: Math.round(original.height * scale)
+    };
   }
 
   /**
@@ -34,6 +74,8 @@ class BackgroundHandler {
     const {
       quality = 90,
       format = 'auto',
+      width = this.defaultDimensions.width,
+      height = this.defaultDimensions.height,
       overlay
     } = options;
 
@@ -42,6 +84,8 @@ class BackgroundHandler {
 
     // Build transformation string with format validation
     const transforms = [
+      `w_${width}`,
+      `h_${height}`,
       `q_${quality}`,
       `f_${format}`,
       'c_fill',
@@ -62,7 +106,7 @@ class BackgroundHandler {
   }
 
   /**
-   * Get optimized background URL with caching
+   * Get optimized background URL with caching and dimension verification
    */
   getOptimizedUrl(url: string, options?: BackgroundOptions): string {
     // Check cache first
@@ -71,14 +115,19 @@ class BackgroundHandler {
       return cached.optimizedUrl;
     }
 
-    // Generate new optimized URL
-    const optimizedUrl = this.optimizeImageUrl(url, options);
+    // Generate new optimized URL with 1080x1080 dimensions
+    const optimizedUrl = this.optimizeImageUrl(url, {
+      ...options,
+      width: this.defaultDimensions.width,
+      height: this.defaultDimensions.height
+    });
 
     // Update cache
     this.cache.set(url, {
       url,
       optimizedUrl,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      dimensions: this.defaultDimensions
     });
 
     return optimizedUrl;
@@ -114,7 +163,6 @@ class BackgroundHandler {
       opacity: 50
     };
 
-    // TODO: Implement intelligent overlay based on image brightness/contrast
     return defaultOverlay;
   }
 

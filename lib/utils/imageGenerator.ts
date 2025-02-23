@@ -11,6 +11,7 @@ const FONT_FAMILY = 'Inter';
 
 // Character count to font size mapping
 const TEXT_SIZE_MAP: [number, number][] = [
+  [Infinity, 20], // text > 700 char use 20px
   [700, 30], // text <= 700 char use 30px
   [600, 31], // text <= 600 char use 31px
   [550, 33], // text <= 550 char use 33px
@@ -54,7 +55,7 @@ export class QuoteImageGenerator {
     
     // Find the appropriate font size from the mapping
     const [, fontSize] = TEXT_SIZE_MAP.find(([maxLength]) => length <= maxLength) 
-      ?? TEXT_SIZE_MAP[0]; // Default to smallest font size if text is too long
+      ?? TEXT_SIZE_MAP[0]; // Default to 20px for very long text
 
     return fontSize;
   }
