@@ -148,7 +148,7 @@ class ImageProcessor extends EventEmitter {
       console.error('Error processing image:', error);
       throw new AppError(
         'Failed to process image',
-        'IMAGE_PROCESSING_FAILED',
+        'IMAGE_UPLOAD_FAILED', // Change to a valid AppErrorCode
         500
       );
     }
@@ -242,7 +242,7 @@ class ImageProcessor extends EventEmitter {
     if (error instanceof AppError) throw error;
     throw new AppError(
       'Failed to process image after multiple retries',
-      'IMAGE_PROCESSING_FAILED',
+      'IMAGE_UPLOAD_FAILED', // Change this as well
       500
     );
   }
@@ -288,7 +288,7 @@ class ImageProcessor extends EventEmitter {
       console.error('Error during image conversion:', error);
       throw new AppError(
         'Failed to convert to static image',
-        'IMAGE_CONVERSION_FAILED', 
+        'IMAGE_UPLOAD_FAILED', // Change this too
         500
       );
     }
