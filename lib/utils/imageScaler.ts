@@ -1,5 +1,6 @@
 // lib/utils/imageScaler.ts
 import { createCanvas, loadImage } from 'canvas';
+import sharp from 'sharp'; // Import sharp using ES6 import syntax
 import { cloudinaryConfig } from '@/lib/cloudinary';
 
 interface ScalingOptions {
@@ -366,37 +367,32 @@ export class ImageScaler {
   /**
    * Optimize image buffer using Sharp or fallback to canvas
    */
-  private optimizeImageBuffer(buffer: Buffer, format: string): Promise<Buffer> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        // Use Sharp if available for better performance
-        try {
-          const sharp = require('sharp');
-          const optimized = await sharp(buffer)
-            .toFormat(format, {
-              quality: 90,
-              effort: 10, // Maximum compression effort
-              progressive: true,
-              optimizeScans: true
-            })
-            .toBuffer();
-          return resolve(optimized);
-        } catch {
-          // Fall back to canvas if Sharp is not available
-          const image = await loadImage(buffer);
-          const canvas = createCanvas(image.width, image.height);
-          const ctx = canvas.getContext('2d');
-          
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-          ctx.drawImage(image, 0, 0);
-          
-          resolve(canvas.toBuffer(`image/${format}`));
-        }
-      } catch (error) {
-        reject(error);
-      }
-    });
+  private async optimizeImageBuffer(buffer: Buffer, format: string): Promise<Buffer> {
+    try {
+      // Use Sharp for better performance
+      const optimized = await sharp(buffer)
+        .toFormat(format, {
+          quality: 90,
+          effort: 10, // Maximum compression effort
+          progressive: true,
+          optimizeScans: true
+        })
+        .toBuffer();
+      return optimized;
+    } catch (error) {
+      console.error('Error during Sharp optimization:', error); // Log the error for debugging
+
+      // Fall back to canvas if Sharp is not available
+      const image = await loadImage(buffer);
+      const canvas = createCanvas(image.width, image.height);
+      const ctx = canvas.getContext('2d');
+      
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(image, 0, 0);
+      
+      return canvas.toBuffer(`image/${format}`);
+    }
   }
 }
 

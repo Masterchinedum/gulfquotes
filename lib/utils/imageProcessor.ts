@@ -213,6 +213,9 @@ class ImageProcessor extends EventEmitter {
       task.status = 'pending';
       task.error = error instanceof Error ? error.message : 'Unknown error';
 
+      // Log error for debugging
+      console.error(`Task ${taskId} failed (attempt ${task.retries}/${maxRetries}):`, task.error);
+
       // Exponential backoff
       await new Promise(resolve => 
         setTimeout(resolve, this.RETRY_DELAY * Math.pow(2, task.retries - 1))
@@ -223,6 +226,13 @@ class ImageProcessor extends EventEmitter {
 
     task.status = 'failed';
     task.endTime = Date.now();
+
+    // Emit error event with details
+    this.emit('taskError', {
+      taskId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      retries: task.retries
+    });
 
     if (error instanceof AppError) throw error;
     throw new AppError(
@@ -264,6 +274,7 @@ class ImageProcessor extends EventEmitter {
         })
         .toBuffer();
     } catch (error) {
+      console.error('Error during image conversion:', error); // Log the error for debugging
       throw new AppError(
         'Failed to convert to static image',
         'IMAGE_CONVERSION_FAILED', 
