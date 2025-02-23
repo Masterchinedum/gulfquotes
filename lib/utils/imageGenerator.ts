@@ -9,6 +9,20 @@ const FALLBACK_FONTS = ['Arial', 'Helvetica', 'sans-serif'];
 // Define font family name
 const FONT_FAMILY = 'Inter';
 
+// Character count to font size mapping
+const TEXT_SIZE_MAP: [number, number][] = [
+  [700, 30], // text <= 700 char use 30px
+  [600, 31], // text <= 600 char use 31px
+  [550, 33], // text <= 550 char use 33px
+  [500, 35], // text <= 500 char use 35px
+  [450, 36], // text <= 450 char use 36px
+  [400, 38], // text <= 400 char use 38px
+  [350, 39], // text <= 350 char use 39px
+  [300, 40], // text <= 300 char use 40px
+  [240, 41], // text <= 240 char use 41px
+  [100, 45], // text <= 100 char use 45px
+];
+
 // Register Inter font asynchronously
 try {
   await registerFont(path.join(process.cwd(), 'public/fonts/Inter-Regular.ttf'), { 
@@ -23,129 +37,93 @@ interface GenerateQuoteImageOptions {
   author: string;
   siteName: string;
   backgroundUrl?: string | null;
-  width?: number;
-  height?: number;
 }
 
 export class QuoteImageGenerator {
-  private readonly defaultWidth = 1200;
-  private readonly defaultHeight = 1200;
-  private readonly padding = 60;
-  private readonly maxFontSize = 72;
-  private readonly minFontSize = 24;
+  // Fixed dimensions as per requirements
+  private readonly canvasWidth = 1080;
+  private readonly canvasHeight = 1080;
+  private readonly padding = 40;
   private readonly fontFamily = `${FONT_FAMILY}, ${FALLBACK_FONTS.join(', ')}`;
 
   /**
-   * Calculate optimal font size based on text length and container size
+   * Calculate font size based on text length using the mapping
    */
-  private calculateFontSize(text: string, maxWidth: number, maxHeight: number): number {
+  private calculateFontSize(text: string): number {
     const length = text.length;
-    let fontSize = this.maxFontSize;
-
-    // Base scaling on text length
-    if (length > 100) {
-      fontSize = Math.max(
-        this.minFontSize,
-        Math.floor(fontSize * (100 / length) * 1.5)
-      );
-    }
-
-    // Further adjust based on container dimensions
-    const availableWidth = maxWidth - (this.padding * 2);
-    const availableHeight = maxHeight - (this.padding * 4); // Extra padding for author and site name
     
-    // Reduce font size if it would exceed container
-    while (fontSize > this.minFontSize) {
-      const measuredHeight = (fontSize * 1.5) * Math.ceil(text.length * fontSize / availableWidth);
-      if (measuredHeight <= availableHeight) break;
-      fontSize -= 2;
-    }
+    // Find the appropriate font size from the mapping
+    const [, fontSize] = TEXT_SIZE_MAP.find(([maxLength]) => length <= maxLength) 
+      ?? TEXT_SIZE_MAP[0]; // Default to smallest font size if text is too long
 
     return fontSize;
   }
 
   /**
-   * Generate quote image with dynamic text scaling
+   * Generate quote image with fixed dimensions
    */
   async generate({
     content,
     author,
     siteName,
     backgroundUrl,
-    width = this.defaultWidth,
-    height = this.defaultHeight
   }: GenerateQuoteImageOptions): Promise<Buffer> {
-    // Create canvas
-    const canvas = createCanvas(width, height);
+    // Create canvas with fixed dimensions
+    const canvas = createCanvas(this.canvasWidth, this.canvasHeight);
     const ctx = canvas.getContext('2d');
 
     // Draw background
     if (backgroundUrl) {
       try {
         const image = await loadImage(backgroundUrl);
-        ctx.drawImage(image, 0, 0, width, height);
+        // Use cover/fill approach for background
+        const scale = Math.max(
+          this.canvasWidth / image.width,
+          this.canvasHeight / image.height
+        );
+        const x = (this.canvasWidth - image.width * scale) / 2;
+        const y = (this.canvasHeight - image.height * scale) / 2;
+        
+        ctx.drawImage(
+          image,
+          x, y,
+          image.width * scale,
+          image.height * scale
+        );
+        
         // Add dark overlay for better text readability
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.fillRect(0, 0, width, height);
+        ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
       } catch (error) {
         console.error('Failed to load background image:', error);
-        // Fallback to gradient background
-        const gradient = ctx.createLinearGradient(0, 0, width, height);
-        gradient.addColorStop(0, '#1a1a1a');
-        gradient.addColorStop(1, '#2a2a2a');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, width, height);
+        this.drawDefaultBackground(ctx);
       }
     } else {
-      // Default gradient background
-      const gradient = ctx.createLinearGradient(0, 0, width, height);
-      gradient.addColorStop(0, '#1a1a1a');
-      gradient.addColorStop(1, '#2a2a2a');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, width, height);
+      this.drawDefaultBackground(ctx);
     }
 
-    // Calculate optimal font size
-    const fontSize = this.calculateFontSize(
-      content,
-      width - (this.padding * 2),
-      height - (this.padding * 4)
-    );
+    // Calculate font size based on content length
+    const fontSize = this.calculateFontSize(content);
 
-    // Draw quote text
+    // Configure text rendering
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#ffffff';
     ctx.font = `${fontSize}px ${this.fontFamily}`;
 
     // Word wrap and center text
-    const words = content.split(' ');
-    let line = '';
-    const lines: string[] = [];
-    const maxWidth = width - (this.padding * 2);
-
-    for (const word of words) {
-      const testLine = line + word + ' ';
-      const metrics = ctx.measureText(testLine);
-      
-      if (metrics.width > maxWidth && line) {
-        lines.push(line.trim());
-        line = word + ' ';
-      } else {
-        line = testLine;
-      }
-    }
-    lines.push(line.trim());
+    const maxWidth = this.canvasWidth - (this.padding * 2);
+    const lines = this.wrapText(ctx, content, maxWidth);
 
     // Draw text lines
     const lineHeight = fontSize * 1.5;
     const totalTextHeight = lines.length * lineHeight;
-    const startY = (height - totalTextHeight) / 2;
+    const startY = (this.canvasHeight - totalTextHeight) / 2;
 
     lines.forEach((line, i) => {
       ctx.fillText(
         line,
-        width / 2,
+        this.canvasWidth / 2,
         startY + (i * lineHeight)
       );
     });
@@ -154,7 +132,7 @@ export class QuoteImageGenerator {
     ctx.font = `${fontSize * 0.4}px ${this.fontFamily}`;
     ctx.fillText(
       `― ${author}`,
-      width / 2,
+      this.canvasWidth / 2,
       startY + totalTextHeight + (fontSize * 0.8)
     );
 
@@ -163,12 +141,50 @@ export class QuoteImageGenerator {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.fillText(
       siteName,
-      width / 2,
-      height - (this.padding / 2)
+      this.canvasWidth / 2,
+      this.canvasHeight - (this.padding / 2)
     );
 
     // Return PNG buffer
-    return canvas.toBuffer();
+    return canvas.toBuffer('image/png');
+  }
+
+  /**
+   * Draw default gradient background
+   */
+  private drawDefaultBackground(ctx: CanvasRenderingContext2D): void {
+    const gradient = ctx.createLinearGradient(0, 0, this.canvasWidth, this.canvasHeight);
+    gradient.addColorStop(0, '#1a1a1a');
+    gradient.addColorStop(1, '#2a2a2a');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+  }
+
+  /**
+   * Wrap text into lines that fit within maxWidth
+   */
+  private wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+
+    words.forEach(word => {
+      const testLine = currentLine + word + ' ';
+      const metrics = ctx.measureText(testLine);
+      
+      if (metrics.width > maxWidth && currentLine !== '') {
+        lines.push(currentLine.trim());
+        currentLine = word + ' ';
+      } else {
+        currentLine = testLine;
+      }
+    });
+    
+    if (currentLine.trim()) {
+      lines.push(currentLine.trim());
+    }
+
+    return lines;
   }
 }
 
