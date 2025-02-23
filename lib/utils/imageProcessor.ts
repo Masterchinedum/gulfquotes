@@ -35,7 +35,7 @@ interface ProcessingOptions {
 }
 
 interface BatchProcessingResult {
-  successful: Array<{ id: string; buffer: Buffer }>;
+  successful: Array<{ id: string; buffer: Blob }>;  // Changed from Buffer to Blob
   failed: Array<{ id: string; error: Error }>;
 }
 
@@ -86,12 +86,12 @@ class ImageProcessor extends EventEmitter {
       for (const group of taskGroups) {
         const promises = group.map(async (task) => {
           try {
-            const buffer = await this.processImage({
+            const blob = await this.processImage({
               ...task,
               batchId,
               priority: task.priority || 1
             });
-            return { id: task.content, buffer };
+            return { id: task.content, buffer: blob };
           } catch (error) {
             return { id: task.content, error: error as Error };
           }
