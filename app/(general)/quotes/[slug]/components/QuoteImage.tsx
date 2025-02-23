@@ -80,18 +80,25 @@ export function QuoteImage({
 
       const options = IMAGE_SIZES[size];
       
-      const imageBuffer = await quoteImageGenerator.generate({
+      // Use the image processor with optimizations
+      const imageBuffer = await imageProcessor.processImage({
         content,
         author,
         siteName,
         backgroundUrl: selectedBg,
         width: options.width,
         height: options.height,
-        quality: options.quality
+        quality: options.quality,
+        format: 'png', // Use PNG for best quality
+        priority: 1
       });
 
+      // Create optimized blob
+      const blob = new Blob([imageBuffer], { 
+        type: 'image/png'
+      });
+      
       // Convert buffer to blob and create download link
-      const blob = new Blob([imageBuffer], { type: 'image/png' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

@@ -4,6 +4,7 @@ import { imageScaler } from './imageScaler';
 import { imageCache } from './imageCache';
 import { AppError } from '@/lib/api-error';
 import { EventEmitter } from 'events';
+import { loadImage, createCanvas } from 'canvas';
 
 interface ProcessingTask {
   id: string;
@@ -247,9 +248,34 @@ class ImageProcessor extends EventEmitter {
    * Convert to static image
    */
   private async convertToStaticImage(buffer: Buffer): Promise<Buffer> {
-    // Here we ensure the image is properly encoded as a static image
-    // You might want to add additional optimization here
-    return buffer;
+    // Instead of just returning the buffer, let's properly convert it
+    try {
+      // Load the buffer into a canvas to ensure proper image encoding
+      const image = await loadImage(buffer);
+      const canvas = createCanvas(image.width, image.height);
+      const ctx = canvas.getContext('2d');
+
+      // Use better image rendering
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // Draw with proper compositing
+      ctx.globalCompositeOperation = 'copy';
+      ctx.drawImage(image, 0, 0);
+
+      // Convert to optimized PNG for best quality
+      return canvas.toBuffer('image/png', {
+        compressionLevel: 9,
+        filters: 4, // Paeth filter for better compression
+        resolution: 300 // Higher DPI for better quality
+      });
+    } catch (error) {
+      throw new AppError(
+        'Failed to convert to static image',
+        'IMAGE_CONVERSION_FAILED',
+        500
+      );
+    }
   }
 
   /**
