@@ -1,5 +1,5 @@
 // lib/utils/imageGenerator.ts
-import { createCanvas, loadImage, CanvasRenderingContext2D } from 'canvas';
+import { createCanvas, loadImage, CanvasRenderingContext2D, Canvas } from 'canvas';
 import path from 'path';
 import { registerFont } from '@/lib/canvas/register-font';
 
@@ -26,15 +26,6 @@ const TEXT_SIZE_MAP: [number, number][] = [
   [100, 45],  // text <= 100 char use 45px
 ];
 
-// Register Inter font asynchronously
-try {
-  await registerFont(path.join(process.cwd(), 'public/fonts/Inter-Regular.ttf'), { 
-    family: FONT_FAMILY 
-  });
-} catch (error) {
-  console.warn('Failed to register custom font, using system fonts:', error);
-}
-
 interface GenerateQuoteImageOptions {
   content: string;
   author: string;
@@ -55,11 +46,25 @@ export class QuoteImageGenerator {
   private readonly padding = 40;
   private readonly fontFamily = `${FONT_FAMILY}, ${FALLBACK_FONTS.join(', ')}`;
   private readonly overlayOpacity = 0.5;
+  private fontLoaded: boolean = false;
+
+  constructor() {
+    // Register font in constructor
+    registerFont(
+      path.join(process.cwd(), 'public/fonts/Inter-Regular.ttf'),
+      { family: FONT_FAMILY }
+    ).then(() => {
+      this.fontLoaded = true;
+    }).catch(error => {
+      console.warn('Failed to register custom font, using system fonts:', error);
+      this.fontLoaded = false;
+    });
+  }
 
   /**
    * Create initial staging canvas at 1080x1080
    */
-  private createStagingCanvas(): [HTMLCanvasElement, CanvasRenderingContext2D] {
+  private createStagingCanvas(): [Canvas, CanvasRenderingContext2D] {
     const canvas = createCanvas(this.canvasWidth, this.canvasHeight);
     const ctx = canvas.getContext('2d');
     return [canvas, ctx];
@@ -237,6 +242,11 @@ export class QuoteImageGenerator {
    * Generate quote image
    */
   async generate(options: GenerateQuoteImageOptions): Promise<Buffer> {
+    // Wait for font to be ready
+    if (!this.fontLoaded) {
+      console.warn('Using fallback fonts as custom font failed to load');
+    }
+
     const [canvas, ctx] = this.createStagingCanvas();
     
     // Process background and overlay

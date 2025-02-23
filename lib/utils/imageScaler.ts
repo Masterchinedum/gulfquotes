@@ -1,7 +1,8 @@
 // lib/utils/imageScaler.ts
 import { createCanvas, loadImage } from 'canvas';
-import sharp from 'sharp'; // Import sharp using ES6 import syntax
 import { cloudinaryConfig } from '@/lib/cloudinary';
+
+// Remove Sharp import
 
 interface ScalingOptions {
   quality?: number;
@@ -365,34 +366,28 @@ export class ImageScaler {
   // Cache management methods remain the same...
 
   /**
-   * Optimize image buffer using Sharp or fallback to canvas
+   * Optimize image buffer using Canvas
    */
   private async optimizeImageBuffer(buffer: Buffer, format: string): Promise<Buffer> {
-    try {
-      // Use Sharp for better performance
-      const optimized = await sharp(buffer)
-        .toFormat(format, {
-          quality: 90,
-          effort: 10, // Maximum compression effort
-          progressive: true,
-          optimizeScans: true
-        })
-        .toBuffer();
-      return optimized;
-    } catch (error) {
-      console.error('Error during Sharp optimization:', error); // Log the error for debugging
-
-      // Fall back to canvas if Sharp is not available
-      const image = await loadImage(buffer);
-      const canvas = createCanvas(image.width, image.height);
-      const ctx = canvas.getContext('2d');
-      
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(image, 0, 0);
-      
-      return canvas.toBuffer(`image/${format}`);
-    }
+    // Load and draw image with Canvas
+    const image = await loadImage(buffer);
+    const canvas = createCanvas(image.width, image.height);
+    const ctx = canvas.getContext('2d');
+    
+    // Enable high-quality rendering
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    
+    // Draw image
+    ctx.drawImage(image, 0, 0);
+    
+    // Return optimized buffer with compression options
+    return canvas.toBuffer(`image/${format}`, {
+      quality: 0.9, // 90% quality
+      progressive: true,
+      compressionLevel: 9, // Maximum compression for PNG
+      filters: 4 // Paeth filter for better compression
+    });
   }
 }
 

@@ -6,9 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Share2, Download, ImageIcon, Loader2 } from "lucide-react";
 import { QuoteBgSelector } from "./QuoteBgSelector";
-import { quoteImageGenerator } from "@/lib/utils/imageGenerator";
-import { backgroundHandler } from "@/lib/utils/backgrounds";
-import { imageProcessor } from "@/lib/utils/imageProcessor"; // Import imageProcessor
+import { imageProcessor } from "@/lib/utils/imageProcessor";
+import { backgroundHandler } from "@/lib/utils/backgrounds"; // Add this import
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import type { GalleryItem } from "@/types/gallery";
@@ -82,7 +81,7 @@ export function QuoteImage({
       const options = IMAGE_SIZES[size];
       
       // Use the image processor with optimizations
-      const imageBuffer = await imageProcessor.processImage({
+      const imageBlob = await imageProcessor.processImage({
         content,
         author,
         siteName,
@@ -90,17 +89,11 @@ export function QuoteImage({
         width: options.width,
         height: options.height,
         quality: options.quality,
-        format: 'png', // Use PNG for best quality
-        priority: 1
+        format: 'png' // Use PNG for best quality
       });
 
       // Create optimized blob
-      const blob = new Blob([imageBuffer], { 
-        type: 'image/png'
-      });
-      
-      // Convert buffer to blob and create download link
-      const url = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(imageBlob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `quote-${author.toLowerCase().replace(/\s+/g, '-')}-${size}.png`;
@@ -131,15 +124,18 @@ export function QuoteImage({
       setIsGenerating(true);
       setError(null);
 
-      const imageBuffer = await quoteImageGenerator.generate({
+      const imageBlob = await imageProcessor.processImage({
         content,
         author,
         siteName,
-        backgroundUrl: selectedBg
+        backgroundUrl: selectedBg,
+        width: 1080,
+        height: 1080,
+        quality: 100,
+        format: 'png'
       });
 
-      const blob = new Blob([imageBuffer], { type: 'image/png' });
-      const file = new File([blob], 'quote.png', { type: 'image/png' });
+      const file = new File([imageBlob], 'quote.png', { type: 'image/png' });
 
       if (navigator.share) {
         await navigator.share({

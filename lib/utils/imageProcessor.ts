@@ -4,7 +4,7 @@ import { imageScaler } from './imageScaler';
 import { imageCache } from './imageCache';
 import { AppError } from '@/lib/api-error';
 import { EventEmitter } from 'events';
-import sharp from 'sharp';
+import { createCanvas, loadImage } from 'canvas'; // Import canvas instead of sharp
 
 interface ProcessingTask {
   id: string;
@@ -23,11 +23,13 @@ interface ProcessingOptions {
   author: string;
   siteName: string;
   backgroundUrl?: string | null;
+  width: number;
+  height: number;
+  quality: number;
+  format: 'png' | 'jpeg' | 'webp';
   maxRetries?: number;
   deviceWidth?: number;
   deviceHeight?: number;
-  quality?: number;
-  format?: 'webp' | 'png' | 'jpeg';
   priority?: number;
   batchId?: string;
 }
@@ -119,34 +121,24 @@ class ImageProcessor extends EventEmitter {
   /**
    * Add new image processing task to queue with priority
    */
-  async processImage(options: ProcessingOptions): Promise<Buffer> {
-    const taskId = this.generateTaskId();
-    const task: ProcessingTask = {
-      id: taskId,
-      status: 'pending',
-      progress: 0,
-      retries: 0,
-      priority: options.priority || 1
-    };
-
-    this.queue.set(taskId, task);
-    if (options.batchId) {
-      this.batchQueues.get(options.batchId)?.add(taskId);
+  async processImage(options: ProcessingOptions): Promise<Blob> {
+    try {
+      // Generate the image buffer
+      const buffer = await this.renderInitialImage(options);
+      
+      // Convert buffer to optimized format
+      const optimizedBuffer = await this.convertToStaticImage(buffer);
+      
+      // Convert to blob for browser
+      return await this.convertToBlob(optimizedBuffer);
+    } catch (error) {
+      console.error('Error processing image:', error);
+      throw new AppError(
+        'Failed to process image',
+        'IMAGE_PROCESSING_FAILED',
+        500
+      );
     }
-
-    // Check memory before processing
-    await this.checkMemoryUsage();
-    
-    this.startProcessing();
-
-    return new Promise((resolve, reject) => {
-      this.processTask(taskId, options)
-        .then(resolve)
-        .catch(reject)
-        .finally(() => {
-          this.cleanupTask(taskId);
-        });
-    });
   }
 
   /**
@@ -155,7 +147,7 @@ class ImageProcessor extends EventEmitter {
   private async processTask(
     taskId: string,
     options: ProcessingOptions
-  ): Promise<Buffer> {
+  ): Promise<Blob> {
     const task = this.queue.get(taskId);
     if (!task) throw new Error('Task not found');
 
@@ -202,7 +194,7 @@ class ImageProcessor extends EventEmitter {
     taskId: string,
     error: unknown,
     options: ProcessingOptions
-  ): Promise<Buffer> {
+  ): Promise<Blob> {
     const task = this.queue.get(taskId);
     if (!task) throw new Error('Task not found');
 
@@ -259,28 +251,41 @@ class ImageProcessor extends EventEmitter {
    */
   private async convertToStaticImage(buffer: Buffer): Promise<Buffer> {
     try {
-      return await sharp(buffer)
-        // Maintain original dimensions
-        .rotate() // Auto-rotate based on EXIF
-        .withMetadata() // Preserve metadata
-        // Apply optimizations
-        .png({
-          compressionLevel: 9,
-          palette: true, // Use indexed color when possible
-          quality: 100,
-          effort: 10, // Max compression effort
-          colors: 256, // Max colors for indexed mode
-          dither: 1.0 // Full dithering for better quality
-        })
-        .toBuffer();
+      // Load the source image
+      const image = await loadImage(buffer);
+      
+      // Create a canvas with the same dimensions
+      const canvas = createCanvas(image.width, image.height);
+      const ctx = canvas.getContext('2d');
+      
+      // Enable high-quality rendering
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      
+      // Draw the image
+      ctx.drawImage(image, 0, 0, image.width, image.height);
+      
+      // Return as PNG with maximum quality
+      return canvas.toBuffer('image/png', {
+        compressionLevel: 9,
+        filters: 4, // Paeth filter for better compression
+        resolution: 300 // Higher DPI for better quality
+      });
     } catch (error) {
-      console.error('Error during image conversion:', error); // Log the error for debugging
+      console.error('Error during image conversion:', error);
       throw new AppError(
         'Failed to convert to static image',
         'IMAGE_CONVERSION_FAILED', 
         500
       );
     }
+  }
+
+  /**
+   * Convert buffer to Blob
+   */
+  private async convertToBlob(buffer: Buffer): Promise<Blob> {
+    return new Blob([buffer], { type: 'image/png' });
   }
 
   /**
@@ -450,6 +455,110 @@ class ImageProcessor extends EventEmitter {
     this.queue.clear();
     this.batchQueues.clear();
     this.removeAllListeners();
+  }
+
+  /**
+   * Draw background image
+   */
+  private async drawBackground(
+    ctx: CanvasRenderingContext2D,
+    url: string,
+    width: number,
+    height: number
+  ): Promise<void> {
+    const image = await this.loadImage(url);
+    ctx.drawImage(image, 0, 0, width, height);
+  }
+
+  /**
+   * Draw semi-transparent overlay
+   */
+  private drawOverlay(
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number
+  ): void {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  /**
+   * Draw quote text
+   */
+  private drawText(
+    ctx: CanvasRenderingContext2D,
+    options: {
+      content: string;
+      author: string;
+      siteName: string;
+      width: number;
+      height: number;
+    }
+  ): void {
+    const { content, author, siteName, width, height } = options;
+
+    // Configure text style
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'white';
+
+    // Draw quote
+    ctx.font = '600 32px Inter';
+    const lines = this.wrapText(ctx, content, width - 100);
+    const lineHeight = 40;
+    const totalHeight = lines.length * lineHeight;
+    const startY = (height - totalHeight) / 2;
+
+    lines.forEach((line, i) => {
+      ctx.fillText(line, width / 2, startY + i * lineHeight);
+    });
+
+    // Draw author
+    ctx.font = '500 24px Inter';
+    ctx.fillText(`― ${author}`, width / 2, startY + totalHeight + 40);
+
+    // Draw site name
+    ctx.font = '400 16px Inter';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.fillText(siteName, width / 2, height - 40);
+  }
+
+  /**
+   * Load image from URL
+   */
+  private loadImage(url: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
+  /**
+   * Wrap text to fit width
+   */
+  private wrapText(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    maxWidth: number
+  ): string[] {
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let currentLine = words[0];
+
+    for (let i = 1; i < words.length; i++) {
+      const word = words[i];
+      const width = ctx.measureText(currentLine + ' ' + word).width;
+      if (width < maxWidth) {
+        currentLine += ' ' + word;
+      } else {
+        lines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    lines.push(currentLine);
+    return lines;
   }
 }
 
