@@ -8,6 +8,7 @@ import { Share2, Download, ImageIcon, Loader2 } from "lucide-react";
 import { QuoteBgSelector } from "./QuoteBgSelector";
 import { quoteImageGenerator } from "@/lib/utils/imageGenerator";
 import { backgroundHandler } from "@/lib/utils/backgrounds";
+import { imageProcessor } from "@/lib/utils/imageProcessor"; // Import imageProcessor
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import type { GalleryItem } from "@/types/gallery";
