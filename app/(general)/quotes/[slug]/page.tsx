@@ -8,14 +8,17 @@ import { notFound } from "next/navigation";
 import { QuoteText } from "./components/QuoteText";
 import { QuoteImage } from "./components/QuoteImage";
 
-interface QuotePageProps {
-  params: {
+// Update interface to match Next.js requirements
+interface PageProps {
+  params: Promise<{
     slug: string;
-  };
+  }>;
+  searchParams?: Promise<Record<string, string | string[]>>;
 }
 
-// Dynamic metadata generation
-export async function generateMetadata({ params }: QuotePageProps): Promise<Metadata> {
+export async function generateMetadata({ params: paramsPromise }: PageProps): Promise<Metadata> {
+  // Resolve params promise first
+  const params = await paramsPromise;
   const quote = await getQuoteBySlug(params.slug);
   
   if (!quote) {
@@ -37,7 +40,9 @@ export async function generateMetadata({ params }: QuotePageProps): Promise<Meta
   };
 }
 
-export default async function QuotePage({ params }: QuotePageProps) {
+export default async function QuotePage({ params: paramsPromise }: PageProps) {
+  // Resolve params promise first
+  const params = await paramsPromise;
   const quote = await getQuoteBySlug(params.slug);
 
   if (!quote) {
@@ -47,7 +52,6 @@ export default async function QuotePage({ params }: QuotePageProps) {
   return (
     <Shell>
       <div className="container mx-auto px-4 py-8 max-w-5xl">
-        {/* Main quote content */}
         <div className="space-y-8">
           {/* Quote header */}
           <div className="space-y-4">
@@ -61,7 +65,7 @@ export default async function QuotePage({ params }: QuotePageProps) {
             </div>
           </div>
 
-          {/* Quote content area - we'll add components in next steps */}
+          {/* Quote content area */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <QuoteImage
               content={quote.content}
