@@ -11,6 +11,14 @@ interface BackgroundOptions {
     color?: string;
     opacity?: number;
   };
+  device?: {
+    type: 'mobile' | 'tablet' | 'desktop';
+    pixelRatio: number;
+  };
+  optimization?: {
+    quality: 'low' | 'medium' | 'high' | 'auto';
+    priority: 'speed' | 'quality';
+  };
 }
 
 interface CachedBackground {
@@ -21,12 +29,27 @@ interface CachedBackground {
     width: number;
     height: number;
   };
+  format: string;
+  quality: number;
+  device?: string;
 }
 
 interface ImageDimensions {
   width: number;
   height: number;
   aspectRatio: number;
+}
+
+interface DeviceConfig {
+  maxWidth: number;
+  maxHeight: number;
+  pixelRatio: number;
+  defaultFormat: 'webp' | 'jpg' | 'png';
+  defaultQuality: number;
+  optimizationPreset: {
+    quality: 'low' | 'medium' | 'high' | 'auto';
+    priority: 'speed' | 'quality';
+  };
 }
 
 class BackgroundHandler {
@@ -36,6 +59,42 @@ class BackgroundHandler {
   private readonly defaultDimensions = {
     width: 1080,
     height: 1080
+  };
+
+  private readonly deviceConfigs: Record<'mobile' | 'tablet' | 'desktop', DeviceConfig> = {
+    mobile: {
+      maxWidth: 640,
+      maxHeight: 1136,
+      pixelRatio: 2,
+      defaultFormat: 'webp',
+      defaultQuality: 80,
+      optimizationPreset: {
+        quality: 'medium',
+        priority: 'speed'
+      }
+    },
+    tablet: {
+      maxWidth: 1024,
+      maxHeight: 1366,
+      pixelRatio: 2,
+      defaultFormat: 'webp',
+      defaultQuality: 85,
+      optimizationPreset: {
+        quality: 'high',
+        priority: 'quality'
+      }
+    },
+    desktop: {
+      maxWidth: 1920,
+      maxHeight: 1080,
+      pixelRatio: 1,
+      defaultFormat: 'webp',
+      defaultQuality: 90,
+      optimizationPreset: {
+        quality: 'high',
+        priority: 'quality'
+      }
+    }
   };
   
   constructor() {
@@ -106,42 +165,149 @@ class BackgroundHandler {
   }
 
   /**
-   * Get optimized background URL with caching and dimension verification
+   * Preprocess image for optimal display
+   */
+  private preprocessImage(url: string, options: BackgroundOptions = {}): string {
+    // Detect device type and get configuration
+    const deviceConfig = this.getDeviceConfig(options.device?.type || 'desktop');
+    
+    // Apply device-specific optimizations
+    const optimizedOptions = this.getOptimizedSettings(deviceConfig, options);
+    
+    // Calculate dimensions based on device
+    const dimensions = this.calculateDeviceDimensions(deviceConfig, options);
+    
+    return this.optimizeImageUrl(url, {
+      ...optimizedOptions,
+      width: dimensions.width,
+      height: dimensions.height
+    });
+  }
+
+  /**
+   * Get device-specific configuration
+   */
+  private getDeviceConfig(deviceType: 'mobile' | 'tablet' | 'desktop'): DeviceConfig {
+    return this.deviceConfigs[deviceType];
+  }
+
+  /**
+   * Calculate optimal dimensions for device
+   */
+  private calculateDeviceDimensions(
+    deviceConfig: DeviceConfig,
+    options: BackgroundOptions
+  ): { width: number; height: number } {
+    const targetWidth = Math.min(
+      options.width || this.defaultDimensions.width,
+      deviceConfig.maxWidth * deviceConfig.pixelRatio
+    );
+    
+    const targetHeight = Math.min(
+      options.height || this.defaultDimensions.height,
+      deviceConfig.maxHeight * deviceConfig.pixelRatio
+    );
+
+    return this.calculateFillDimensions({
+      width: targetWidth,
+      height: targetHeight,
+      aspectRatio: targetWidth / targetHeight
+    });
+  }
+
+  /**
+   * Get optimized settings based on device and options
+   */
+  private getOptimizedSettings(
+    deviceConfig: DeviceConfig,
+    options: BackgroundOptions
+  ): BackgroundOptions {
+    const quality = this.resolveQuality(
+      options.optimization?.quality || deviceConfig.optimizationPreset.quality,
+      deviceConfig.defaultQuality
+    );
+
+    return {
+      ...options,
+      format: options.format || deviceConfig.defaultFormat,
+      quality,
+      overlay: options.overlay || {
+        color: 'black',
+        opacity: 50
+      }
+    };
+  }
+
+  /**
+   * Resolve quality setting based on preset and device defaults
+   */
+  private resolveQuality(
+    quality: 'low' | 'medium' | 'high' | 'auto',
+    defaultQuality: number
+  ): number {
+    switch (quality) {
+      case 'low': return Math.min(defaultQuality, 70);
+      case 'medium': return Math.min(defaultQuality, 80);
+      case 'high': return Math.min(defaultQuality, 90);
+      case 'auto': return defaultQuality;
+    }
+  }
+
+  /**
+   * Get optimized background URL with enhanced caching
    */
   getOptimizedUrl(url: string, options?: BackgroundOptions): string {
+    const cacheKey = this.generateCacheKey(url, options);
+    
     // Check cache first
-    const cached = this.cache.get(url);
+    const cached = this.cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
       return cached.optimizedUrl;
     }
 
-    // Generate new optimized URL with 1080x1080 dimensions
-    const optimizedUrl = this.optimizeImageUrl(url, {
-      ...options,
-      width: this.defaultDimensions.width,
-      height: this.defaultDimensions.height
-    });
+    // Preprocess and optimize image
+    const optimizedUrl = this.preprocessImage(url, options);
 
-    // Update cache
-    this.cache.set(url, {
+    // Update cache with detailed metadata
+    this.cache.set(cacheKey, {
       url,
       optimizedUrl,
       timestamp: Date.now(),
-      dimensions: this.defaultDimensions
+      dimensions: this.defaultDimensions,
+      format: options?.format || 'webp',
+      quality: options?.quality || 90,
+      device: options?.device?.type
     });
 
     return optimizedUrl;
   }
 
   /**
-   * Clear expired cache entries
+   * Generate cache key including device and optimization settings
+   */
+  private generateCacheKey(url: string, options?: BackgroundOptions): string {
+    const device = options?.device?.type || 'desktop';
+    const quality = options?.optimization?.quality || 'auto';
+    const format = options?.format || 'webp';
+    return `${url}-${device}-${quality}-${format}`;
+  }
+
+  /**
+   * Clear expired cache entries with logging
    */
   private cleanCache(): void {
     const now = Date.now();
+    let cleared = 0;
+    
     for (const [url, cached] of this.cache.entries()) {
       if (now - cached.timestamp > this.cacheTimeout) {
         this.cache.delete(url);
+        cleared++;
       }
+    }
+
+    if (cleared > 0) {
+      console.log(`Cleared ${cleared} expired background cache entries`);
     }
   }
 
