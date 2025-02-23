@@ -1,6 +1,9 @@
 /* app/(general)/quotes/[slug]/components/quote-image.css */
 .quote-preview {
-  @apply relative aspect-square rounded-lg overflow-hidden;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  background: linear-gradient(to bottom right, var(--primary-50), var(--primary-900));
 }
 
 .quote-preview-default {
@@ -8,20 +11,37 @@
 }
 
 .quote-preview-custom {
-  @apply bg-cover bg-center;
+  background: none;
 }
 
 .quote-preview-background {
-  @apply absolute inset-0;
-  background-image: var(--quote-bg-url);
+  position: absolute;
+  inset: 0;
+  background-image: var(--quote-bg-image);
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
 }
 
 .quote-overlay {
-  @apply absolute inset-0 bg-black/50 flex items-center justify-center p-8;
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
 }
 
 .quote-content {
-  @apply text-center text-white space-y-4 max-w-[80%];
+  max-width: 80%;
+  text-align: center;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+  .quote-content {
+    max-width: 90%;
+  }
 }
