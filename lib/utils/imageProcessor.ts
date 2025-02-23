@@ -39,6 +39,16 @@ interface BatchProcessingResult {
   failed: Array<{ id: string; error: Error }>;
 }
 
+// Add new type for the result of processing a single task
+type ProcessingResult = 
+  | { id: string; buffer: Blob; error?: never }
+  | { id: string; error: Error; buffer?: never };
+
+// Add type guard
+function isSuccessResult(result: ProcessingResult): result is { id: string; buffer: Blob } {
+  return 'buffer' in result;
+}
+
 class ImageProcessor extends EventEmitter {
   private queue: Map<string, ProcessingTask>;
   private batchQueues: Map<string, Set<string>>;
@@ -91,16 +101,19 @@ class ImageProcessor extends EventEmitter {
               batchId,
               priority: task.priority || 1
             });
-            return { id: task.content, buffer: blob };
+            return { id: task.content, buffer: blob } as ProcessingResult;
           } catch (error) {
-            return { id: task.content, error: error as Error };
+            return { 
+              id: task.content, 
+              error: error instanceof Error ? error : new Error('Unknown error') 
+            } as ProcessingResult;
           }
         });
 
         const groupResults = await Promise.all(promises);
         
-        groupResults.forEach(result => {
-          if ('buffer' in result) {
+        groupResults.forEach((result: ProcessingResult) => {
+          if (isSuccessResult(result)) {
             results.successful.push(result);
           } else {
             results.failed.push(result);
