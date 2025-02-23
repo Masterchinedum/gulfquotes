@@ -189,11 +189,14 @@ class ImageProcessor extends EventEmitter {
         }
       );
 
+      // Convert the final buffer to a Blob before returning
+      const finalBlob = await this.convertToBlob(finalBuffer);
+
       task.status = 'completed';
       task.progress = 100;
       task.endTime = Date.now();
 
-      return finalBuffer;
+      return finalBlob;
 
     } catch (error) {
       return await this.handleError(taskId, error, options);
