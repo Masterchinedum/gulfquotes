@@ -13,7 +13,9 @@
 
 .quote-preview-background {
   @apply absolute inset-0;
-  background-image: var(--quote-bg-image);
+  background-image: var(--quote-bg-url);
+  background-size: cover;
+  background-position: center;
 }
 
 .quote-overlay {
