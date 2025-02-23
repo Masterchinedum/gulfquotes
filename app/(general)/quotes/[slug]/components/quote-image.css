@@ -1,0 +1,25 @@
+/* app/(general)/quotes/[slug]/components/quote-image.css */
+.quote-preview {
+  @apply relative aspect-square rounded-lg overflow-hidden;
+}
+
+.quote-preview-default {
+  @apply bg-gradient-to-br from-primary/10 to-primary/5;
+}
+
+.quote-preview-custom {
+  @apply bg-cover bg-center;
+}
+
+.quote-preview-background {
+  @apply absolute inset-0;
+  background-image: var(--quote-bg-image);
+}
+
+.quote-overlay {
+  @apply absolute inset-0 bg-black/50 flex items-center justify-center p-8;
+}
+
+.quote-content {
+  @apply text-center text-white space-y-4 max-w-[80%];
+}

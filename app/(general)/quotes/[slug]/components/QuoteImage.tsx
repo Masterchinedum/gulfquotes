@@ -2,13 +2,15 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Share2, Download } from "lucide-react";
 import { QuoteBgSelector } from "./QuoteBgSelector";
 import { quoteImageGenerator } from "@/lib/utils/imageGenerator";
+import { backgroundHandler } from "@/lib/utils/backgrounds";
+import { cn } from "@/lib/utils";
 import type { GalleryItem } from "@/types/gallery";
+import "./quote-image.css";
 
 interface QuoteImageProps {
   content: string;
@@ -27,6 +29,15 @@ export function QuoteImage({
 }: QuoteImageProps) {
   const [selectedBg, setSelectedBg] = useState(backgroundImage);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  const backgroundUrl = selectedBg ? 
+    backgroundHandler.getOptimizedUrl(selectedBg, {
+      quality: 90,
+      overlay: {
+        color: 'black',
+        opacity: 50
+      }
+    }) : null;
 
   const handleDownload = async () => {
     try {
@@ -86,21 +97,20 @@ export function QuoteImage({
       </div>
 
       {/* Quote Preview */}
-      <div className="relative aspect-square rounded-lg overflow-hidden">
-        {selectedBg ? (
-          <Image
-            src={selectedBg}
-            alt="Quote background"
-            fill
-            className="object-cover"
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5" />
+      <div 
+        className={cn(
+          "quote-preview",
+          backgroundUrl ? "quote-preview-custom" : "quote-preview-default"
         )}
-        
-        {/* Quote Overlay */}
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center p-8">
-          <div className="text-center text-white space-y-4 max-w-[80%]">
+      >
+        {backgroundUrl && (
+          <div 
+            className="quote-preview-background"
+            style={{ "--quote-bg-image": `url(${backgroundUrl})` } as React.CSSProperties}
+          />
+        )}
+        <div className="quote-overlay">
+          <div className="quote-content">
             <p className="text-xl font-medium">&ldquo;{content}&rdquo;</p>
             <p className="text-sm">- {author}</p>
             <p className="text-xs text-white/70">{siteName}</p>
