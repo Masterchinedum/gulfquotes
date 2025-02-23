@@ -4,7 +4,7 @@ import { imageScaler } from './imageScaler';
 import { imageCache } from './imageCache';
 import { AppError } from '@/lib/api-error';
 import { EventEmitter } from 'events';
-import { loadImage, createCanvas } from 'canvas';
+import sharp from 'sharp';
 
 interface ProcessingTask {
   id: string;
@@ -245,34 +245,28 @@ class ImageProcessor extends EventEmitter {
   }
 
   /**
-   * Convert to static image
+   * Convert to static image with optimized settings
    */
   private async convertToStaticImage(buffer: Buffer): Promise<Buffer> {
-    // Instead of just returning the buffer, let's properly convert it
     try {
-      // Load the buffer into a canvas to ensure proper image encoding
-      const image = await loadImage(buffer);
-      const canvas = createCanvas(image.width, image.height);
-      const ctx = canvas.getContext('2d');
-
-      // Use better image rendering
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-
-      // Draw with proper compositing
-      ctx.globalCompositeOperation = 'copy';
-      ctx.drawImage(image, 0, 0);
-
-      // Convert to optimized PNG for best quality
-      return canvas.toBuffer('image/png', {
-        compressionLevel: 9,
-        filters: 4, // Paeth filter for better compression
-        resolution: 300 // Higher DPI for better quality
-      });
+      return await sharp(buffer)
+        // Maintain original dimensions
+        .rotate() // Auto-rotate based on EXIF
+        .withMetadata() // Preserve metadata
+        // Apply optimizations
+        .png({
+          compressionLevel: 9,
+          palette: true, // Use indexed color when possible
+          quality: 100,
+          effort: 10, // Max compression effort
+          colors: 256, // Max colors for indexed mode
+          dither: 1.0 // Full dithering for better quality
+        })
+        .toBuffer();
     } catch (error) {
       throw new AppError(
         'Failed to convert to static image',
-        'IMAGE_CONVERSION_FAILED',
+        'IMAGE_CONVERSION_FAILED', 
         500
       );
     }

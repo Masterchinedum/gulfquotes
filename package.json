@@ -34,6 +34,7 @@
     "@tiptap/pm": "^2.11.5",
     "@tiptap/react": "^2.11.5",
     "@tiptap/starter-kit": "^2.11.5",
+    "@types/sharp": "^0.31.1",
     "@uploadthing/react": "^7.1.5",
     "arctic": "^3.2.4",
     "bcrypt": "^5.1.1",
