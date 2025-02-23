@@ -1,7 +1,9 @@
 // lib/utils/imageProcessor.ts
 import { quoteImageGenerator } from './imageGenerator';
 import { imageScaler } from './imageScaler';
+import { imageCache } from './imageCache';
 import { AppError } from '@/lib/api-error';
+import { EventEmitter } from 'events';
 
 interface ProcessingTask {
   id: string;
@@ -11,6 +13,8 @@ interface ProcessingTask {
   error?: string;
   startTime?: number;
   endTime?: number;
+  memoryUsage?: number;
+  priority?: number;
 }
 
 interface ProcessingOptions {
@@ -23,24 +27,96 @@ interface ProcessingOptions {
   deviceHeight?: number;
   quality?: number;
   format?: 'webp' | 'png' | 'jpeg';
+  priority?: number;
+  batchId?: string;
 }
 
-class ImageProcessor {
+interface BatchProcessingResult {
+  successful: Array<{ id: string; buffer: Buffer }>;
+  failed: Array<{ id: string; error: Error }>;
+}
+
+class ImageProcessor extends EventEmitter {
   private queue: Map<string, ProcessingTask>;
+  private batchQueues: Map<string, Set<string>>;
   private processing: boolean;
   private readonly MAX_RETRIES = 3;
   private readonly RETRY_DELAY = 1000; // 1 second
   private readonly MAX_CONCURRENT = 3;
+  private readonly MAX_MEMORY_USAGE = 1024 * 1024 * 512; // 512MB
   private activeProcessing: number;
+  private currentMemoryUsage: number;
+  private cleanupInterval: NodeJS.Timer;
 
   constructor() {
+    super();
     this.queue = new Map();
+    this.batchQueues = new Map();
     this.processing = false;
     this.activeProcessing = 0;
+    this.currentMemoryUsage = 0;
+
+    // Initialize cleanup routine
+    this.cleanupInterval = setInterval(() => this.runCleanup(), 1000 * 60 * 5); // Every 5 minutes
+    
+    // Monitor memory usage
+    this.monitorMemoryUsage();
   }
 
   /**
-   * Add new image processing task to queue
+   * Process multiple images in parallel
+   */
+  async processBatch(tasks: ProcessingOptions[]): Promise<BatchProcessingResult> {
+    const batchId = `batch_${Date.now()}`;
+    const batchSet = new Set<string>();
+    this.batchQueues.set(batchId, batchSet);
+
+    const results: BatchProcessingResult = {
+      successful: [],
+      failed: []
+    };
+
+    try {
+      // Process tasks in parallel with concurrency limit
+      const taskGroups = this.chunkArray(tasks, this.MAX_CONCURRENT);
+      
+      for (const group of taskGroups) {
+        const promises = group.map(async (task) => {
+          try {
+            const buffer = await this.processImage({
+              ...task,
+              batchId,
+              priority: task.priority || 1
+            });
+            return { id: task.content, buffer };
+          } catch (error) {
+            return { id: task.content, error: error as Error };
+          }
+        });
+
+        const groupResults = await Promise.all(promises);
+        
+        groupResults.forEach(result => {
+          if ('buffer' in result) {
+            results.successful.push(result);
+          } else {
+            results.failed.push(result);
+          }
+        });
+
+        // Check memory usage after each group
+        await this.checkMemoryUsage();
+      }
+    } finally {
+      // Cleanup batch queue
+      this.batchQueues.delete(batchId);
+    }
+
+    return results;
+  }
+
+  /**
+   * Add new image processing task to queue with priority
    */
   async processImage(options: ProcessingOptions): Promise<Buffer> {
     const taskId = this.generateTaskId();
@@ -49,9 +125,17 @@ class ImageProcessor {
       status: 'pending',
       progress: 0,
       retries: 0,
+      priority: options.priority || 1
     };
 
     this.queue.set(taskId, task);
+    if (options.batchId) {
+      this.batchQueues.get(options.batchId)?.add(taskId);
+    }
+
+    // Check memory before processing
+    await this.checkMemoryUsage();
+    
     this.startProcessing();
 
     return new Promise((resolve, reject) => {
@@ -59,9 +143,7 @@ class ImageProcessor {
         .then(resolve)
         .catch(reject)
         .finally(() => {
-          this.queue.delete(taskId);
-          this.activeProcessing--;
-          this.startProcessing();
+          this.cleanupTask(taskId);
         });
     });
   }
@@ -242,7 +324,108 @@ class ImageProcessor {
       }
     }
   }
+
+  /**
+   * Memory management methods
+   */
+  private async checkMemoryUsage(): Promise<void> {
+    if (this.currentMemoryUsage > this.MAX_MEMORY_USAGE) {
+      // Wait for memory to be freed
+      await new Promise(resolve => {
+        const check = () => {
+          if (this.currentMemoryUsage <= this.MAX_MEMORY_USAGE * 0.8) {
+            resolve(undefined);
+          } else {
+            setTimeout(check, 100);
+          }
+        };
+        check();
+      });
+    }
+  }
+
+  private monitorMemoryUsage(): void {
+    const updateMemoryUsage = () => {
+      const usage = process.memoryUsage();
+      this.currentMemoryUsage = usage.heapUsed;
+      
+      // Emit memory usage event
+      this.emit('memoryUsage', {
+        current: this.currentMemoryUsage,
+        max: this.MAX_MEMORY_USAGE,
+        percentage: (this.currentMemoryUsage / this.MAX_MEMORY_USAGE) * 100
+      });
+    };
+
+    setInterval(updateMemoryUsage, 1000);
+  }
+
+  /**
+   * Cleanup routines
+   */
+  private async runCleanup(): Promise<void> {
+    // Clear completed tasks
+    this.clearCompletedTasks();
+
+    // Clear expired cache entries
+    await imageCache.cleanup();
+
+    // Force garbage collection if available
+    if (global.gc) {
+      global.gc();
+    }
+
+    // Emit cleanup event
+    this.emit('cleanup', {
+      queueSize: this.queue.size,
+      activeProcessing: this.activeProcessing,
+      memoryUsage: this.currentMemoryUsage
+    });
+  }
+
+  private cleanupTask(taskId: string): void {
+    const task = this.queue.get(taskId);
+    if (!task) return;
+
+    // Update memory usage
+    if (task.memoryUsage) {
+      this.currentMemoryUsage -= task.memoryUsage;
+    }
+
+    // Remove from queue
+    this.queue.delete(taskId);
+    this.activeProcessing--;
+
+    // Continue processing queue
+    this.startProcessing();
+  }
+
+  /**
+   * Helper methods
+   */
+  private chunkArray<T>(array: T[], size: number): T[][] {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+  }
+
+  /**
+   * Cleanup on process exit
+   */
+  dispose(): void {
+    clearInterval(this.cleanupInterval);
+    this.queue.clear();
+    this.batchQueues.clear();
+    this.removeAllListeners();
+  }
 }
 
 // Export singleton instance
 export const imageProcessor = new ImageProcessor();
+
+// Cleanup on process exit
+process.on('exit', () => {
+  imageProcessor.dispose();
+});
