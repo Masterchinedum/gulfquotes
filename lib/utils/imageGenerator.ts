@@ -1,5 +1,5 @@
 // lib/utils/imageGenerator.ts
-import { createCanvas, loadImage } from 'canvas';
+import { createCanvas, loadImage, CanvasRenderingContext2D } from 'canvas';
 import path from 'path';
 import { registerFont } from '@/lib/canvas/register-font';
 
@@ -11,17 +11,19 @@ const FONT_FAMILY = 'Inter';
 
 // Character count to font size mapping
 const TEXT_SIZE_MAP: [number, number][] = [
-  [Infinity, 20], // text > 700 char use 20px
-  [700, 30], // text <= 700 char use 30px
-  [600, 31], // text <= 600 char use 31px
-  [550, 33], // text <= 550 char use 33px
-  [500, 35], // text <= 500 char use 35px
-  [450, 36], // text <= 450 char use 36px
-  [400, 38], // text <= 400 char use 38px
-  [350, 39], // text <= 350 char use 39px
-  [300, 40], // text <= 300 char use 40px
-  [240, 41], // text <= 240 char use 41px
-  [100, 45], // text <= 100 char use 45px
+  [1000, 25], // text <= 1000 char use 25px
+  [900, 27],  // text <= 900 char use 27px
+  [800, 28],  // text <= 800 char use 28px
+  [700, 30],  // text <= 700 char use 30px
+  [600, 31],  // text <= 600 char use 31px
+  [550, 33],  // text <= 550 char use 33px
+  [500, 35],  // text <= 500 char use 35px
+  [450, 36],  // text <= 450 char use 36px
+  [400, 38],  // text <= 400 char use 38px
+  [350, 39],  // text <= 350 char use 39px
+  [300, 40],  // text <= 300 char use 40px
+  [240, 41],  // text <= 240 char use 41px
+  [100, 45],  // text <= 100 char use 45px
 ];
 
 // Register Inter font asynchronously
@@ -40,51 +42,77 @@ interface GenerateQuoteImageOptions {
   backgroundUrl?: string | null;
 }
 
+interface TextMetrics {
+  lines: string[];
+  fontSize: number;
+  lineHeight: number;
+  totalHeight: number;
+}
+
 export class QuoteImageGenerator {
-  // Fixed dimensions as per requirements
   private readonly canvasWidth = 1080;
   private readonly canvasHeight = 1080;
   private readonly padding = 40;
   private readonly fontFamily = `${FONT_FAMILY}, ${FALLBACK_FONTS.join(', ')}`;
+  private readonly overlayOpacity = 0.5;
 
   /**
-   * Calculate font size based on text length using the mapping
+   * Create initial staging canvas at 1080x1080
    */
-  private calculateFontSize(text: string): number {
-    const length = text.length;
-    
-    // Find the appropriate font size from the mapping
-    const [, fontSize] = TEXT_SIZE_MAP.find(([maxLength]) => length <= maxLength) 
-      ?? TEXT_SIZE_MAP[0]; // Default to 20px for very long text
-
-    return fontSize;
+  private createStagingCanvas(): [HTMLCanvasElement, CanvasRenderingContext2D] {
+    const canvas = createCanvas(this.canvasWidth, this.canvasHeight);
+    const ctx = canvas.getContext('2d');
+    return [canvas, ctx];
   }
 
   /**
-   * Generate quote image with fixed dimensions
+   * Calculate font size and prepare text layout
    */
-  async generate({
-    content,
-    author,
-    siteName,
-    backgroundUrl,
-  }: GenerateQuoteImageOptions): Promise<Buffer> {
-    // Create canvas with fixed dimensions
-    const canvas = createCanvas(this.canvasWidth, this.canvasHeight);
-    const ctx = canvas.getContext('2d');
+  private calculateTextMetrics(ctx: CanvasRenderingContext2D, text: string): TextMetrics {
+    // Calculate font size based on text length
+    const fontSize = this.calculateFontSize(text);
+    const maxWidth = this.canvasWidth - (this.padding * 2);
 
-    // Draw background
+    // Configure context for text measurement
+    ctx.font = `${fontSize}px ${this.fontFamily}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Perform text wrapping
+    const lines = this.wrapText(ctx, text, maxWidth);
+    const lineHeight = fontSize * 1.5;
+    const totalHeight = lines.length * lineHeight;
+
+    return {
+      lines,
+      fontSize,
+      lineHeight,
+      totalHeight
+    };
+  }
+
+  /**
+   * Process and draw background image with overlay
+   */
+  private async drawBackground(
+    ctx: CanvasRenderingContext2D, 
+    backgroundUrl: string | null | undefined
+  ): Promise<void> {
     if (backgroundUrl) {
       try {
         const image = await loadImage(backgroundUrl);
-        // Use cover/fill approach for background
+        
+        // Calculate scaling to cover 1080x1080
         const scale = Math.max(
           this.canvasWidth / image.width,
           this.canvasHeight / image.height
         );
+
+        // Calculate positioning for center
         const x = (this.canvasWidth - image.width * scale) / 2;
         const y = (this.canvasHeight - image.height * scale) / 2;
         
+        // Draw image
         ctx.drawImage(
           image,
           x, y,
@@ -92,8 +120,8 @@ export class QuoteImageGenerator {
           image.height * scale
         );
         
-        // Add dark overlay for better text readability
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        // Add semi-transparent overlay
+        ctx.fillStyle = `rgba(0, 0, 0, ${this.overlayOpacity})`;
         ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
       } catch (error) {
         console.error('Failed to load background image:', error);
@@ -102,25 +130,26 @@ export class QuoteImageGenerator {
     } else {
       this.drawDefaultBackground(ctx);
     }
+  }
 
-    // Calculate font size based on content length
-    const fontSize = this.calculateFontSize(content);
+  /**
+   * Draw the quote text content
+   */
+  private drawQuoteContent(
+    ctx: CanvasRenderingContext2D,
+    content: string,
+    author: string,
+    siteName: string
+  ): void {
+    // Calculate text metrics
+    const metrics = this.calculateTextMetrics(ctx, content);
+    const { lines, fontSize, lineHeight, totalHeight } = metrics;
 
-    // Configure text rendering
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    // Calculate vertical positioning
+    const startY = (this.canvasHeight - totalHeight) / 2;
+
+    // Draw main quote text
     ctx.fillStyle = '#ffffff';
-    ctx.font = `${fontSize}px ${this.fontFamily}`;
-
-    // Word wrap and center text
-    const maxWidth = this.canvasWidth - (this.padding * 2);
-    const lines = this.wrapText(ctx, content, maxWidth);
-
-    // Draw text lines
-    const lineHeight = fontSize * 1.5;
-    const totalTextHeight = lines.length * lineHeight;
-    const startY = (this.canvasHeight - totalTextHeight) / 2;
-
     lines.forEach((line, i) => {
       ctx.fillText(
         line,
@@ -129,25 +158,41 @@ export class QuoteImageGenerator {
       );
     });
 
-    // Draw author
-    ctx.font = `${fontSize * 0.4}px ${this.fontFamily}`;
+    // Draw author attribution
+    const authorFontSize = fontSize * 0.4;
+    ctx.font = `${authorFontSize}px ${this.fontFamily}`;
     ctx.fillText(
       `― ${author}`,
       this.canvasWidth / 2,
-      startY + totalTextHeight + (fontSize * 0.8)
+      startY + totalHeight + (fontSize * 0.8)
     );
 
     // Draw site name
-    ctx.font = `${fontSize * 0.25}px ${this.fontFamily}`;
+    const siteNameFontSize = fontSize * 0.25;
+    ctx.font = `${siteNameFontSize}px ${this.fontFamily}`;
     ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.fillText(
       siteName,
       this.canvasWidth / 2,
       this.canvasHeight - (this.padding / 2)
     );
+  }
 
-    // Return PNG buffer
-    return canvas.toBuffer('image/png');
+  /**
+   * Calculate font size based on text length using the mapping
+   */
+  private calculateFontSize(text: string): number {
+    const length = text.length;
+    
+    if (length > 1000) {
+      return 20; // Default smallest size for very long text
+    }
+    
+    // Find the appropriate font size from the mapping
+    const [, fontSize] = TEXT_SIZE_MAP.find(([maxLength]) => length <= maxLength) 
+      ?? [0, 20]; // Fallback size if no match found
+
+    return fontSize;
   }
 
   /**
@@ -186,6 +231,22 @@ export class QuoteImageGenerator {
     }
 
     return lines;
+  }
+
+  /**
+   * Generate quote image
+   */
+  async generate(options: GenerateQuoteImageOptions): Promise<Buffer> {
+    const [canvas, ctx] = this.createStagingCanvas();
+    
+    // Process background and overlay
+    await this.drawBackground(ctx, options.backgroundUrl);
+    
+    // Draw quote content
+    this.drawQuoteContent(ctx, options.content, options.author, options.siteName);
+    
+    // Return final image buffer
+    return canvas.toBuffer('image/png');
   }
 }
 
