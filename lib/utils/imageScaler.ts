@@ -178,7 +178,7 @@ export class ImageScaler {
     // Determine optimal compression settings
     const compressionOptions = this.getCompressionOptions(format, quality, preserveText);
 
-    // Return optimized buffer with correct mime type
+    // Return optimized buffer with correct MIME type
     switch (format) {
       case 'png':
         return canvas.toBuffer('image/png', compressionOptions);
