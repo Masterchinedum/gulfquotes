@@ -3,10 +3,20 @@ import { createCanvas, loadImage } from 'canvas';
 import path from 'path';
 import { registerFont } from '@/lib/canvas/register-font';
 
+// Default system fonts as fallback
+const FALLBACK_FONTS = ['Arial', 'Helvetica', 'sans-serif'];
+
+// Define font family name
+const FONT_FAMILY = 'Inter';
+
 // Register Inter font asynchronously
-await registerFont(path.join(process.cwd(), 'public/fonts/Inter-Regular.ttf'), { 
-  family: 'Inter' 
-});
+try {
+  await registerFont(path.join(process.cwd(), 'public/fonts/Inter-Regular.ttf'), { 
+    family: FONT_FAMILY 
+  });
+} catch (error) {
+  console.warn('Failed to register custom font, using system fonts:', error);
+}
 
 interface GenerateQuoteImageOptions {
   content: string;
@@ -23,7 +33,7 @@ export class QuoteImageGenerator {
   private readonly padding = 60;
   private readonly maxFontSize = 72;
   private readonly minFontSize = 24;
-  private readonly fontFamily = 'Inter';
+  private readonly fontFamily = `${FONT_FAMILY}, ${FALLBACK_FONTS.join(', ')}`;
 
   /**
    * Calculate optimal font size based on text length and container size
@@ -157,11 +167,8 @@ export class QuoteImageGenerator {
       height - (this.padding / 2)
     );
 
-    // Return image buffer
-    return canvas.toBuffer('image/png', {
-      quality: 0.95,
-      compressionLevel: 6
-    });
+    // Return PNG buffer
+    return canvas.toBuffer();
   }
 }
 
