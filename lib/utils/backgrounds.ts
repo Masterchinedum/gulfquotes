@@ -102,8 +102,10 @@ class BackgroundHandler {
   getOverlayOptions(image: GalleryItem): BackgroundOptions['overlay'] {
     // Ensure image format is supported
     const supportedFormats = cloudinaryConfig.limits.gallery.allowedFormats;
-    if (!supportedFormats.includes(image.format.toLowerCase())) {
-      console.warn(`Unsupported image format: ${image.format}`);
+    const format = image.format?.toLowerCase();
+
+    if (format && !supportedFormats.includes(format)) {
+      console.warn(`Unsupported image format: ${format}`);
     }
 
     // Default dark overlay for readability

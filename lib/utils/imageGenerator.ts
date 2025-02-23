@@ -1,9 +1,10 @@
 // lib/utils/imageGenerator.ts
-import { createCanvas, loadImage, registerFont } from 'canvas';
+import { createCanvas, loadImage } from 'canvas';
 import path from 'path';
+import { registerFont } from '@/lib/canvas/register-font';
 
-// Register Inter font
-registerFont(path.join(process.cwd(), 'public/fonts/Inter-Regular.ttf'), { 
+// Register Inter font asynchronously
+await registerFont(path.join(process.cwd(), 'public/fonts/Inter-Regular.ttf'), { 
   family: 'Inter' 
 });
 
