@@ -40,6 +40,9 @@ export default async function QuotePage({ params: paramsPromise }: PageProps) {
     notFound();
   }
 
+  // Get the first author image if available
+  const authorImage = quote.authorProfile.images?.[0]?.url;
+
   return (
     <Shell>
       <div className="container mx-auto px-4 py-8">
@@ -81,9 +84,9 @@ export default async function QuotePage({ params: paramsPromise }: PageProps) {
             </blockquote>
             <div className="flex items-center gap-4">
               <div className="h-10 w-10 rounded-full overflow-hidden bg-muted">
-                {quote.authorProfile.image && (
+                {authorImage && (
                   <Image
-                    src={quote.authorProfile.image}
+                    src={authorImage}
                     alt={quote.authorProfile.name}
                     width={40}
                     height={40}

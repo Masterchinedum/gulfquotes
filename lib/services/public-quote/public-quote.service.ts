@@ -9,11 +9,14 @@ import type {
   Category, 
   Tag,
   QuoteToGallery,
-  Gallery 
+  Gallery,
+  AuthorImage
 } from "@prisma/client";
 
 type QuoteWithRelations = Quote & {
-  authorProfile: AuthorProfile;
+  authorProfile: AuthorProfile & {
+    images: AuthorImage[];
+  };
   category: Category;
   tags: Tag[];
   gallery: (QuoteToGallery & {
@@ -27,7 +30,11 @@ class PublicQuoteService {
       where: { slug },
       include: {
         category: true,
-        authorProfile: true,
+        authorProfile: {
+          include: {
+            images: true
+          }
+        },
         tags: true,
         gallery: {
           include: {
