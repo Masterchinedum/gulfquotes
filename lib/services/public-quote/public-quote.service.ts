@@ -34,6 +34,12 @@ class PublicQuoteService {
           include: {
             images: true
           }
+        },
+        tags: true, // Add tags relation
+        gallery: {  // Add gallery relation
+          include: {
+            gallery: true
+          }
         }
       }
     });

@@ -28,6 +28,7 @@ export class QuoteImageService {
     backgroundColor: '#ffffff',
     textColor: '#000000',
     fontFamily: 'Inter',
+    fontSize: 30, // Add default fontSize
     overlay: {
       color: '#000000',
       opacity: 0.5
