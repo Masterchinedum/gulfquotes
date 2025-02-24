@@ -34,12 +34,6 @@ class PublicQuoteService {
           include: {
             images: true
           }
-        },
-        tags: true,
-        gallery: {
-          include: {
-            gallery: true
-          }
         }
       }
     });

@@ -93,7 +93,24 @@ async function QuoteContent({ params: paramsPromise }: { params: Promise<{ slug:
       notFound();
     }
 
-    return <QuoteDisplay quote={quote} />;
+    // Make sure authorProfile includes images
+    const fullQuote = await db.quote.findUnique({
+      where: { slug: params.slug },
+      include: {
+        category: true,
+        authorProfile: {
+          include: {
+            images: true
+          }
+        }
+      }
+    });
+
+    if (!fullQuote) {
+      notFound();
+    }
+
+    return <QuoteDisplay quote={fullQuote} />;
   } catch (error) {
     console.error("[QUOTE_PAGE]", error);
     throw new Error(

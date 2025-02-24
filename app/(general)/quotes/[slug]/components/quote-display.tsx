@@ -1,5 +1,3 @@
-//app/(general)/quotes/[slug]/components/quote-display.tsx
-
 "use client";
 
 import { useState } from "react";
@@ -7,14 +5,16 @@ import { BackgroundGallery } from "./background-gallery";
 import { QuoteImage } from "./quote-image";
 import Image from "next/image"; 
 import type { GalleryItem } from "@/types/gallery";
-import type { Quote, AuthorProfile, Category } from "@prisma/client";
+import type { Quote, AuthorProfile, Category, AuthorImage } from "@prisma/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Share2 } from "lucide-react";
 
 interface QuoteDisplayProps {
   quote: Quote & {
-    authorProfile: AuthorProfile;
+    authorProfile: AuthorProfile & {
+      images: AuthorImage[];
+    };
     category: Category;
   };
   className?: string;
