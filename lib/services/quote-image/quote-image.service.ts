@@ -1,4 +1,4 @@
-import { fabric } from 'fabric';
+import { Canvas, Image, Textbox, Text, Rect } from "fabric"; // Import specific components
 import type { Quote } from "@prisma/client";
 
 interface QuoteImageOptions {
@@ -8,6 +8,10 @@ interface QuoteImageOptions {
   backgroundColor?: string;
   textColor?: string;
   fontFamily?: string;
+  overlay?: {
+    color?: string;
+    opacity?: number;
+  };
   branding?: {
     text: string;
     color?: string;
@@ -23,6 +27,10 @@ export class QuoteImageService {
     backgroundColor: '#ffffff',
     textColor: '#000000',
     fontFamily: 'Inter',
+    overlay: {
+      color: '#000000',
+      opacity: 0.5
+    },
     branding: {
       text: 'Quoticon',
       color: '#666666',
@@ -45,7 +53,7 @@ export class QuoteImageService {
     if (textLength <= 300) return 40;
     if (textLength <= 240) return 41;
     if (textLength <= 100) return 45;
-    return 30; // default size
+    return 30;
   }
 
   /**
@@ -53,63 +61,20 @@ export class QuoteImageService {
    */
   async createImage(quote: Quote, options?: QuoteImageOptions): Promise<string> {
     const opts = { ...this.defaultOptions, ...options };
-    const canvas = new fabric.Canvas(null, {
+    const canvas = new Canvas(null, {
       width: opts.width,
       height: opts.height
     });
 
-    // Add background if provided
+    // Handle background
     if (quote.backgroundImage) {
-      const bgImage = await this.loadImage(quote.backgroundImage);
-      const scaled = this.scaleImageToFill(bgImage, opts.width, opts.height);
-      canvas.setBackgroundImage(scaled, canvas.renderAll.bind(canvas));
-      
-      // Add dark overlay for better text visibility
-      const overlay = new fabric.Rect({
-        width: opts.width,
-        height: opts.height,
-        fill: 'rgba(0,0,0,0.5)'
-      });
-      canvas.add(overlay);
+      await this.setupBackground(canvas, quote.backgroundImage, opts);
+    } else {
+      canvas.backgroundColor = opts.backgroundColor;
     }
 
-    // Add quote text
-    const fontSize = this.calculateFontSize(quote.content.length);
-    const quoteText = new fabric.Textbox(`"${quote.content}"`, {
-      width: opts.width - (opts.padding * 2),
-      fontSize,
-      fontFamily: opts.fontFamily,
-      fill: quote.backgroundImage ? '#ffffff' : opts.textColor,
-      textAlign: 'center',
-      top: opts.padding,
-      left: opts.padding
-    });
-
-    // Add author name
-    const authorText = new fabric.Text(`- ${quote.authorProfile.name}`, {
-      fontSize: fontSize * 0.5,
-      fontFamily: opts.fontFamily,
-      fill: quote.backgroundImage ? '#ffffff' : opts.textColor,
-      left: opts.padding,
-      top: opts.height - (opts.padding * 2)
-    });
-
-    // Add branding
-    const brandingText = new fabric.Text(opts.branding.text, {
-      fontSize: opts.branding.fontSize,
-      fontFamily: opts.fontFamily,
-      fill: quote.backgroundImage ? '#ffffff' : opts.branding.color,
-      left: opts.width - opts.padding - 100,
-      top: opts.height - (opts.padding * 2)
-    });
-
-    // Add elements to canvas
-    canvas.add(quoteText, authorText, brandingText);
-
-    // Center quote text vertically
-    const bounds = quoteText.getBoundingRect();
-    const centerY = (opts.height - bounds.height) / 2;
-    quoteText.set('top', centerY);
+    // Add content
+    await this.addContent(canvas, quote, opts);
 
     // Generate image
     canvas.renderAll();
@@ -117,11 +82,96 @@ export class QuoteImageService {
   }
 
   /**
+   * Setup background with image
+   */
+  private async setupBackground(
+    canvas: Canvas, 
+    imageUrl: string, 
+    options: Required<QuoteImageOptions>
+  ): Promise<void> {
+    try {
+      const bgImage = await this.loadImage(imageUrl);
+      const scaled = this.scaleImageToFill(bgImage, options.width, options.height);
+      
+      // Set background image
+      canvas.setBackgroundImage(scaled, canvas.renderAll.bind(canvas));
+      
+      // Add overlay for better text visibility
+      const overlay = new Rect({
+        width: options.width,
+        height: options.height,
+        fill: options.overlay.color,
+        opacity: options.overlay.opacity,
+        selectable: false
+      });
+      
+      canvas.add(overlay);
+    } catch (error) {
+      console.error('Failed to setup background:', error);
+      // Fallback to solid background
+      canvas.backgroundColor = options.backgroundColor;
+    }
+  }
+
+  /**
+   * Add quote content to canvas
+   */
+  private async addContent(
+    canvas: Canvas, 
+    quote: Quote, 
+    options: Required<QuoteImageOptions>
+  ): Promise<void> {
+    const hasBackground = !!quote.backgroundImage;
+    const textColor = hasBackground ? '#ffffff' : options.textColor;
+    const fontSize = this.calculateFontSize(quote.content.length);
+
+    // Add quote text
+    const quoteText = new Textbox(`"${quote.content}"`, {
+      width: options.width - (options.padding * 2),
+      fontSize,
+      fontFamily: options.fontFamily,
+      fill: textColor,
+      textAlign: 'center',
+      top: options.padding,
+      left: options.padding,
+      selectable: false
+    });
+
+    // Add author name
+    const authorText = new Text(`- ${quote.authorProfile.name}`, {
+      fontSize: fontSize * 0.5,
+      fontFamily: options.fontFamily,
+      fill: textColor,
+      left: options.padding,
+      top: options.height - (options.padding * 2),
+      selectable: false
+    });
+
+    // Add branding
+    const brandingText = new Text(options.branding.text, {
+      fontSize: options.branding.fontSize,
+      fontFamily: options.fontFamily,
+      fill: hasBackground ? '#ffffff' : options.branding.color,
+      left: options.width - options.padding - 100,
+      top: options.height - (options.padding * 2),
+      selectable: false
+    });
+
+    // Add elements to canvas
+    canvas.add(quoteText, authorText, brandingText);
+
+    // Center quote text vertically
+    const bounds = quoteText.getBoundingRect();
+    const centerY = (options.height - bounds.height) / 2;
+    quoteText.set('top', centerY);
+  }
+
+  /**
    * Load image from URL
    */
-  private loadImage(url: string): Promise<fabric.Image> {
+  private loadImage(url: string): Promise<Image> {
     return new Promise((resolve, reject) => {
-      fabric.Image.fromURL(url, (img) => {
+      Image.fromURL(url, (img) => {
         if (img) {
           resolve(img);
         } else {
@@ -134,7 +184,7 @@ export class QuoteImageService {
   /**
    * Scale image to fill dimensions while maintaining aspect ratio
    */
-  private scaleImageToFill(image: fabric.Image, targetWidth: number, targetHeight: number): fabric.Image {
+  private scaleImageToFill(image: Image, targetWidth: number, targetHeight: number): Image {
     const scale = Math.max(
       targetWidth / image.width!,
       targetHeight / image.height!
@@ -145,7 +195,8 @@ export class QuoteImageService {
     // Center the image
     image.set({
       left: (targetWidth - image.width! * scale) / 2,
-      top: (targetHeight - image.height! * scale) / 2
+      top: (targetHeight - image.height! * scale) / 2,
+      selectable: false
     });
 
     return image;

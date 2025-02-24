@@ -1,14 +1,11 @@
-//app/(general)/quotes/[slug]/components/quote-image.tsx
-
 "use client";
 
 import { useEffect, useCallback, useRef, useState } from "react";
 import Image from "next/image";
 import { quoteImageService } from "@/lib/services/quote-image/quote-image.service";
-import { Button } from "@/components/ui/button";
-import { Download, Share2 } from "lucide-react";
 import type { Quote, AuthorProfile } from "@prisma/client";
 import { cn } from "@/lib/utils";
+import { ShareActions } from "./share-actions";
 
 interface QuoteImageProps {
   quote: Quote & {
@@ -50,39 +47,6 @@ export function QuoteImage({ quote, className }: QuoteImageProps) {
     generateQuoteImage();
   }, [generateQuoteImage]);
 
-  const handleDownload = () => {
-    if (!imageUrl) return;
-
-    const link = document.createElement('a');
-    link.href = imageUrl;
-    link.download = `quote-${quote.slug}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleShare = async () => {
-    if (!imageUrl) return;
-
-    try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const file = new File([blob], `quote-${quote.slug}.png`, { type: 'image/png' });
-
-      if (navigator.share) {
-        await navigator.share({
-          files: [file],
-          title: 'Share Quote',
-          text: quote.content
-        });
-      } else {
-        handleDownload();
-      }
-    } catch (error) {
-      console.error('Failed to share quote:', error);
-    }
-  };
-
   return (
     <div className={cn("space-y-4", className)}>
       {/* Quote Image Display */}
@@ -110,27 +74,12 @@ export function QuoteImage({ quote, className }: QuoteImageProps) {
         )}
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex justify-end gap-2">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleDownload}
-          disabled={!imageUrl || isGenerating}
-        >
-          <Download className="h-4 w-4 mr-2" />
-          Download
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={handleShare}
-          disabled={!imageUrl || isGenerating}
-        >
-          <Share2 className="h-4 w-4 mr-2" />
-          Share
-        </Button>
-      </div>
+      {/* Share Actions */}
+      <ShareActions
+        quote={quote}
+        imageUrl={imageUrl}
+        disabled={isGenerating}
+      />
     </div>
   );
 }
