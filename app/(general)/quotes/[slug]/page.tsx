@@ -7,6 +7,7 @@ import { QuoteDisplay } from "./components/quote-display";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import db from "@/lib/prisma"; // Add this import
 
 interface PageProps {
   params: Promise<{
