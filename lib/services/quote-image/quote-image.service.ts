@@ -1,5 +1,5 @@
-import { Canvas, Image, Textbox, Text, Rect } from "fabric"; // Import specific components
-import type { Quote } from "@prisma/client";
+import { Canvas, Image, Textbox, Text, Rect } from "fabric";
+import type { Quote, AuthorProfile } from "@prisma/client"; // Add AuthorProfile import
 
 interface QuoteImageOptions {
   width?: number;
@@ -8,7 +8,7 @@ interface QuoteImageOptions {
   backgroundColor?: string;
   textColor?: string;
   fontFamily?: string;
-  fontSize?: number; // Add this line
+  fontSize?: number;
   overlay?: {
     color?: string;
     opacity?: number;
@@ -18,6 +18,11 @@ interface QuoteImageOptions {
     color?: string;
     fontSize?: number;
   };
+}
+
+// Add interface for Quote with relations
+interface QuoteWithAuthor extends Quote {
+  authorProfile: AuthorProfile;
 }
 
 export class QuoteImageService {
@@ -61,7 +66,7 @@ export class QuoteImageService {
   /**
    * Create quote image
    */
-  async createImage(quote: Quote, options?: QuoteImageOptions): Promise<string> {
+  async createImage(quote: QuoteWithAuthor, options?: QuoteImageOptions): Promise<string> {
     const opts = { ...this.defaultOptions, ...options };
     
     // Check if we're in the browser
@@ -91,6 +96,7 @@ export class QuoteImageService {
     return canvas.toDataURL({
       format: 'png',
       quality: 1,
+      multiplier: 1, // Add required multiplier property
       enableRetinaScaling: false
     });
   }
@@ -108,7 +114,8 @@ export class QuoteImageService {
       const scaled = this.scaleImageToFill(bgImage, options.width, options.height);
       
       // Set background image
-      canvas.setBackgroundImage(scaled, canvas.renderAll.bind(canvas));
+      canvas.backgroundImage = scaled;
+      canvas.renderAll();
       
       // Add overlay for better text visibility
       const overlay = new Rect({
@@ -132,7 +139,7 @@ export class QuoteImageService {
    */
   private async addContent(
     canvas: Canvas, 
-    quote: Quote, 
+    quote: QuoteWithAuthor, // Update type here
     options: Required<QuoteImageOptions>
   ): Promise<void> {
     const hasBackground = !!quote.backgroundImage;
@@ -185,7 +192,9 @@ export class QuoteImageService {
    */
   private loadImage(url: string): Promise<Image> {
     return new Promise((resolve, reject) => {
-      Image.fromURL(url, (img) => {
+      Image.fromURL(url, {
+        crossOrigin: 'anonymous',
+      }, (img: Image | null) => {
         if (img) {
           resolve(img);
         } else {

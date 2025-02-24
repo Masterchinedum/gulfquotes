@@ -1,6 +1,6 @@
 // lib/services/quote-share/quote-share.service.ts
 
-import type { Quote } from "@prisma/client";
+import type { Quote, AuthorProfile } from "@prisma/client";
 import { slugify } from "@/lib/utils";
 
 interface ExportOptions {
@@ -12,6 +12,11 @@ interface ExportOptions {
 interface ShareOptions extends ExportOptions {
   title?: string;
   text?: string;
+}
+
+// Add interface for Quote with relations
+interface QuoteWithAuthor extends Quote {
+  authorProfile: AuthorProfile;
 }
 
 export class QuoteShareService {
@@ -59,7 +64,7 @@ export class QuoteShareService {
    * Export quote as image
    */
   async exportImage(
-    quote: Quote, 
+    quote: QuoteWithAuthor, 
     imageData: string,
     options?: ExportOptions
   ): Promise<{ dataUrl: string; fileName: string }> {
@@ -77,7 +82,7 @@ export class QuoteShareService {
    * Download quote image
    */
   async download(
-    quote: Quote,
+    quote: QuoteWithAuthor,
     imageData: string,
     options?: ExportOptions
   ): Promise<void> {
@@ -95,7 +100,7 @@ export class QuoteShareService {
    * Share quote image
    */
   async share(
-    quote: Quote,
+    quote: QuoteWithAuthor,
     imageData: string,
     options?: ShareOptions
   ): Promise<void> {
