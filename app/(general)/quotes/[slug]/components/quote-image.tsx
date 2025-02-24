@@ -1,3 +1,5 @@
+//app/(general)/quotes/[slug]/components/quote-image.tsx
+
 "use client";
 
 import { useEffect, useCallback, useRef, useState } from "react";
