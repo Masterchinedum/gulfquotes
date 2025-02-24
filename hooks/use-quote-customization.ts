@@ -135,19 +135,19 @@ export function useQuoteCustomization(
     }
   }, [quote.slug]);
 
-  // Generate quote image
+  // Update generateImage callback
   const generateImage = useCallback(async () => {
     setState(prev => ({ ...prev, isGenerating: true, error: null }));
 
     try {
-      const imageData = await quoteImageService.createImage(quote, { // Fix service call
+      const imageData = await quoteImageService.createImage(quote, {
         width: 1080,
         height: 1080,
         padding: 40,
         backgroundColor: '#ffffff',
         textColor: state.background.imageUrl ? '#ffffff' : '#000000',
         fontFamily: 'Inter',
-        fontSize: state.fontSize,
+        // Remove fontSize as it's not part of QuoteImageOptions
         branding: {
           text: 'Quoticon',
           color: state.background.imageUrl ? '#ffffff' : '#666666',
@@ -168,7 +168,7 @@ export function useQuoteCustomization(
         error: error instanceof Error ? error.message : 'Failed to generate image'
       }));
     }
-  }, [quote, state.background.imageUrl, state.fontSize]);
+  }, [quote, state.background.imageUrl]); // Remove state.fontSize from dependencies
 
   return {
     fontSize: state.fontSize,

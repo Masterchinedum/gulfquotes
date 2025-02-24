@@ -8,6 +8,7 @@ interface QuoteImageOptions {
   backgroundColor?: string;
   textColor?: string;
   fontFamily?: string;
+  fontSize?: number; // Add this line
   overlay?: {
     color?: string;
     opacity?: number;
