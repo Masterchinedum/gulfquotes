@@ -3,11 +3,26 @@ import type { ListQuotesResult } from "../quote/types";
 import type { ListQuotesParams } from "@/types/api/quotes";
 import { quoteFilterUtils } from "./utils/quote-filter.utils";
 import { quoteSortUtils } from "./utils/quote-sort.utils";
-import type { Quote } from "@prisma/client";
+import type { 
+  Quote, 
+  AuthorProfile, 
+  Category, 
+  Tag,
+  QuoteToGallery,
+  Gallery 
+} from "@prisma/client";
+
+type QuoteWithRelations = Quote & {
+  authorProfile: AuthorProfile;
+  category: Category;
+  tags: Tag[];
+  gallery: (QuoteToGallery & {
+    gallery: Gallery;
+  })[];
+};
 
 class PublicQuoteService {
-  // Add getBySlug method
-  async getBySlug(slug: string): Promise<Quote | null> {
+  async getBySlug(slug: string): Promise<QuoteWithRelations | null> {
     return await db.quote.findUnique({
       where: { slug },
       include: {
