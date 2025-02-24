@@ -63,7 +63,15 @@ export class QuoteImageService {
    */
   async createImage(quote: Quote, options?: QuoteImageOptions): Promise<string> {
     const opts = { ...this.defaultOptions, ...options };
-    const canvas = new Canvas(null, {
+    
+    // Check if we're in the browser
+    if (typeof window === 'undefined') {
+      throw new Error('Quote image generation is only available in the browser');
+    }
+
+    // Create a canvas element
+    const canvasEl = document.createElement('canvas');
+    const canvas = new Canvas(canvasEl, {
       width: opts.width,
       height: opts.height
     });
@@ -80,7 +88,11 @@ export class QuoteImageService {
 
     // Generate image
     canvas.renderAll();
-    return canvas.toDataURL('image/png');
+    return canvas.toDataURL({
+      format: 'png',
+      quality: 1,
+      enableRetinaScaling: false
+    });
   }
 
   /**
