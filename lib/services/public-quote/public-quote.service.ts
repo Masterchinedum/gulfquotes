@@ -3,8 +3,26 @@ import type { ListQuotesResult } from "../quote/types";
 import type { ListQuotesParams } from "@/types/api/quotes";
 import { quoteFilterUtils } from "./utils/quote-filter.utils";
 import { quoteSortUtils } from "./utils/quote-sort.utils";
+import type { Quote } from "@prisma/client";
 
 class PublicQuoteService {
+  // Add getBySlug method
+  async getBySlug(slug: string): Promise<Quote | null> {
+    return await db.quote.findUnique({
+      where: { slug },
+      include: {
+        category: true,
+        authorProfile: true,
+        tags: true,
+        gallery: {
+          include: {
+            gallery: true
+          }
+        }
+      }
+    });
+  }
+
   async list(params: ListQuotesParams): Promise<ListQuotesResult> {
     const page = params.page || 1;
     const limit = params.limit || 12;
