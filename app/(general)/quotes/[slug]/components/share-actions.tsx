@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Dialog,
@@ -35,9 +35,13 @@ interface ShareActionsProps {
 export function ShareActions({ quote, imageUrl, disabled = false }: ShareActionsProps) {
   const [isCopied, setIsCopied] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string>('');
+  const [shareText, setShareText] = useState<string>('');
 
-  const shareUrl = `${window.location.origin}/quotes/${quote.slug}`;
-  const shareText = `"${quote.content}" - ${quote.authorProfile.name}`;
+  useEffect(() => {
+    setShareUrl(`${window.location.origin}/quotes/${quote.slug}`);
+    setShareText(`"${quote.content}" - ${quote.authorProfile.name}`);
+  }, [quote]);
 
   const handleDownload = async () => {
     if (!imageUrl) return;
