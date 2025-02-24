@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import type { Quote, AuthorProfile } from "@prisma/client";
 import type { GalleryItem } from "@/types/gallery";
+import { quoteImageService } from "@/lib/services/quote-image/quote-image.service"; // Fix import
 
 interface QuoteCustomizationOptions {
   minFontSize?: number;
@@ -139,7 +140,7 @@ export function useQuoteCustomization(
     setState(prev => ({ ...prev, isGenerating: true, error: null }));
 
     try {
-      const imageData = await [`quoteImageService`](lib/services/quote-image/quote-image.service.ts).createImage(quote, {
+      const imageData = await quoteImageService.createImage(quote, { // Fix service call
         width: 1080,
         height: 1080,
         padding: 40,
