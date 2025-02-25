@@ -21,7 +21,8 @@ export function QuotePageClient({
   activeBackground,
   fontSize,
 }: QuotePageClientProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  // Explicitly type the ref as non-null
+  const containerRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
 
   const handleBackgroundChange = useCallback(async (background: Gallery) => {
     try {
