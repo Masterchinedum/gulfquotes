@@ -7,15 +7,18 @@ import { LoadingQuote } from "./components/quote-loading";
 import { ErrorQuote } from "./components/quote-error";
 
 interface QuotePageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
+  searchParams?: Promise<Record<string, string | string[]>>;
 }
 
 // Generate dynamic metadata for the quote page
 export async function generateMetadata({ params }: QuotePageProps): Promise<Metadata> {
   try {
-    const quote = await quoteDisplayService.getQuoteBySlug(params.slug);
+    // Resolve the params promise to get the slug
+    const resolvedParams = await params;
+    const quote = await quoteDisplayService.getQuoteBySlug(resolvedParams.slug);
     
     if (!quote) {
       return {
@@ -49,8 +52,11 @@ export async function generateMetadata({ params }: QuotePageProps): Promise<Meta
 
 export default async function QuotePage({ params }: QuotePageProps) {
   try {
+    // Resolve the params promise to get the slug
+    const resolvedParams = await params;
+    
     // Fetch the quote data
-    const quote = await quoteDisplayService.getQuoteBySlug(params.slug);
+    const quote = await quoteDisplayService.getQuoteBySlug(resolvedParams.slug);
     
     // Handle non-existent quote
     if (!quote) {
