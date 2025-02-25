@@ -9,7 +9,7 @@ import { Download, Share2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Gallery } from "@prisma/client";
-import { BackgroundSelector } from "./quote-background";
+import { QuoteBackgroundSwitcher } from "./quote-background-switcher";
 import type { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
 
 interface QuoteActionsProps {
@@ -148,10 +148,11 @@ export function QuoteActions({
         {/* Background Selection */}
         {activeTab === "backgrounds" && (
           <div className="pt-4">
-            <BackgroundSelector
+            <QuoteBackgroundSwitcher
               backgrounds={backgrounds}
               activeBackground={activeBackground}
-              onSelectBackground={handleBackgroundSelect}
+              onBackgroundChange={handleBackgroundSelect}
+              isLoading={isLoading}
             />
           </div>
         )}
