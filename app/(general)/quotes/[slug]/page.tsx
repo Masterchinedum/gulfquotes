@@ -1,3 +1,5 @@
+//app/general/quotes/[slug]/page.tsx
+
 import React from 'react'
 
 const page = () => {
