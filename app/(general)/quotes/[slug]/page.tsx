@@ -2,86 +2,51 @@
 import React, { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { quoteDisplayService } from "@/lib/services/public-quote/quote-display.service";
-import { Metadata } from "next";
 import { LoadingQuote } from "./components/quote-loading";
 import { ErrorQuote } from "./components/quote-error";
-import { QuoteDisplay, ResponsiveQuoteContainer } from "./components/quote-display";
+import { QuotePageClient } from "./components/quote-page-client";
+import type { Gallery } from "@prisma/client";
 
-// Update the interface to match Next.js's expected PageProps
-interface QuotePageProps {
-  params: Promise<{
+interface PageProps {
+  params: {
     slug: string;
-  }>;
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+  };
 }
 
-// Update the generateMetadata function to handle Promise params
-export async function generateMetadata(
-  { params }: QuotePageProps
-): Promise<Metadata> {
+export default async function QuotePage({ params }: PageProps) {
   try {
-    // Await the params Promise
-    const resolvedParams = await params;
-    const quote = await quoteDisplayService.getQuoteBySlug(resolvedParams.slug);
-    
-    if (!quote) {
-      return {
-        title: "Quote Not Found",
-        description: "The quote you're looking for doesn't exist or has been removed."
-      };
-    }
-
-    return {
-      title: `"${quote.content.substring(0, 60)}${quote.content.length > 60 ? '...' : ''}" - ${quote.authorProfile?.name || "Unknown"}`,
-      description: `Quote by ${quote.authorProfile?.name || "Unknown"}`,
-      openGraph: {
-        title: `Quote by ${quote.authorProfile?.name || "Unknown"}`,
-        description: quote.content.substring(0, 160),
-        type: 'article',
-      },
-      twitter: {
-        card: 'summary_large_image',
-        title: `Quote by ${quote.authorProfile?.name || "Unknown"}`,
-        description: quote.content.substring(0, 160),
-      }
-    };
-  } catch (error) {
-    console.error("[QUOTE_PAGE_METADATA]", error);
-    return {
-      title: "Quote - Quoticon",
-      description: "View inspiring quotes on Quoticon"
-    };
-  }
-}
-
-// Update the page component to handle Promise params
-export default async function QuotePage({ params }: QuotePageProps) {
-  try {
-    // Await the params Promise
-    const resolvedParams = await params;
-    // Fetch the quote data
-    const quote = await quoteDisplayService.getQuoteBySlug(resolvedParams.slug);
+    // Fetch the quote data and backgrounds in parallel
+    const [quote, backgrounds] = await Promise.all([
+      quoteDisplayService.getQuoteBySlug(params.slug),
+      quoteDisplayService.getQuoteBackgrounds(params.slug)
+    ]);
     
     // Handle non-existent quote
     if (!quote) {
       notFound();
     }
     
+    // Get active background
+    const activeBackground = quote.gallery.find(g => g.isActive)?.gallery || null;
+    
     // Get the display configuration for the quote
     const displayConfig = quoteDisplayService.getDisplayConfig(quote);
 
+    // Handle background change
+    const handleBackgroundChange = async (background: Gallery) => {
+      await quoteDisplayService.updateActiveBackground(quote.id, background.id);
+    };
+
     return (
-      <div className="container mx-auto py-8 px-4">
-        <Suspense fallback={<LoadingQuote />}>
-          <ResponsiveQuoteContainer>
-            <QuoteDisplay 
-              quote={quote}
-              fontSize={displayConfig.fontSize}
-              backgroundImage={displayConfig.backgroundImage}
-            />
-          </ResponsiveQuoteContainer>
-        </Suspense>
-      </div>
+      <Suspense fallback={<LoadingQuote />}>
+        <QuotePageClient 
+          quote={quote}
+          backgrounds={backgrounds}
+          activeBackground={activeBackground}
+          fontSize={displayConfig.fontSize}
+          onBackgroundChange={handleBackgroundChange}
+        />
+      </Suspense>
     );
   } catch (error) {
     console.error("[QUOTE_PAGE]", error);
