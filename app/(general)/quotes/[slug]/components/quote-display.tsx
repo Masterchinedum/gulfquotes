@@ -33,11 +33,18 @@ export function QuoteDisplay({
     
     const length = quote.content.length;
     
-    if (length < 50) return 48;
-    if (length < 100) return 40;
-    if (length < 200) return 32;
-    if (length < 300) return 28;
-    return 24;
+    // Using the precise template specification you provided
+    if (length <= 100) return 45;
+    if (length <= 240) return 41;
+    if (length <= 300) return 40;
+    if (length <= 350) return 39;
+    if (length <= 400) return 38;
+    if (length <= 450) return 36;
+    if (length <= 500) return 35;
+    if (length <= 550) return 33;
+    if (length <= 600) return 31;
+    if (length <= 700) return 30;
+    return 28; // For anything longer than 700 characters
   }, [quote.content.length, propFontSize]);
   
   // Get the style settings based on the selected background style
@@ -57,8 +64,9 @@ export function QuoteDisplay({
         className="w-full h-full relative"
         style={{
           aspectRatio: "1/1",
-          maxWidth: "1080px",
-          maxHeight: "1080px"
+          width: "1080px", // Setting fixed width as requested
+          height: "1080px", // Setting fixed height as requested
+          maxWidth: "100%", // Allows it to scale down on smaller screens
         }}
       >
         {/* Background Layer */}
@@ -68,7 +76,7 @@ export function QuoteDisplay({
         />
 
         {/* Quote Content */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-10">
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-10" style={{ padding: "40px" }}>
           <div className="relative w-full max-w-full">
             {/* Quote Marks */}
             <div className={cn(
@@ -140,7 +148,7 @@ export function QuoteDisplay({
 export function ResponsiveQuoteContainer({ children }: { children: React.ReactNode }) {
   return (
     <div className="w-full max-w-3xl mx-auto">
-      <div className="aspect-square w-full relative">
+      <div className="w-full relative" style={{ maxWidth: "1080px", margin: "0 auto" }}>
         {children}
       </div>
     </div>
