@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface QuoteLayoutProps {
@@ -8,6 +8,9 @@ interface QuoteLayoutProps {
   className?: string;
   innerRef?: React.RefObject<HTMLDivElement>;
 }
+
+const CANVAS_SIZE = 1080; // Fixed size for width and height
+const PADDING = 40; // Fixed padding that will scale proportionally
 
 /**
  * QuoteLayout - A standardized layout component for displaying quotes
@@ -18,29 +21,66 @@ export function QuoteLayout({
   className,
   innerRef,
 }: QuoteLayoutProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  const [containerWidth, setContainerWidth] = useState(CANVAS_SIZE);
+
+  // Calculate and update scale based on container width
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const updateScale = () => {
+      const parentWidth = containerRef.current?.parentElement?.offsetWidth || CANVAS_SIZE;
+      const newScale = Math.min(1, parentWidth / CANVAS_SIZE);
+      setScale(newScale);
+      setContainerWidth(parentWidth);
+    };
+
+    // Initial calculation
+    updateScale();
+
+    // Add resize observer
+    const resizeObserver = new ResizeObserver(updateScale);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current.parentElement as Element);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
   return (
     <div 
+      ref={containerRef}
       className={cn(
-        "relative w-full max-w-[1080px] mx-auto",
-        "overflow-hidden",
+        "relative mx-auto",
         className
       )}
+      style={{
+        width: `${containerWidth}px`,
+        height: `${containerWidth}px`, // Keep aspect ratio 1:1
+      }}
     >
-      {/* Fixed aspect ratio container */}
+      {/* Fixed size canvas container */}
       <div 
         ref={innerRef}
-        className="relative w-full"
+        className="absolute top-1/2 left-1/2 origin-center"
         style={{ 
-          aspectRatio: "1/1",
-          maxWidth: "1080px",
+          width: `${CANVAS_SIZE}px`,
+          height: `${CANVAS_SIZE}px`,
+          transform: `translate(-50%, -50%) scale(${scale})`,
         }}
       >
-        {/* Content container with 40px padding */}
+        {/* Content wrapper with scaled padding */}
         <div 
-          className="absolute inset-0 flex flex-col items-center justify-center"
-          style={{ padding: "40px" }}
+          className="absolute inset-0 bg-white overflow-hidden"
+          style={{ 
+            padding: `${PADDING}px`,
+          }}
         >
-          {children}
+          {/* Content container */}
+          <div className="relative w-full h-full flex items-center justify-center">
+            {children}
+          </div>
         </div>
       </div>
     </div>
@@ -48,31 +88,7 @@ export function QuoteLayout({
 }
 
 /**
- * QuoteContentArea - A flexible container for the quote content
- * that centers its contents both horizontally and vertically
- */
-export function QuoteContentArea({ 
-  children, 
-  className 
-}: { 
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={cn(
-      "flex flex-col items-center justify-center",
-      "w-full h-full",
-      "relative",
-      className
-    )}>
-      {children}
-    </div>
-  );
-}
-
-/**
- * ResponsiveQuoteContainer - A container that ensures quotes
- * are displayed responsively across different screen sizes
+ * ResponsiveQuoteContainer - Wrapper to handle responsive scaling
  */
 export function ResponsiveQuoteContainer({ 
   children,
@@ -82,16 +98,11 @@ export function ResponsiveQuoteContainer({
   className?: string;
 }) {
   return (
-    <div className={cn("w-full mx-auto", className)}>
-      <div 
-        className="w-full relative"
-        style={{ 
-          maxWidth: "1080px", 
-          margin: "0 auto",
-        }}
-      >
-        {children}
-      </div>
+    <div className={cn(
+      "w-full max-w-[1080px] mx-auto overflow-hidden",
+      className
+    )}>
+      {children}
     </div>
   );
 }
