@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { AppError } from "@/lib/api-error";
 import { quoteDisplayService } from "@/lib/services/public-quote/quote-display.service";
-import { storageService } from "@/lib/services/storage/storage.service";
 import type { ApiResponse } from "@/types/api";
 
 interface QuoteDownloadBody {
@@ -39,10 +38,7 @@ export async function POST(
         { status: 400 }
       );
     }
-    
-    // 3. Process the dataUrl and save to storage
-    const fileName = `${quote.slug}.${body.format}`;
-    const fileUrl = await storageService.saveImage(body.dataUrl, fileName, body.format, body.quality);
+
     
     // Track the download (optional)
     if (session?.user) {
@@ -52,7 +48,7 @@ export async function POST(
 
     return NextResponse.json({
       data: { 
-        url: fileUrl 
+        url: body.dataUrl 
       }
     });
     
