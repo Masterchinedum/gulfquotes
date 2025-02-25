@@ -1,11 +1,11 @@
 // app/(general)/quotes/[slug]/components/quote-page-client.tsx
 "use client"
 
-import React, { useRef } from "react";
+import React, { useRef, useCallback } from "react";
 import { Gallery } from "@prisma/client";
-// import { LoadingQuote } from "./quote-loading";
 import { QuoteDisplay, ResponsiveQuoteContainer } from "./quote-display";
 import { QuoteActions } from "./quote-actions";
+import { toast } from "sonner";
 import type { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
 
 interface QuotePageClientProps {
@@ -13,7 +13,6 @@ interface QuotePageClientProps {
   backgrounds: Gallery[];
   activeBackground: Gallery | null;
   fontSize: number;
-  onBackgroundChange: (background: Gallery) => Promise<void>;
 }
 
 export function QuotePageClient({
@@ -21,10 +20,31 @@ export function QuotePageClient({
   backgrounds,
   activeBackground,
   fontSize,
-  onBackgroundChange,
 }: QuotePageClientProps) {
-  // Create ref for the quote container
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleBackgroundChange = useCallback(async (background: Gallery) => {
+    try {
+      const response = await fetch(`/api/quotes/${quote.slug}/background`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          imageUrl: background.url 
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update background');
+      }
+
+      window.location.reload();
+    } catch (error) {
+      toast.error('Failed to update background');
+      console.error('Background update error:', error);
+    }
+  }, [quote.slug]);
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -42,7 +62,7 @@ export function QuotePageClient({
           quote={quote}
           backgrounds={backgrounds}
           activeBackground={activeBackground}
-          onBackgroundChange={onBackgroundChange}
+          onBackgroundChange={handleBackgroundChange}
           containerRef={containerRef}
         />
       </div>

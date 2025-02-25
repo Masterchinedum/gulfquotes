@@ -5,20 +5,21 @@ import { quoteDisplayService } from "@/lib/services/public-quote/quote-display.s
 import { LoadingQuote } from "./components/quote-loading";
 import { ErrorQuote } from "./components/quote-error";
 import { QuotePageClient } from "./components/quote-page-client";
-import type { Gallery } from "@prisma/client";
+// import type { Gallery } from "@prisma/client";
 
 interface PageProps {
-  params: {
-    slug: string;
-  };
+  params: Promise<{ slug: string }>;
 }
 
 export default async function QuotePage({ params }: PageProps) {
   try {
+    // Await the params first
+    const resolvedParams = await params;
+    
     // Fetch the quote data and backgrounds in parallel
     const [quote, backgrounds] = await Promise.all([
-      quoteDisplayService.getQuoteBySlug(params.slug),
-      quoteDisplayService.getQuoteBackgrounds(params.slug)
+      quoteDisplayService.getQuoteBySlug(resolvedParams.slug),
+      quoteDisplayService.getQuoteBackgrounds(resolvedParams.slug)
     ]);
     
     // Handle non-existent quote
@@ -32,11 +33,6 @@ export default async function QuotePage({ params }: PageProps) {
     // Get the display configuration for the quote
     const displayConfig = quoteDisplayService.getDisplayConfig(quote);
 
-    // Handle background change
-    const handleBackgroundChange = async (background: Gallery) => {
-      await quoteDisplayService.updateActiveBackground(quote.id, background.id);
-    };
-
     return (
       <Suspense fallback={<LoadingQuote />}>
         <QuotePageClient 
@@ -44,7 +40,7 @@ export default async function QuotePage({ params }: PageProps) {
           backgrounds={backgrounds}
           activeBackground={activeBackground}
           fontSize={displayConfig.fontSize}
-          onBackgroundChange={handleBackgroundChange}
+          quoteId={quote.id} // Pass the ID instead of the handler
         />
       </Suspense>
     );
