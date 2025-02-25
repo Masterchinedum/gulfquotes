@@ -2,15 +2,13 @@
 "use client"
 
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-// import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Download, Share2, Image as ImageIcon } from "lucide-react";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Gallery } from "@prisma/client";
 import { QuoteBackgroundSwitcher } from "./quote-background-switcher";
 import { QuoteDownload } from "./quote-download";
+import { QuoteShare } from "./quote-share";
 import type { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
 
 interface QuoteActionsProps {
@@ -32,42 +30,6 @@ export function QuoteActions({
 }: QuoteActionsProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("backgrounds");
-
-  // Handle social sharing
-  const handleShare = async (platform: string) => {
-    try {
-      setIsLoading(true);
-
-      if (!containerRef.current) {
-        throw new Error("Quote container not found");
-      }
-
-      const response = await fetch(`/api/quotes/${quote.slug}/share`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          platform,
-          imageDataUrl: containerRef.current.innerHTML
-        })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error?.message || "Failed to share quote");
-      }
-
-      window.open(result.data.shareUrl, '_blank');
-      toast.success(`Shared on ${platform}`);
-    } catch (error) {
-      console.error("Share error:", error);
-      toast.error("Failed to share quote");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <div className={cn("space-y-6", className)}>
@@ -113,37 +75,13 @@ export function QuoteActions({
 
         {/* Share Options */}
         {activeTab === "share" && (
-          <div className="pt-4 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Button
-                variant="outline"
-                onClick={() => handleShare("twitter")}
-                disabled={isLoading}
-              >
-                Share on Twitter
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleShare("facebook")}
-                disabled={isLoading}
-              >
-                Share on Facebook
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleShare("linkedin")}
-                disabled={isLoading}
-              >
-                Share on LinkedIn
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleShare("pinterest")}
-                disabled={isLoading}
-              >
-                Share on Pinterest
-              </Button>
-            </div>
+          <div className="pt-4">
+            <QuoteShare
+              quote={quote}
+              containerRef={containerRef}
+              onShareStart={() => setIsLoading(true)}
+              onShareComplete={() => setIsLoading(false)}
+            />
           </div>
         )}
       </Tabs>
