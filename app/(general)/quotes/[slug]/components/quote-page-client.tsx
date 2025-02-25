@@ -22,7 +22,7 @@ export function QuotePageClient({
   fontSize,
 }: QuotePageClientProps) {
   // Explicitly type the ref as non-null
-  const containerRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
+  const containerRef = useRef<HTMLDivElement>(null) as React.MutableRefObject<HTMLDivElement>;
 
   const handleBackgroundChange = useCallback(async (background: Gallery) => {
     try {
