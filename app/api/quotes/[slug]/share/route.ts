@@ -12,14 +12,14 @@ interface QuoteSocialShareBody {
 
 export async function POST(
   req: Request,
-  { params }: { params: { slug: string } }
+  context: { params: { slug: string } }
 ): Promise<NextResponse<ApiResponse<{ shareUrl: string }>>> {
   try {
     // Authentication is optional for public quotes
     const session = await auth();
     
     // 1. Get the quote
-    const quote = await quoteDisplayService.getQuoteBySlug(params.slug);
+    const quote = await quoteDisplayService.getQuoteBySlug(context.params.slug);
     
     if (!quote) {
       return NextResponse.json(
@@ -39,8 +39,9 @@ export async function POST(
     }
     
     // 3. Generate the share URL based on the platform
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://yourapp.com';
-    const quoteUrl = `${baseUrl}/quotes/${params.slug}`;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://quoticon.vercel.app';
+    // const baseUrl = 'https://quoticon.com';
+    const quoteUrl = `${baseUrl}/quotes/${context.params.slug}`;
     const quoteText = encodeURIComponent(quote.content);
     const authorName = encodeURIComponent(quote.authorProfile?.name || "Unknown");
     

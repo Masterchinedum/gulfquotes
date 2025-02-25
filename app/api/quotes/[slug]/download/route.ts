@@ -13,14 +13,14 @@ interface QuoteDownloadBody {
 
 export async function POST(
   req: Request,
-  { params }: { params: { slug: string } }
+  context: { params: { slug: string } }
 ): Promise<NextResponse<ApiResponse<{ url: string }>>> {
   try {
     // Authentication is optional for public quotes
     const session = await auth();
     
     // 1. Get the quote from the database
-    const quote = await quoteDisplayService.getQuoteBySlug(params.slug);
+    const quote = await quoteDisplayService.getQuoteBySlug(context.params.slug);
     
     if (!quote) {
       return NextResponse.json(
@@ -38,7 +38,6 @@ export async function POST(
         { status: 400 }
       );
     }
-
     
     // Track the download (optional)
     if (session?.user) {
