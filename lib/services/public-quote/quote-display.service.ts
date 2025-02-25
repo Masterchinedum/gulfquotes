@@ -10,6 +10,7 @@ export interface QuoteDisplayData extends Quote {
     name: string;
     slug: string;
     image?: string | null; // Add image property
+    bio?: string | null;  // Add bio field
   };
   category: {
     name: string;
@@ -20,6 +21,16 @@ export interface QuoteDisplayData extends Quote {
     isActive: boolean;
     isBackground: boolean;
   }>;
+  tags?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+  }>;
+  metrics?: {
+    views: number;
+    likes: number;
+    shares: number;
+  };
 }
 
 class QuoteDisplayService {
