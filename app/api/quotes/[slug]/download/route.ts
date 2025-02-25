@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { AppError } from "@/lib/api-error";
 import { quoteDisplayService } from "@/lib/services/public-quote/quote-display.service";
-import type { ApiResponse } from "@/types/api/quotes";
+import type { ApiResponse, QuoteErrorCode } from "@/types/api/quotes";
 
 interface QuoteDownloadBody {
   dataUrl: string;
@@ -20,7 +20,7 @@ export async function POST(req: Request): Promise<NextResponse<ApiResponse<{ url
     const slug = req.url.split('/quotes/')[1]?.split('/')[0];
     if (!slug) {
       return NextResponse.json(
-        { error: { code: "BAD_REQUEST", message: "Invalid quote slug" } },
+        { error: { code: "BAD_REQUEST" as QuoteErrorCode, message: "Invalid quote slug" } },
         { status: 400 }
       );
     }
@@ -30,7 +30,7 @@ export async function POST(req: Request): Promise<NextResponse<ApiResponse<{ url
     
     if (!quote) {
       return NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "Quote not found" } },
+        { error: { code: "NOT_FOUND" as QuoteErrorCode, message: "Quote not found" } },
         { status: 404 }
       );
     }
@@ -40,7 +40,7 @@ export async function POST(req: Request): Promise<NextResponse<ApiResponse<{ url
     
     if (!body.dataUrl) {
       return NextResponse.json(
-        { error: { code: "BAD_REQUEST", message: "Image data is required" } },
+        { error: { code: "BAD_REQUEST" as QuoteErrorCode, message: "Image data is required" } },
         { status: 400 }
       );
     }
@@ -61,13 +61,13 @@ export async function POST(req: Request): Promise<NextResponse<ApiResponse<{ url
     console.error("[QUOTE_DOWNLOAD]", error);
     if (error instanceof AppError) {
       return NextResponse.json(
-        { error: { code: error.code, message: error.message } },
+        { error: { code: error.code as QuoteErrorCode, message: error.message } },
         { status: error.statusCode }
       );
     }
     
     return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Failed to generate download" } },
+      { error: { code: "INTERNAL_ERROR" as QuoteErrorCode, message: "Failed to generate download" } },
       { status: 500 }
     );
   }
