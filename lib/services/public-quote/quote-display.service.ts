@@ -143,7 +143,7 @@ class QuoteDisplayService {
 
       return canvas.toDataURL('image/png');
     } catch {
-      throw new AppError("Failed to generate image", "IMAGE_GENERATION_FAILED", 500);
+      throw new AppError("Failed to generate image", "INTERNAL_ERROR", 500);
     }
   }
 
