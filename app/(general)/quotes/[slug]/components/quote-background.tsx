@@ -6,53 +6,55 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Gallery } from "@prisma/client";
 
+// Helper function to create a properly typed default background
+function createDefaultBackground(): Gallery {
+  return {
+    id: "default",
+    url: "",
+    publicId: "default",
+    title: "Default",
+    description: null,
+    altText: null,
+    format: null,
+    width: null, 
+    height: null,
+    bytes: null,
+    type: "SOLID",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    userId: null,
+    isPublic: true,
+    // Add the missing properties from the error message
+    isGlobal: false,
+    usageCount: 0
+  } as Gallery;
+}
+
 interface QuoteBackgroundProps {
-  background: Gallery | null;
-  overlayStyle?: "light" | "dark" | "transparent" | "gradient";
+  // Update this to handle string or Gallery
+  background: Gallery | string | null;
+  overlayStyle: string;
   className?: string;
   imageClassName?: string;
 }
 
 export function QuoteBackground({
   background,
-  overlayStyle = "dark",
-  className,
-  imageClassName,
+  overlayStyle,
 }: QuoteBackgroundProps) {
-  // If no background is provided, display a gradient background
-  if (!background) {
-    return (
-      <div className={cn(
-        "absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5",
-        className
-      )} />
-    );
-  }
+  const backgroundUrl = typeof background === 'string' 
+    ? background 
+    : background?.url || null;
 
   return (
-    <div className={cn("absolute inset-0", className)}>
-      <Image 
-        src={background.url}
-        alt={background.title || "Quote background"}
-        fill
-        className={cn("object-cover", imageClassName)}
-        priority
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 768px, 1080px"
-      />
-      
-      {/* Overlay styles for better readability of text */}
-      {overlayStyle === "dark" && (
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/30" />
+    <div 
+      className={cn(
+        "absolute inset-0 rounded-lg overflow-hidden", 
+        overlayStyle,
+        backgroundUrl ? "bg-image" : ""
       )}
-      
-      {overlayStyle === "light" && (
-        <div className="absolute inset-0 bg-white/60" />
-      )}
-      
-      {overlayStyle === "gradient" && (
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/50 to-secondary/50 mix-blend-overlay" />
-      )}
-    </div>
+      style={backgroundUrl ? { backgroundImage: `url(${backgroundUrl})` } : {}}
+    />
   );
 }
 
@@ -102,7 +104,7 @@ export function BackgroundSelector({
       
       {/* Default solid background option */}
       <button
-        onClick={() => onSelectBackground({ id: "default", url: "", title: "Default", type: "SOLID" } as Gallery)}
+        onClick={() => onSelectBackground(createDefaultBackground())}
         className={cn(
           "w-16 h-16 rounded-md overflow-hidden relative border-2 bg-gradient-to-br from-primary/10 to-primary/5",
           !activeBackground || activeBackground.id === "default"

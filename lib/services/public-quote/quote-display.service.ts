@@ -5,7 +5,7 @@ import { AppError } from "@/lib/api-error";
 import type { Quote, Gallery } from "@prisma/client";
 import html2canvas from 'html2canvas';
 
-interface QuoteDisplayData extends Quote {
+export interface QuoteDisplayData extends Quote {
   authorProfile: {
     name: string;
     slug: string;
