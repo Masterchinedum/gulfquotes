@@ -10,16 +10,22 @@ interface QuoteSocialShareBody {
   imageDataUrl?: string;
 }
 
-export async function POST(
-  req: Request,
-  context: { params: { slug: string } }
-): Promise<NextResponse<ApiResponse<{ shareUrl: string }>>> {
+export async function POST(req: Request): Promise<NextResponse<ApiResponse<{ shareUrl: string }>>> {
   try {
     // Authentication is optional for public quotes
     const session = await auth();
     
+    // Extract slug from URL
+    const slug = req.url.split('/quotes/')[1]?.split('/')[0];
+    if (!slug) {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "Invalid quote slug" } },
+        { status: 400 }
+      );
+    }
+    
     // 1. Get the quote
-    const quote = await quoteDisplayService.getQuoteBySlug(context.params.slug);
+    const quote = await quoteDisplayService.getQuoteBySlug(slug);
     
     if (!quote) {
       return NextResponse.json(
@@ -40,8 +46,7 @@ export async function POST(
     
     // 3. Generate the share URL based on the platform
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://quoticon.vercel.app';
-    // const baseUrl = 'https://quoticon.com';
-    const quoteUrl = `${baseUrl}/quotes/${context.params.slug}`;
+    const quoteUrl = `${baseUrl}/quotes/${slug}`;
     const quoteText = encodeURIComponent(quote.content);
     const authorName = encodeURIComponent(quote.authorProfile?.name || "Unknown");
     

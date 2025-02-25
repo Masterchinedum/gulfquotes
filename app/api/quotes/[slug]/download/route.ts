@@ -11,16 +11,22 @@ interface QuoteDownloadBody {
   quality?: number;
 }
 
-export async function POST(
-  req: Request,
-  context: { params: { slug: string } }
-): Promise<NextResponse<ApiResponse<{ url: string }>>> {
+export async function POST(req: Request): Promise<NextResponse<ApiResponse<{ url: string }>>> {
   try {
     // Authentication is optional for public quotes
     const session = await auth();
     
+    // Extract slug from URL
+    const slug = req.url.split('/quotes/')[1]?.split('/')[0];
+    if (!slug) {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "Invalid quote slug" } },
+        { status: 400 }
+      );
+    }
+    
     // 1. Get the quote from the database
-    const quote = await quoteDisplayService.getQuoteBySlug(context.params.slug);
+    const quote = await quoteDisplayService.getQuoteBySlug(slug);
     
     if (!quote) {
       return NextResponse.json(
