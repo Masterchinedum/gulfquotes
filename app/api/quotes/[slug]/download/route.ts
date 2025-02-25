@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { AppError } from "@/lib/api-error";
 import { quoteDisplayService } from "@/lib/services/public-quote/quote-display.service";
-import type { ApiResponse } from "@/types/api";
+import type { ApiResponse } from "@/types/api/quotes";
 
 interface QuoteDownloadBody {
   dataUrl: string;
