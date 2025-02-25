@@ -21,25 +21,23 @@ export function QuoteLayout({
   return (
     <div 
       className={cn(
-        "relative w-full overflow-hidden",
-        "aspect-square",
+        "relative w-full max-w-[1080px] mx-auto",
+        "overflow-hidden",
         className
       )}
     >
-      {/* This is the fixed-size container with a 1:1 aspect ratio */}
+      {/* Fixed aspect ratio container */}
       <div 
         ref={innerRef}
-        className="w-full h-full relative"
-        style={{
-          width: "1080px",
-          height: "1080px",
-          maxWidth: "100%",
+        className="relative w-full"
+        style={{ 
           aspectRatio: "1/1",
+          maxWidth: "1080px",
         }}
       >
-        {/* Content container with standard 40px padding */}
+        {/* Content container with 40px padding */}
         <div 
-          className="absolute inset-0 flex flex-col"
+          className="absolute inset-0 flex flex-col items-center justify-center"
           style={{ padding: "40px" }}
         >
           {children}
