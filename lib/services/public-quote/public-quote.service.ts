@@ -42,6 +42,49 @@ class PublicQuoteService {
       limit
     };
   }
+
+  async getQuoteBySlug(slug: string): Promise<QuoteDisplayData | null> {
+    try {
+      const quote = await db.quote.findUnique({
+        where: { slug },
+        include: {
+          authorProfile: {
+            select: {
+              name: true,
+              slug: true,
+              image: true,
+              bio: true,  // Add this line
+            }
+          },
+          category: {
+            select: {
+              name: true,
+              slug: true,
+            }
+          },
+          gallery: {
+            include: {
+              gallery: true,
+            },
+          },
+          tags: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            }
+          },
+        }
+      });
+
+      if (!quote) return null;
+
+      return quote as QuoteDisplayData;
+    } catch (error) {
+      console.error("[QUOTE_DISPLAY_SERVICE]", error);
+      throw new Error("Failed to fetch quote");
+    }
+  }
 }
 
 export const publicQuoteService = new PublicQuoteService();
