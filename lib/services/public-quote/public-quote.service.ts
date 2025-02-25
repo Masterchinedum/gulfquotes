@@ -1,6 +1,7 @@
 import db from "@/lib/prisma";
 import type { ListQuotesResult } from "../quote/types";
 import type { ListQuotesParams } from "@/types/api/quotes";
+import type { QuoteDisplayData } from "./types"; // Add this import
 import { quoteFilterUtils } from "./utils/quote-filter.utils";
 import { quoteSortUtils } from "./utils/quote-sort.utils";
 
@@ -53,7 +54,7 @@ class PublicQuoteService {
               name: true,
               slug: true,
               image: true,
-              bio: true,  // Add this line
+              bio: true,
             }
           },
           category: {
