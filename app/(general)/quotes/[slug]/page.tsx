@@ -5,7 +5,6 @@ import { quoteDisplayService } from "@/lib/services/public-quote/quote-display.s
 import { LoadingQuote } from "./components/quote-loading";
 import { ErrorQuote } from "./components/quote-error";
 import { QuotePageClient } from "./components/quote-page-client";
-// import type { Gallery } from "@prisma/client";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -40,7 +39,6 @@ export default async function QuotePage({ params }: PageProps) {
           backgrounds={backgrounds}
           activeBackground={activeBackground}
           fontSize={displayConfig.fontSize}
-          quoteId={quote.id} // Pass the ID instead of the handler
         />
       </Suspense>
     );
