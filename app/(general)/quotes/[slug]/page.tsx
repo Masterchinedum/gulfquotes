@@ -7,16 +7,22 @@ import { LoadingQuote } from "./components/quote-loading";
 import { ErrorQuote } from "./components/quote-error";
 import { QuoteDisplay, ResponsiveQuoteContainer } from "./components/quote-display";
 
+// Update the interface to match Next.js's expected PageProps
 interface QuotePageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
-// Generate dynamic metadata for the quote page
-export async function generateMetadata({ params }: QuotePageProps): Promise<Metadata> {
+// Update the generateMetadata function to handle Promise params
+export async function generateMetadata(
+  { params }: QuotePageProps
+): Promise<Metadata> {
   try {
-    const quote = await quoteDisplayService.getQuoteBySlug(params.slug);
+    // Await the params Promise
+    const resolvedParams = await params;
+    const quote = await quoteDisplayService.getQuoteBySlug(resolvedParams.slug);
     
     if (!quote) {
       return {
@@ -48,10 +54,13 @@ export async function generateMetadata({ params }: QuotePageProps): Promise<Meta
   }
 }
 
+// Update the page component to handle Promise params
 export default async function QuotePage({ params }: QuotePageProps) {
   try {
+    // Await the params Promise
+    const resolvedParams = await params;
     // Fetch the quote data
-    const quote = await quoteDisplayService.getQuoteBySlug(params.slug);
+    const quote = await quoteDisplayService.getQuoteBySlug(resolvedParams.slug);
     
     // Handle non-existent quote
     if (!quote) {
@@ -71,8 +80,6 @@ export default async function QuotePage({ params }: QuotePageProps) {
               backgroundImage={displayConfig.backgroundImage}
             />
           </ResponsiveQuoteContainer>
-
-          {/* Additional UI will be added in later phases */}
         </Suspense>
       </div>
     );
