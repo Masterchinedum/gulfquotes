@@ -9,6 +9,7 @@ export interface QuoteDisplayData extends Quote {
   authorProfile: {
     name: string;
     slug: string;
+    image?: string | null; // Add image property
   };
   category: {
     name: string;
@@ -34,6 +35,7 @@ class QuoteDisplayService {
             select: {
               name: true,
               slug: true,
+              image: true, // Add this line
             }
           },
           category: {
