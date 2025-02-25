@@ -5,20 +5,18 @@ import { quoteDisplayService } from "@/lib/services/public-quote/quote-display.s
 import { Metadata } from "next";
 import { LoadingQuote } from "./components/quote-loading";
 import { ErrorQuote } from "./components/quote-error";
+import { QuoteDisplay, ResponsiveQuoteContainer } from "./components/quote-display";
 
 interface QuotePageProps {
-  params: Promise<{
+  params: {
     slug: string;
-  }>;
-  searchParams?: Promise<Record<string, string | string[]>>;
+  };
 }
 
 // Generate dynamic metadata for the quote page
 export async function generateMetadata({ params }: QuotePageProps): Promise<Metadata> {
   try {
-    // Resolve the params promise to get the slug
-    const resolvedParams = await params;
-    const quote = await quoteDisplayService.getQuoteBySlug(resolvedParams.slug);
+    const quote = await quoteDisplayService.getQuoteBySlug(params.slug);
     
     if (!quote) {
       return {
@@ -28,16 +26,16 @@ export async function generateMetadata({ params }: QuotePageProps): Promise<Meta
     }
 
     return {
-      title: `"${quote.content.substring(0, 60)}${quote.content.length > 60 ? '...' : ''}" - ${quote.authorProfile.name}`,
-      description: `Quote by ${quote.authorProfile.name}`,
+      title: `"${quote.content.substring(0, 60)}${quote.content.length > 60 ? '...' : ''}" - ${quote.authorProfile?.name || "Unknown"}`,
+      description: `Quote by ${quote.authorProfile?.name || "Unknown"}`,
       openGraph: {
-        title: `Quote by ${quote.authorProfile.name}`,
+        title: `Quote by ${quote.authorProfile?.name || "Unknown"}`,
         description: quote.content.substring(0, 160),
         type: 'article',
       },
       twitter: {
         card: 'summary_large_image',
-        title: `Quote by ${quote.authorProfile.name}`,
+        title: `Quote by ${quote.authorProfile?.name || "Unknown"}`,
         description: quote.content.substring(0, 160),
       }
     };
@@ -52,11 +50,8 @@ export async function generateMetadata({ params }: QuotePageProps): Promise<Meta
 
 export default async function QuotePage({ params }: QuotePageProps) {
   try {
-    // Resolve the params promise to get the slug
-    const resolvedParams = await params;
-    
     // Fetch the quote data
-    const quote = await quoteDisplayService.getQuoteBySlug(resolvedParams.slug);
+    const quote = await quoteDisplayService.getQuoteBySlug(params.slug);
     
     // Handle non-existent quote
     if (!quote) {
@@ -69,13 +64,15 @@ export default async function QuotePage({ params }: QuotePageProps) {
     return (
       <div className="container mx-auto py-8 px-4">
         <Suspense fallback={<LoadingQuote />}>
-          {/* The actual quote display component will be added in Phase 2 */}
-          <div className="flex flex-col items-center justify-center">
-            <h1 className="text-2xl font-bold mb-8">Quote Display</h1>
-            <pre className="bg-muted p-4 rounded-md overflow-auto">
-              {JSON.stringify({ quote, displayConfig }, null, 2)}
-            </pre>
-          </div>
+          <ResponsiveQuoteContainer>
+            <QuoteDisplay 
+              quote={quote}
+              fontSize={displayConfig.fontSize}
+              backgroundImage={displayConfig.backgroundImage}
+            />
+          </ResponsiveQuoteContainer>
+
+          {/* Additional UI will be added in later phases */}
         </Suspense>
       </div>
     );
