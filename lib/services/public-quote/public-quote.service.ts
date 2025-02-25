@@ -1,7 +1,7 @@
 import db from "@/lib/prisma";
 import type { ListQuotesResult } from "../quote/types";
 import type { ListQuotesParams } from "@/types/api/quotes";
-import type { QuoteDisplayData } from "./types"; // Add this import
+import type { QuoteDisplayData } from "./types";
 import { quoteFilterUtils } from "./utils/quote-filter.utils";
 import { quoteSortUtils } from "./utils/quote-sort.utils";
 
@@ -53,7 +53,12 @@ class PublicQuoteService {
             select: {
               name: true,
               slug: true,
-              image: true,
+              images: {
+                select: {
+                  url: true
+                },
+                take: 1
+              },
               bio: true,
             }
           },
@@ -80,7 +85,16 @@ class PublicQuoteService {
 
       if (!quote) return null;
 
-      return quote as QuoteDisplayData;
+      // Transform the data to match QuoteDisplayData interface
+      const transformedQuote = {
+        ...quote,
+        authorProfile: {
+          ...quote.authorProfile,
+          image: quote.authorProfile.images[0]?.url || null
+        }
+      };
+
+      return transformedQuote as QuoteDisplayData;
     } catch (error) {
       console.error("[QUOTE_DISPLAY_SERVICE]", error);
       throw new Error("Failed to fetch quote");

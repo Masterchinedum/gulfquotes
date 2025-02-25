@@ -46,7 +46,13 @@ class QuoteDisplayService {
             select: {
               name: true,
               slug: true,
-              image: true, // Add this line
+              bio: true,
+              images: {
+                select: {
+                  url: true
+                },
+                take: 1
+              }
             }
           },
           category: {
@@ -63,6 +69,13 @@ class QuoteDisplayService {
               gallery: true,
             },
           },
+          tags: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            }
+          },
         }
       });
 
@@ -70,7 +83,17 @@ class QuoteDisplayService {
         throw new AppError("Quote not found", "NOT_FOUND", 404);
       }
 
-      return quote as QuoteDisplayData;
+      // Transform the data to match QuoteDisplayData interface
+      const transformedQuote = {
+        ...quote,
+        authorProfile: {
+          ...quote.authorProfile,
+          image: quote.authorProfile.images[0]?.url || null,
+          images: undefined // Remove the images array from the transformed data
+        }
+      };
+
+      return transformedQuote as QuoteDisplayData;
     } catch (error) {
       if (error instanceof AppError) throw error;
       throw new AppError("Failed to fetch quote", "INTERNAL_ERROR", 500);
