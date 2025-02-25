@@ -1,14 +1,16 @@
 // app/(general)/quotes/[slug]/components/quote-display.tsx
 "use client"
 import React, { useRef, useMemo } from "react";
-import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
+import { Gallery } from "@prisma/client";
+import { QuoteBackground, backgroundStyles } from "./quote-background";
 
 interface QuoteDisplayProps {
   quote: QuoteDisplayData;
-  fontSize?: number; // Make it optional
-  backgroundImage: string | null;
+  fontSize?: number;
+  backgroundImage: Gallery | null;
+  backgroundStyle?: keyof typeof backgroundStyles;
   className?: string;
   containerRef?: React.RefObject<HTMLDivElement>;
 }
@@ -17,6 +19,7 @@ export function QuoteDisplay({
   quote,
   fontSize: propFontSize,
   backgroundImage,
+  backgroundStyle = "dark",
   className,
   containerRef,
 }: QuoteDisplayProps) {
@@ -37,6 +40,9 @@ export function QuoteDisplay({
     return 24;
   }, [quote.content.length, propFontSize]);
   
+  // Get the style settings based on the selected background style
+  const style = backgroundStyles[backgroundStyle];
+  
   return (
     <div 
       className={cn(
@@ -56,55 +62,56 @@ export function QuoteDisplay({
         }}
       >
         {/* Background Layer */}
-        {backgroundImage ? (
-          <div className="absolute inset-0">
-            <Image 
-              src={backgroundImage}
-              alt="Quote background"
-              fill
-              className="object-cover"
-              priority
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 768px, 1080px"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/30" />
-          </div>
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5" />
-        )}
+        <QuoteBackground 
+          background={backgroundImage}
+          overlayStyle={style.overlayStyle}
+        />
 
         {/* Quote Content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center p-10">
           <div className="relative w-full max-w-full">
             {/* Quote Marks */}
-            <div className="absolute -top-8 -left-4 text-6xl opacity-20">&ldquo;</div>
+            <div className={cn(
+              "absolute -top-8 -left-4 text-6xl opacity-20", 
+              style.textColor
+            )}>
+              &ldquo;
+            </div>
 
             {/* Quote Text */}
             <p 
               className={cn(
-                "text-center font-serif text-white relative z-10",
-                "leading-snug tracking-wide"
+                "text-center font-serif relative z-10",
+                "leading-snug tracking-wide",
+                style.textColor
               )}
               style={{
                 fontSize: `${fontSize}px`,
-                textShadow: "0 2px 4px rgba(0,0,0,0.3)"
+                textShadow: `0 2px 4px ${style.shadowColor}`
               }}
             >
               {quote.content}
             </p>
 
             {/* Quote Marks Closing */}
-            <div className="absolute -bottom-12 -right-4 text-6xl opacity-20">&rdquo;</div>
+            <div className={cn(
+              "absolute -bottom-12 -right-4 text-6xl opacity-20", 
+              style.textColor
+            )}>
+              &rdquo;
+            </div>
           </div>
 
           {/* Author Attribution */}
           <div className="mt-auto">
             <p 
               className={cn(
-                "text-center font-medium text-white/90 mt-8",
-                "text-xl sm:text-2xl"
+                "text-center font-medium mt-8",
+                "text-xl sm:text-2xl",
+                style.textColor
               )}
               style={{
-                textShadow: "0 1px 3px rgba(0,0,0,0.4)"
+                textShadow: `0 1px 3px ${style.shadowColor}`
               }}
             >
               — {quote.authorProfile?.name || "Unknown"}
