@@ -5,6 +5,7 @@ import { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.serv
 import { Gallery } from "@prisma/client";
 import { QuoteBackground, backgroundStyles } from "./quote-background";
 import { QuoteLayout } from "./quote-layout";
+import { QuoteContent } from "./quote-content";
 
 interface QuoteDisplayProps {
   quote: QuoteDisplayData;
@@ -55,37 +56,21 @@ export function QuoteDisplay({
         className
       )}
     >
-      {/* Add the background if needed */}
+      {/* Background Layer */}
       <QuoteBackground 
         background={backgroundImage || null} 
         overlayStyle={style.overlayStyle} 
       />
       
-      <div className="relative z-10 w-full h-full flex flex-col items-center justify-center">
-        <div className="relative max-w-full space-y-4">
-          <p className={cn(
-            "text-center font-serif",
-            "leading-snug tracking-wide",
-            style.textColor
-          )}
-          style={{
-            fontSize: `${fontSize}px`,
-            textShadow: `0 2px 4px ${style.shadowColor}`
-          }}>
-            {quote.content}
-          </p>
-          <p className={cn(
-            "text-center font-medium mt-4",
-            "text-xl",
-            style.textColor
-          )}
-          style={{
-            textShadow: `0 1px 3px ${style.shadowColor}`
-          }}>
-            — {quote.authorProfile?.name || "Unknown"}
-          </p>
-        </div>
-      </div>
+      {/* Content Layer */}
+      <QuoteContent 
+        content={quote.content}
+        author={quote.authorProfile?.name}
+        fontSize={fontSize}
+        textColor={style.textColor}
+        shadowColor={style.shadowColor}
+        className="z-10"
+      />
     </QuoteLayout>
   );
 }

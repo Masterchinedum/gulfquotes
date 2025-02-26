@@ -1,4 +1,3 @@
-// app/(general)/quotes/[slug]/components/quote-background.tsx
 "use client"
 
 import React from "react";
@@ -6,55 +5,91 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Gallery } from "@prisma/client";
 
-// Helper function to create a properly typed default background
-function createDefaultBackground(): Gallery {
-  return {
-    id: "default",
-    url: "",
-    publicId: "default",
-    title: "Default",
-    description: null,
-    altText: null,
-    format: null,
-    width: null, 
-    height: null,
-    bytes: null,
-    type: "SOLID",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    userId: null,
-    isPublic: true,
-    // Add the missing properties from the error message
-    isGlobal: false,
-    usageCount: 0
-  } as Gallery;
+interface QuoteBackgroundProps {
+  background: Gallery | string | null;
+  overlayStyle?: keyof typeof overlayStyles;
+  className?: string;
 }
 
-interface QuoteBackgroundProps {
-  // Update this to handle string or Gallery
-  background: Gallery | string | null;
-  overlayStyle: string;
-  className?: string;
-  imageClassName?: string;
-}
+// Overlay style configurations
+const overlayStyles = {
+  dark: "bg-gradient-to-t from-black/70 via-black/40 to-black/30",
+  light: "bg-white/60",
+  gradient: "bg-gradient-to-br from-primary/50 to-secondary/50 mix-blend-overlay",
+  transparent: "",
+} as const;
 
 export function QuoteBackground({
   background,
-  overlayStyle,
+  overlayStyle = "dark",
+  className,
 }: QuoteBackgroundProps) {
+  // Handle different background types
   const backgroundUrl = typeof background === 'string' 
     ? background 
     : background?.url || null;
 
   return (
-    <div 
-      className={cn(
-        "absolute inset-0 rounded-lg overflow-hidden", 
-        overlayStyle,
-        backgroundUrl ? "bg-image" : ""
+    <div className={cn("relative w-full h-full", className)}>
+      {/* Background Container */}
+      <div className="absolute inset-0 overflow-hidden">
+        {backgroundUrl ? (
+          // Image Background
+          <div className="relative w-full h-full">
+            <Image
+              src={backgroundUrl}
+              alt="Quote background"
+              fill
+              sizes="(max-width: 1080px) 100vw, 1080px"
+              className={cn(
+                "object-cover", // Ensures image covers the area
+                "w-full h-full",
+                "select-none pointer-events-none" // Prevent interaction with image
+              )}
+              priority // Load image immediately
+              quality={90} // High quality for aesthetics
+            />
+          </div>
+        ) : (
+          // Solid/Gradient Background (when no image)
+          <div 
+            className={cn(
+              "absolute inset-0",
+              "bg-gradient-to-br from-primary/10 to-secondary/5"
+            )} 
+          />
+        )}
+      </div>
+
+      {/* Overlay Layer */}
+      {overlayStyle !== "transparent" && (
+        <div 
+          className={cn(
+            "absolute inset-0",
+            overlayStyles[overlayStyle],
+            "transition-opacity duration-200"
+          )} 
+        />
       )}
-      style={backgroundUrl ? { backgroundImage: `url(${backgroundUrl})` } : {}}
-    />
+
+      {/* Optional Texture */}
+      <div 
+        className={cn(
+          "absolute inset-0",
+          "opacity-5 mix-blend-overlay pointer-events-none",
+          "bg-[url('/textures/noise.png')] bg-repeat"
+        )} 
+      />
+
+      {/* Border Overlay */}
+      <div 
+        className={cn(
+          "absolute inset-0",
+          "border border-white/10 rounded-lg",
+          "pointer-events-none"
+        )} 
+      />
+    </div>
   );
 }
 
@@ -122,7 +157,7 @@ export function BackgroundSelector({
 }
 
 /**
- * Preset background styles for the quote display
+ * Preset background styles with text color coordination
  */
 export const backgroundStyles = {
   dark: {
@@ -145,4 +180,7 @@ export const backgroundStyles = {
     textColor: "text-white",
     shadowColor: "rgba(0,0,0,0.2)"
   }
-};
+} as const;
+
+// Types for style configurations
+export type BackgroundStyle = keyof typeof backgroundStyles;

@@ -1,7 +1,11 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
 import { cn } from "@/lib/utils";
+import { useViewportScale } from "@/hooks/use-viewport-scale";
+
+const CANVAS_SIZE = 1080; // Fixed size for width and height
+const PADDING = 40; // Fixed padding that will scale proportionally
 
 interface QuoteLayoutProps {
   children: React.ReactNode;
@@ -9,44 +13,23 @@ interface QuoteLayoutProps {
   innerRef?: React.RefObject<HTMLDivElement>;
 }
 
-const CANVAS_SIZE = 1080; // Fixed size for width and height
-const PADDING = 40; // Fixed padding that will scale proportionally
-
-/**
- * QuoteLayout - A standardized layout component for displaying quotes
- * with consistent dimensions and padding
- */
 export function QuoteLayout({
   children,
   className,
   innerRef,
 }: QuoteLayoutProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
-  const [containerWidth, setContainerWidth] = useState(CANVAS_SIZE);
-
-  // Calculate and update scale based on container width
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const updateScale = () => {
-      const parentWidth = containerRef.current?.parentElement?.offsetWidth || CANVAS_SIZE;
-      const newScale = Math.min(1, parentWidth / CANVAS_SIZE);
-      setScale(newScale);
-      setContainerWidth(parentWidth);
-    };
-
-    // Initial calculation
-    updateScale();
-
-    // Add resize observer
-    const resizeObserver = new ResizeObserver(updateScale);
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current.parentElement as Element);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  
+  const { scale, containerWidth, contentScale } = useViewportScale(
+    containerRef,
+    {
+      targetWidth: CANVAS_SIZE,
+      targetHeight: CANVAS_SIZE,
+      minScale: 0.1,
+      maxScale: 1,
+      padding: PADDING
     }
-
-    return () => resizeObserver.disconnect();
-  }, []);
+  );
 
   return (
     <div 
@@ -74,7 +57,7 @@ export function QuoteLayout({
         <div 
           className="absolute inset-0 bg-white overflow-hidden"
           style={{ 
-            padding: `${PADDING}px`,
+            padding: `${PADDING * contentScale}px`,
           }}
         >
           {/* Content container */}
