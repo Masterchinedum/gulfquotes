@@ -14,7 +14,6 @@ interface QuoteDownloadProps {
   onAfterDownload?: () => void;
   className?: string;
   filename?: string;
-  quality?: 'high' | 'standard' | 'web'; // Add quality prop
 }
 
 export function QuoteDownload({
@@ -23,52 +22,20 @@ export function QuoteDownload({
   onAfterDownload,
   className,
   filename,
-  quality: propQuality = 'standard' // Add default value
 }: QuoteDownloadProps) {
   const { 
     downloadImage, 
-    setQuality, 
     isLoading, 
-    progress, 
-    quality 
+    progress
   } = useQuoteDownload({
     containerRef,
     onPrepareDownload: onBeforeDownload,
     onDownloadComplete: onAfterDownload,
-    filename,
-    initialQuality: propQuality // Pass quality to hook
+    filename
   });
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Quality Selection */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-medium">Quality Settings</h3>
-        <div className="grid grid-cols-3 gap-4">
-          <Button 
-            variant={quality === 'high' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setQuality('high')}
-          >
-            High Quality
-          </Button>
-          <Button 
-            variant={quality === 'standard' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setQuality('standard')}
-          >
-            Standard
-          </Button>
-          <Button 
-            variant={quality === 'web' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setQuality('web')}
-          >
-            Web
-          </Button>
-        </div>
-      </div>
-
       {/* Download Progress */}
       {isLoading && (
         <Progress value={progress} className="h-2" />

@@ -9,8 +9,8 @@ import { Gallery } from "@prisma/client";
 import { QuoteBackgroundSwitcher } from "./quote-background-switcher";
 import { QuoteDownload } from "./quote-download";
 import { QuoteShare } from "./quote-share";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+// import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+// import { Label } from "@/components/ui/label";
 import type { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
 
 interface QuoteActionsProps {
@@ -32,10 +32,9 @@ export function QuoteActions({
 }: QuoteActionsProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("backgrounds");
-  const [quality, setQuality] = useState<"high" | "standard" | "web">("standard");
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn("space-y-4", className)}>
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="backgrounds">
@@ -66,53 +65,12 @@ export function QuoteActions({
 
         {/* Download Options */}
         {activeTab === "download" && (
-          <div className="pt-4 space-y-6">
-            <div className="space-y-3">
-              <h3 className="text-sm font-medium">Quality Settings</h3>
-              <RadioGroup
-                value={quality}
-                onValueChange={(value) => setQuality(value as typeof quality)}
-                className="grid grid-cols-3 gap-4"
-              >
-                <div>
-                  <RadioGroupItem value="high" id="high" className="peer sr-only" />
-                  <Label
-                    htmlFor="high"
-                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                  >
-                    <span>High</span>
-                    <span className="text-xs text-muted-foreground">3x Scale</span>
-                  </Label>
-                </div>
-                <div>
-                  <RadioGroupItem value="standard" id="standard" className="peer sr-only" />
-                  <Label
-                    htmlFor="standard"
-                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                  >
-                    <span>Standard</span>
-                    <span className="text-xs text-muted-foreground">2x Scale</span>
-                  </Label>
-                </div>
-                <div>
-                  <RadioGroupItem value="web" id="web" className="peer sr-only" />
-                  <Label
-                    htmlFor="web"
-                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                  >
-                    <span>Web</span>
-                    <span className="text-xs text-muted-foreground">1.5x Scale</span>
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-
+          <div className="pt-4">
             <QuoteDownload
               containerRef={containerRef}
               filename={`quote-${quote.slug}`}
               onBeforeDownload={() => setIsLoading(true)}
               onAfterDownload={() => setIsLoading(false)}
-              quality={quality}
             />
           </div>
         )}

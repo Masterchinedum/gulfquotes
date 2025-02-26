@@ -3,6 +3,7 @@ import { AppError } from "@/lib/api-error";
 import html2canvas from "html2canvas";
 // import type { QuoteDisplayData } from "./public-quote/quote-display.service";
 
+// Simplify interfaces
 export interface DownloadSettings {
   width: number;
   height: number;
@@ -12,52 +13,25 @@ export interface DownloadSettings {
 }
 
 export interface GenerateImageOptions {
-  quality?: number;
   format?: 'png' | 'jpg' | 'webp';
-  scale?: number;
-  width?: number;
-  height?: number;
 }
 
-// Quality presets for different use cases
-export const QUALITY_PRESETS = {
-  high: {
-    width: 1080 * 3,
-    height: 1080 * 3,
-    quality: 1.0,
-    scale: 3,
-    format: 'png' as const
-  },
-  standard: {
-    width: 1080 * 2,
-    height: 1080 * 2,
-    quality: 0.9,
-    scale: 2,
-    format: 'png' as const
-  },
-  web: {
-    width: 1080 * 1.5,
-    height: 1080 * 1.5,
-    quality: 0.8,
-    scale: 1.5,
-    format: 'webp' as const
-  }
+// Single fixed configuration
+const DOWNLOAD_CONFIG = {
+  width: 1080,
+  height: 1080,
+  quality: 0.9, // High quality
+  scale: 2,     // Retina display support
+  format: 'png' as const
 } as const;
 
-const CANVAS_SIZE = 1080;
-
 class QuoteDownloadService {
-  private readonly DEFAULT_SCALE = 2;
-
-  /**
-   * Generate high-quality image from DOM element
-   */
   async generateImage(
     element: HTMLElement,
     options: GenerateImageOptions = {}
   ): Promise<string> {
     try {
-      // Store original styles as an object
+      // Store original styles
       const originalStyles = {
         width: element.style.width,
         height: element.style.height,
@@ -65,9 +39,9 @@ class QuoteDownloadService {
         transform: element.style.transform
       };
 
-      // Set styles individually instead of using Object.assign
-      element.style.width = `${CANVAS_SIZE}px`;
-      element.style.height = `${CANVAS_SIZE}px`;
+      // Set fixed dimensions
+      element.style.width = `${DOWNLOAD_CONFIG.width}px`;
+      element.style.height = `${DOWNLOAD_CONFIG.height}px`;
       element.style.position = 'relative';
       element.style.transform = 'none';
 
@@ -77,20 +51,23 @@ class QuoteDownloadService {
       ]);
 
       const canvas = await html2canvas(element, {
-        width: CANVAS_SIZE,
-        height: CANVAS_SIZE,
-        scale: options.scale || QUALITY_PRESETS.standard.scale,
+        width: DOWNLOAD_CONFIG.width,
+        height: DOWNLOAD_CONFIG.height,
+        scale: DOWNLOAD_CONFIG.scale,
         useCORS: true,
         logging: false,
         backgroundColor: null,
         allowTaint: true,
         onclone: (clonedDoc, clonedElement) => {
-          // Fix background image scaling in cloned element
-          const backgroundElements = clonedElement.getElementsByClassName('bg-image');
-          Array.from(backgroundElements).forEach((bgElement) => {
+          const backgroundElements = [
+            ...Array.from(clonedElement.getElementsByClassName('bg-image')),
+            ...Array.from(clonedElement.getElementsByTagName('img'))
+          ];
+          
+          backgroundElements.forEach((bgElement) => {
             if (bgElement instanceof HTMLElement) {
-              bgElement.style.backgroundSize = 'cover';
-              bgElement.style.backgroundPosition = 'center';
+              bgElement.style.objectFit = 'cover';
+              bgElement.style.objectPosition = 'center';
               bgElement.style.width = '100%';
               bgElement.style.height = '100%';
             }
@@ -98,24 +75,20 @@ class QuoteDownloadService {
         }
       });
 
-      // Restore styles individually
+      // Restore original styles
       element.style.width = originalStyles.width;
       element.style.height = originalStyles.height;
       element.style.position = originalStyles.position;
       element.style.transform = originalStyles.transform;
 
-      // Process and optimize the output
+      // Process canvas with fixed settings
       return this.processCanvas(canvas, {
-        ...QUALITY_PRESETS[this.getQualityPreset(options)],
-        ...options
+        ...DOWNLOAD_CONFIG,
+        format: options.format || DOWNLOAD_CONFIG.format
       });
     } catch (error) {
       console.error("[QUOTE_DOWNLOAD_SERVICE]", error);
-      throw new AppError(
-        "Failed to generate image",
-        "IMAGE_UPLOAD_FAILED",
-        500
-      );
+      throw new AppError("Failed to generate image", "IMAGE_UPLOAD_FAILED", 500);
     }
   }
 
@@ -173,35 +146,7 @@ class QuoteDownloadService {
     }
   }
 
-  /**
-   * Normalize settings with defaults
-   */
-  private normalizeSettings(options: GenerateImageOptions): DownloadSettings {
-    const preset = QUALITY_PRESETS[
-      this.getQualityPreset(options)
-    ];
-
-    return {
-      width: options.width || preset.width,
-      height: options.height || preset.height,
-      quality: options.quality || preset.quality,
-      scale: options.scale || preset.scale,
-      format: options.format || preset.format
-    };
-  }
-
-  /**
-   * Get appropriate quality preset based on options
-   */
-  private getQualityPreset(options: GenerateImageOptions): keyof typeof QUALITY_PRESETS {
-    if (options.scale && options.scale >= 3) return 'high';
-    if (options.format === 'webp') return 'web';
-    return 'standard';
-  }
-
-  /**
-   * Get proper mime type for format
-   */
+  // Remove unused methods
   private getMimeType(format: DownloadSettings['format']): string {
     switch (format) {
       case 'jpg':
@@ -212,29 +157,6 @@ class QuoteDownloadService {
         return 'image/png';
     }
   }
-
-  /**
-   * Calculate optimal dimensions
-   */
-  getOptimalDimensions(targetWidth: number, targetHeight: number): {
-    width: number;
-    height: number;
-    scale: number;
-  } {
-    const maxSize = 5000; // Maximum size limit
-    const scale = Math.min(
-      maxSize / targetWidth,
-      maxSize / targetHeight,
-      3 // Maximum scale factor
-    );
-
-    return {
-      width: Math.round(targetWidth * scale),
-      height: Math.round(targetHeight * scale),
-      scale
-    };
-  }
 }
 
-// Export service instance
 export const quoteDownloadService = new QuoteDownloadService();

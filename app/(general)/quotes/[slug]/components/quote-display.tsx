@@ -7,7 +7,7 @@ import { Gallery } from "@prisma/client";
 import { QuoteBackground, backgroundStyles } from "./quote-background";
 import { QuoteLayout } from "./quote-layout";
 import { QuoteContent } from "./quote-content";
-import { quoteDownloadService, QUALITY_PRESETS } from "@/lib/services/quote-download.service";
+import { quoteDownloadService } from "@/lib/services/quote-download.service";
 
 interface QuoteDisplayProps {
   quote: QuoteDisplayData;
@@ -21,17 +21,14 @@ interface QuoteDisplayProps {
 }
 
 export async function prepareForDownload(
-  element: HTMLElement,
-  quality: keyof typeof QUALITY_PRESETS = 'standard'
+  element: HTMLElement
 ): Promise<string> {
   // Clone the element for download
   const clone = element.cloneNode(true) as HTMLElement;
   document.body.appendChild(clone);
   
   try {
-    const dataUrl = await quoteDownloadService.generateImage(clone, {
-      ...QUALITY_PRESETS[quality]
-    });
+    const dataUrl = await quoteDownloadService.generateImage(clone);
     return dataUrl;
   } finally {
     document.body.removeChild(clone);

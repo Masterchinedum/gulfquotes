@@ -65,14 +65,15 @@ export function QuoteBackground({
               src={backgroundUrl}
               alt="Quote background"
               fill
-              sizes="(max-width: 1080px) 100vw, 1080px"
               className={cn(
-                "object-cover", // Ensures image covers the area
+                "object-cover",
                 "w-full h-full",
-                "select-none pointer-events-none" // Prevent interaction with image
+                "select-none pointer-events-none",
+                "bg-image" // Add this class for download handler
               )}
-              priority // Load image immediately
-              quality={90} // High quality for aesthetics
+              sizes="1080px"
+              style={{ objectPosition: 'center' }} // Explicit positioning
+              priority
             />
           </div>
         ) : (
