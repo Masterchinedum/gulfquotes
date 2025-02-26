@@ -49,17 +49,14 @@ export function QuoteBackground({
   overlayStyle = "dark",
   className,
 }: QuoteBackgroundProps) {
-  // Handle different background types
   const backgroundUrl = typeof background === 'string' 
     ? background 
     : background?.url || null;
 
   return (
     <div className={cn("relative w-full h-full", className)}>
-      {/* Background Container */}
       <div className="absolute inset-0 overflow-hidden">
         {backgroundUrl ? (
-          // Image Background
           <div className="relative w-full h-full">
             <Image
               src={backgroundUrl}
@@ -69,11 +66,15 @@ export function QuoteBackground({
                 "object-cover",
                 "w-full h-full",
                 "select-none pointer-events-none",
-                "bg-image" // Add this class for download handler
+                "quote-background-image" // Specific class for download handler
               )}
               sizes="1080px"
-              style={{ objectPosition: 'center' }} // Explicit positioning
+              style={{ 
+                objectFit: 'cover',
+                objectPosition: 'center'
+              }}
               priority
+              unoptimized // Prevent Next.js image optimization for download
             />
           </div>
         ) : (

@@ -59,17 +59,19 @@ class QuoteDownloadService {
         backgroundColor: null,
         allowTaint: true,
         onclone: (clonedDoc, clonedElement) => {
-          const backgroundElements = [
-            ...Array.from(clonedElement.getElementsByClassName('bg-image')),
-            ...Array.from(clonedElement.getElementsByTagName('img'))
-          ];
+          // Target specific quote background images
+          const backgroundElements = clonedElement.getElementsByClassName('quote-background-image');
           
-          backgroundElements.forEach((bgElement) => {
+          Array.from(backgroundElements).forEach((bgElement) => {
             if (bgElement instanceof HTMLElement) {
-              bgElement.style.objectFit = 'cover';
-              bgElement.style.objectPosition = 'center';
+              // Ensure consistent scaling and positioning
+              bgElement.style.position = 'absolute';
+              bgElement.style.inset = '0';
               bgElement.style.width = '100%';
               bgElement.style.height = '100%';
+              bgElement.style.objectFit = 'cover';
+              bgElement.style.objectPosition = 'center';
+              bgElement.style.transform = 'none';
             }
           });
         }
@@ -122,7 +124,7 @@ class QuoteDownloadService {
         throw new Error('Failed to get canvas context');
       }
 
-      // Enable image smoothing
+      // Enable high-quality image scaling
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
 
