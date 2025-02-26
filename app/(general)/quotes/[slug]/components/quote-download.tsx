@@ -41,27 +41,17 @@ export function QuoteDownload({
         <Progress value={progress} className="h-2" />
       )}
 
-      {/* Download Buttons */}
-      <div className="flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => downloadImage('png')}
-          disabled={isLoading}
-        >
-          <Download className="h-4 w-4 mr-2" />
-          Download PNG
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => downloadImage('jpg')}
-          disabled={isLoading}
-        >
-          <Download className="h-4 w-4 mr-2" />
-          Download JPG
-        </Button>
-      </div>
+      {/* Single Download Button */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => downloadImage('png')}
+        disabled={isLoading}
+        className="w-full"
+      >
+        <Download className="h-4 w-4 mr-2" />
+        Download Quote
+      </Button>
     </div>
   );
 }

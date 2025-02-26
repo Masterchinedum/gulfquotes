@@ -1,27 +1,24 @@
 // lib/services/quote-download.service.ts
 import { AppError } from "@/lib/api-error";
 import html2canvas from "html2canvas";
-// import type { QuoteDisplayData } from "./public-quote/quote-display.service";
 
-// Simplify interfaces
+// Simplified interfaces
 export interface DownloadSettings {
   width: number;
   height: number;
-  quality: number;
-  scale: number;
-  format: 'png' | 'jpg' | 'webp';
+  format: 'png' | 'jpg';  // Remove webp for better compatibility
 }
 
 export interface GenerateImageOptions {
-  format?: 'png' | 'jpg' | 'webp';
+  format?: 'png' | 'jpg';
 }
 
-// Single fixed configuration
+// Fixed configuration for all downloads
 const DOWNLOAD_CONFIG = {
   width: 1080,
   height: 1080,
-  quality: 0.9, // High quality
-  scale: 2,     // Retina display support
+  quality: 1,     // Always use maximum quality
+  scale: 2,       // Retina display support
   format: 'png' as const
 } as const;
 
@@ -153,8 +150,6 @@ class QuoteDownloadService {
     switch (format) {
       case 'jpg':
         return 'image/jpeg';
-      case 'webp':
-        return 'image/webp';
       default:
         return 'image/png';
     }

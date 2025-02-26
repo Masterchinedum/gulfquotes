@@ -97,14 +97,14 @@ export function QuoteBackground({
         "backdrop-filter backdrop-grayscale"
       )} />
 
-      {/* Optional Texture */}
+      {/* Optional Texture
       <div 
         className={cn(
           "absolute inset-0",
           "opacity-5 mix-blend-overlay pointer-events-none",
           "bg-[url('/textures/noise.png')] bg-repeat"
         )} 
-      />
+      /> */}
 
       {/* Border Overlay */}
       <div 
