@@ -87,11 +87,13 @@ class QuoteDownloadService {
         onclone: (clonedDoc, clonedElement) => {
           // Fix background image scaling in cloned element
           const backgroundElements = clonedElement.getElementsByClassName('bg-image');
-          Array.from(backgroundElements).forEach((bgElement: HTMLElement) => {
-            bgElement.style.backgroundSize = 'cover';
-            bgElement.style.backgroundPosition = 'center';
-            bgElement.style.width = '100%';
-            bgElement.style.height = '100%';
+          Array.from(backgroundElements).forEach((bgElement) => {
+            if (bgElement instanceof HTMLElement) {
+              bgElement.style.backgroundSize = 'cover';
+              bgElement.style.backgroundPosition = 'center';
+              bgElement.style.width = '100%';
+              bgElement.style.height = '100%';
+            }
           });
         }
       });
