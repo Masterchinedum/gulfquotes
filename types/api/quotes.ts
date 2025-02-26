@@ -101,8 +101,8 @@ export type ImageErrorCode =
 
 // Quote specific error codes
 export type QuoteErrorCode = 
-  | BaseErrorCode
-  | ImageErrorCode
+  | BaseErrorCode  // includes "INTERNAL_ERROR", "BAD_REQUEST", etc.
+  | ImageErrorCode // includes "IMAGE_UPLOAD_FAILED", "IMAGE_PROCESSING_FAILED", etc.
   | "DUPLICATE_SLUG"
   | "CONTENT_TOO_LONG"
   | "CONCURRENT_MODIFICATION"
