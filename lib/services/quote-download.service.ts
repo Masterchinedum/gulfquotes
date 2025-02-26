@@ -82,7 +82,6 @@ class QuoteDownloadService {
         useCORS: true,
         logging: false,
         backgroundColor: null,
-        imageRendering: 'high-quality',
         allowTaint: true
       });
 

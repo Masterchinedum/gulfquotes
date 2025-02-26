@@ -1,22 +1,21 @@
 // hooks/use-quote-download.ts
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
-// import type { Gallery } from '@prisma/client';
-import { quoteDownloadService } from '@/lib/services/quote-download.service';
+import { quoteDownloadService, QUALITY_PRESETS } from '@/lib/services/quote-download.service';
 
 interface UseQuoteDownloadOptions {
   containerRef: React.RefObject<HTMLDivElement>;
   onPrepareDownload?: () => void;
   onDownloadComplete?: () => void;
   filename?: string;
-  initialQuality?: 'high' | 'standard' | 'web';
+  initialQuality?: keyof typeof QUALITY_PRESETS;
 }
 
 interface DownloadState {
   isLoading: boolean;
   progress: number;
   error: Error | null;
-  quality: 'high' | 'standard' | 'web';
+  quality: keyof typeof QUALITY_PRESETS;
 }
 
 export function useQuoteDownload({
@@ -93,7 +92,7 @@ export function useQuoteDownload({
       const dataUrl = await quoteDownloadService.generateImage(
         containerRef.current,
         {
-          ...quoteDownloadService.QUALITY_PRESETS[downloadState.quality],
+          ...QUALITY_PRESETS[downloadState.quality],
           format
         }
       );
