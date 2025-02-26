@@ -87,15 +87,13 @@ export function QuoteBackground({
       </div>
 
       {/* Overlay Layer */}
-      {overlayStyle !== "transparent" && (
-        <div 
-          className={cn(
-            "absolute inset-0",
-            overlayStyles[overlayStyle],
-            "transition-opacity duration-200"
-          )} 
-        />
-      )}
+      <div className={cn(
+        "absolute inset-0",
+        overlayStyles[overlayStyle],
+        "transition-opacity duration-200",
+        "opacity-5 mix-blend-overlay",
+        "backdrop-filter backdrop-grayscale"
+      )} />
 
       {/* Optional Texture */}
       <div 

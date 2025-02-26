@@ -57,24 +57,25 @@ class QuoteDownloadService {
     options: GenerateImageOptions = {}
   ): Promise<string> {
     try {
-      // Store original styles
-      const originalStyles = { ...element.style };
-      
-      // Set optimal rendering styles
-      Object.assign(element.style, {
-        width: `${CANVAS_SIZE}px`,
-        height: `${CANVAS_SIZE}px`,
-        transform: 'none',
-        position: 'relative'
-      });
+      // Store original styles as an object
+      const originalStyles = {
+        width: element.style.width,
+        height: element.style.height,
+        position: element.style.position,
+        transform: element.style.transform
+      };
 
-      // Wait for assets
+      // Set styles individually instead of using Object.assign
+      element.style.width = `${CANVAS_SIZE}px`;
+      element.style.height = `${CANVAS_SIZE}px`;
+      element.style.position = 'relative';
+      element.style.transform = 'none';
+
       await Promise.all([
         document.fonts.ready,
         this.waitForImages(element)
       ]);
 
-      // Generate canvas with high quality settings
       const canvas = await html2canvas(element, {
         width: CANVAS_SIZE,
         height: CANVAS_SIZE,
@@ -82,11 +83,24 @@ class QuoteDownloadService {
         useCORS: true,
         logging: false,
         backgroundColor: null,
-        allowTaint: true
+        allowTaint: true,
+        onclone: (clonedDoc, clonedElement) => {
+          // Fix background image scaling in cloned element
+          const backgroundElements = clonedElement.getElementsByClassName('bg-image');
+          Array.from(backgroundElements).forEach((bgElement: HTMLElement) => {
+            bgElement.style.backgroundSize = 'cover';
+            bgElement.style.backgroundPosition = 'center';
+            bgElement.style.width = '100%';
+            bgElement.style.height = '100%';
+          });
+        }
       });
 
-      // Restore original styles
-      Object.assign(element.style, originalStyles);
+      // Restore styles individually
+      element.style.width = originalStyles.width;
+      element.style.height = originalStyles.height;
+      element.style.position = originalStyles.position;
+      element.style.transform = originalStyles.transform;
 
       // Process and optimize the output
       return this.processCanvas(canvas, {

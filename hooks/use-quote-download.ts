@@ -32,53 +32,6 @@ export function useQuoteDownload({
     quality: initialQuality
   });
 
-  // Update quality setting
-  const setQuality = useCallback((quality: DownloadState['quality']) => {
-    setDownloadState(prev => ({ ...prev, quality }));
-  }, []);
-
-  // Handle download preparation
-  const prepareDownload = useCallback(async () => {
-    if (!containerRef.current) return;
-
-    setDownloadState(prev => ({ 
-      ...prev, 
-      isLoading: true, 
-      progress: 0,
-      error: null 
-    }));
-
-    try {
-      onPrepareDownload?.();
-
-      // Wait for fonts to load
-      await document.fonts.ready;
-
-      // Wait for images
-      const images = containerRef.current.getElementsByTagName('img');
-      await Promise.all(
-        Array.from(images).map(img => {
-          if (img.complete) return Promise.resolve();
-          return new Promise<void>(resolve => {
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
-          });
-        })
-      );
-
-      setDownloadState(prev => ({ ...prev, progress: 50 }));
-
-    } catch (error) {
-      setDownloadState(prev => ({ 
-        ...prev, 
-        error: error as Error,
-        isLoading: false 
-      }));
-      toast.error('Failed to prepare download');
-    }
-  }, [containerRef, onPrepareDownload]);
-
-  // Handle download process
   const downloadImage = useCallback(async (format: 'png' | 'jpg') => {
     if (!containerRef.current) {
       toast.error('Download container not found');
@@ -86,9 +39,9 @@ export function useQuoteDownload({
     }
 
     try {
-      await prepareDownload();
+      setDownloadState(prev => ({ ...prev, isLoading: true, progress: 0 }));
+      onPrepareDownload?.();
 
-      // Generate image with current quality settings
       const dataUrl = await quoteDownloadService.generateImage(
         containerRef.current,
         {
@@ -107,16 +60,12 @@ export function useQuoteDownload({
       link.click();
       document.body.removeChild(link);
 
-      setDownloadState(prev => ({ 
-        ...prev, 
-        progress: 100,
-        isLoading: false 
-      }));
-
-      toast.success('Image downloaded successfully');
+      setDownloadState(prev => ({ ...prev, progress: 100, isLoading: false }));
       onDownloadComplete?.();
+      toast.success('Download complete');
 
     } catch (error) {
+      console.error('Download error:', error);
       setDownloadState(prev => ({ 
         ...prev, 
         error: error as Error,
@@ -129,13 +78,15 @@ export function useQuoteDownload({
     containerRef,
     downloadState.quality,
     filename,
-    onDownloadComplete,
-    prepareDownload
+    onPrepareDownload,
+    onDownloadComplete
   ]);
 
   return {
     downloadImage,
-    setQuality,
+    setQuality: useCallback((quality: DownloadState['quality']) => {
+      setDownloadState(prev => ({ ...prev, quality }));
+    }, []),
     isLoading: downloadState.isLoading,
     progress: downloadState.progress,
     error: downloadState.error,
