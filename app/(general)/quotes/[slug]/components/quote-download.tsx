@@ -41,7 +41,7 @@ export function QuoteDownload({
         <Progress value={progress} className="h-2" />
       )}
 
-      {/* Single Download Button */}
+      {/* Download Button */}
       <Button
         variant="outline"
         size="sm"

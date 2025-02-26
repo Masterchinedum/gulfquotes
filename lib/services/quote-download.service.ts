@@ -6,7 +6,7 @@ import html2canvas from "html2canvas";
 export interface DownloadSettings {
   width: number;
   height: number;
-  format: 'png' | 'jpg';  // Remove webp for better compatibility
+  format: 'png' | 'jpg';
 }
 
 export interface GenerateImageOptions {
@@ -132,9 +132,9 @@ class QuoteDownloadService {
         0, 0, settings.width, settings.height
       );
 
-      // Convert to proper format with quality settings
+      // Convert to proper format with fixed quality (1.0)
       const mimeType = this.getMimeType(settings.format);
-      return outputCanvas.toDataURL(mimeType, settings.quality);
+      return outputCanvas.toDataURL(mimeType, 1.0);
     } catch (error) {
       console.error("[QUOTE_DOWNLOAD_SERVICE]", error);
       throw new AppError(
@@ -145,14 +145,9 @@ class QuoteDownloadService {
     }
   }
 
-  // Remove unused methods
+  // Update getMimeType to only handle PNG and JPG
   private getMimeType(format: DownloadSettings['format']): string {
-    switch (format) {
-      case 'jpg':
-        return 'image/jpeg';
-      default:
-        return 'image/png';
-    }
+    return format === 'jpg' ? 'image/jpeg' : 'image/png';
   }
 }
 
