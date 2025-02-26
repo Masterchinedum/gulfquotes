@@ -88,7 +88,7 @@ async function optimizeImage(imageData: string, settings: ReturnType<typeof norm
     console.error('Image optimization error:', error);
     throw new AppError(
       'Failed to optimize image', 
-      'IMAGE_PROCESSING_FAILED', // Using a valid error code
+      'IMAGE_UPLOAD_FAILED', // Using existing valid error code
       500
     );
   }
