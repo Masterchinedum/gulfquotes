@@ -9,6 +9,7 @@ interface UseQuoteDownloadOptions {
   onPrepareDownload?: () => void;
   onDownloadComplete?: () => void;
   filename?: string;
+  initialQuality?: 'high' | 'standard' | 'web';
 }
 
 interface DownloadState {
@@ -22,13 +23,14 @@ export function useQuoteDownload({
   containerRef,
   onPrepareDownload,
   onDownloadComplete,
-  filename = 'quote'
+  filename = 'quote',
+  initialQuality = 'standard'
 }: UseQuoteDownloadOptions) {
   const [downloadState, setDownloadState] = useState<DownloadState>({
     isLoading: false,
     progress: 0,
     error: null,
-    quality: 'standard'
+    quality: initialQuality
   });
 
   // Update quality setting

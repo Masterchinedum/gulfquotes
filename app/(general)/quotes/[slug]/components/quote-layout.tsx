@@ -11,12 +11,16 @@ interface QuoteLayoutProps {
   children: React.ReactNode;
   className?: string;
   innerRef?: React.RefObject<HTMLDivElement>;
+  onPrepareDownload?: () => void;  // Add this
+  onDownloadComplete?: () => void;  // Add this
 }
 
 export function QuoteLayout({
   children,
   className,
   innerRef,
+  onPrepareDownload,  // Add this
+  onDownloadComplete  // Add this
 }: QuoteLayoutProps) {
   // Explicitly type the ref as MutableRefObject<HTMLDivElement>
   const containerRef = React.useRef<HTMLDivElement>(null) as React.MutableRefObject<HTMLDivElement>;
@@ -32,6 +36,19 @@ export function QuoteLayout({
     }
   );
 
+  // Add download lifecycle event handlers
+  const handleBeforeDownload = React.useCallback(() => {
+    if (innerRef?.current) {
+      onPrepareDownload?.();
+    }
+  }, [innerRef, onPrepareDownload]);
+
+  const handleDownloadComplete = React.useCallback(() => {
+    if (innerRef?.current) {
+      onDownloadComplete?.();
+    }
+  }, [innerRef, onDownloadComplete]);
+
   return (
     <div 
       ref={containerRef}
@@ -43,6 +60,8 @@ export function QuoteLayout({
         width: `${containerWidth}px`,
         height: `${containerWidth}px`, // Keep aspect ratio 1:1
       }}
+      onMouseDown={handleBeforeDownload}  // Trigger before download starts
+      onMouseUp={handleDownloadComplete}   // Trigger after download completes
     >
       {/* Fixed size canvas container */}
       <div 

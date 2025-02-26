@@ -7,7 +7,7 @@ import { Gallery } from "@prisma/client";
 import { QuoteBackground, backgroundStyles } from "./quote-background";
 import { QuoteLayout } from "./quote-layout";
 import { QuoteContent } from "./quote-content";
-import { quoteDownloadService } from "@/lib/services/quote-download.service";
+import { quoteDownloadService, QUALITY_PRESETS } from "@/lib/services/quote-download.service";
 
 interface QuoteDisplayProps {
   quote: QuoteDisplayData;
@@ -22,7 +22,7 @@ interface QuoteDisplayProps {
 
 export async function prepareForDownload(
   element: HTMLElement,
-  quality: 'high' | 'standard' | 'web' = 'standard'
+  quality: keyof typeof QUALITY_PRESETS = 'standard'
 ): Promise<string> {
   // Clone the element for download
   const clone = element.cloneNode(true) as HTMLElement;
@@ -30,7 +30,7 @@ export async function prepareForDownload(
   
   try {
     const dataUrl = await quoteDownloadService.generateImage(clone, {
-      ...quoteDownloadService.QUALITY_PRESETS[quality]
+      ...QUALITY_PRESETS[quality]
     });
     return dataUrl;
   } finally {
@@ -49,7 +49,8 @@ export function QuoteDisplay({
   onDownloadComplete
 }: QuoteDisplayProps) {
   const localRef = useRef<HTMLDivElement>(null);
-  const ref = (containerRef || localRef);
+  // Cast the ref to MutableRefObject to match QuoteLayout's expectations
+  const ref = (containerRef || localRef) as React.MutableRefObject<HTMLDivElement>;
   
   const fontSize = useMemo(() => {
     if (propFontSize) return propFontSize;
@@ -72,14 +73,14 @@ export function QuoteDisplay({
 
   // Handle download preparation with proper dependencies
   const handlePrepareDownload = useCallback(() => {
-    if (ref?.current) {
+    if (ref.current) {
       onPrepareDownload?.();
     }
   }, [onPrepareDownload, ref]);
 
   // Handle download completion with proper dependencies  
   const handleDownloadComplete = useCallback(() => {
-    if (ref?.current) {
+    if (ref.current) {
       onDownloadComplete?.();
     }
   }, [onDownloadComplete, ref]);
