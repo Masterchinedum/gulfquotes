@@ -151,7 +151,7 @@ class QuoteDownloadService {
       console.error("[QUOTE_DOWNLOAD_SERVICE]", error);
       throw new AppError(
         "Failed to process image",
-        "IMAGE_PROCESSING_FAILED",
+        "IMAGE_UPLOAD_FAILED", // Using valid error code from AppErrorCode
         500
       );
     }
