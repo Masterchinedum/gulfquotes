@@ -18,10 +18,11 @@ export function QuoteLayout({
   className,
   innerRef,
 }: QuoteLayoutProps) {
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  // Explicitly type the ref as MutableRefObject<HTMLDivElement>
+  const containerRef = React.useRef<HTMLDivElement>(null) as React.MutableRefObject<HTMLDivElement>;
   
   const { scale, containerWidth, contentScale } = useViewportScale(
-    containerRef,
+    containerRef as React.RefObject<HTMLElement>,
     {
       targetWidth: CANVAS_SIZE,
       targetHeight: CANVAS_SIZE,

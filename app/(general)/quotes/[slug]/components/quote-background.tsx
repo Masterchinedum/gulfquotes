@@ -19,6 +19,31 @@ const overlayStyles = {
   transparent: "",
 } as const;
 
+/**
+ * Creates a default background gallery item
+ */
+function createDefaultBackground(): Gallery {
+  return {
+    id: "default",
+    url: "",
+    publicId: "default",
+    title: "Default",
+    description: null,
+    altText: null,
+    format: null,
+    width: null,
+    height: null,
+    bytes: null,
+    type: "SOLID",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    userId: null,
+    isPublic: true,
+    isGlobal: false,
+    usageCount: 0
+  } as Gallery;
+}
+
 export function QuoteBackground({
   background,
   overlayStyle = "dark",
