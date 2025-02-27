@@ -1,13 +1,14 @@
-// app/(general)/quotes/[slug]/components/quote-background-switcher.tsx
 "use client"
 
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { Check, ImageIcon } from "lucide-react";
-// import { Button } from "@/components/ui/button";
+import { Check, ImageIcon, Loader2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Gallery } from "@prisma/client";
+
+// Image cache for preloaded thumbnails
+const preloadedThumbnails = new Map<string, boolean>();
 
 interface QuoteBackgroundSwitcherProps {
   backgrounds: Array<Gallery & {
@@ -27,6 +28,12 @@ export function QuoteBackgroundSwitcher({
   isLoading = false,
   className
 }: QuoteBackgroundSwitcherProps) {
+  // Track loading state for individual images
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
+  
+  // Reference to previously selected background
+  const previousBackgroundRef = useRef<string | null>(null);
+
   // Create a default background option
   const defaultBackground: Gallery = {
     id: "default",
@@ -48,6 +55,60 @@ export function QuoteBackgroundSwitcher({
     usageCount: 0
   } as Gallery;
 
+  // Preload thumbnails when component mounts
+  useEffect(() => {
+    // Preload the most important images first (active and first few)
+    const priorityImages = backgrounds.filter(
+      bg => bg.id === activeBackground?.id || 
+      backgrounds.indexOf(bg) < 4
+    );
+    
+    priorityImages.forEach(background => {
+      if (!preloadedThumbnails.has(background.url)) {
+        const img = new Image();
+        img.onload = () => {
+          preloadedThumbnails.set(background.url, true);
+          // Update loading state to reflect loaded image
+          setLoadingStates(prev => ({
+            ...prev,
+            [background.id]: false
+          }));
+        };
+        img.src = background.url;
+        // Set initial loading state
+        setLoadingStates(prev => ({
+          ...prev,
+          [background.id]: true
+        }));
+      }
+    });
+  }, [backgrounds, activeBackground]);
+
+  // Handle background change with loading state
+  const handleBackgroundChange = async (background: Gallery) => {
+    previousBackgroundRef.current = activeBackground?.id || null;
+    
+    // Set loading state for this specific background
+    if (!preloadedThumbnails.has(background.url) && background.id !== "default") {
+      setLoadingStates(prev => ({
+        ...prev,
+        [background.id]: true
+      }));
+    }
+    
+    // Call the parent handler
+    await onBackgroundChange(background);
+    
+    // After change, mark as loaded
+    if (background.id !== "default") {
+      preloadedThumbnails.set(background.url, true);
+      setLoadingStates(prev => ({
+        ...prev,
+        [background.id]: false
+      }));
+    }
+  };
+
   return (
     <div className={cn("space-y-4", className)}>
       {/* Header */}
@@ -65,7 +126,7 @@ export function QuoteBackgroundSwitcher({
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 p-4">
           {/* Default Background Option */}
           <button
-            onClick={() => onBackgroundChange(defaultBackground)}
+            onClick={() => handleBackgroundChange(defaultBackground)}
             disabled={isLoading}
             className={cn(
               "group relative aspect-square overflow-hidden rounded-lg",
@@ -89,60 +150,91 @@ export function QuoteBackgroundSwitcher({
           </button>
 
           {/* Enhanced Background Options */}
-          {backgrounds.map((background) => (
-            <button
-              key={background.id}
-              onClick={() => onBackgroundChange(background)}
-              disabled={isLoading}
-              className={cn(
-                "group relative aspect-square overflow-hidden rounded-lg",
-                "border-2 transition-all duration-300 ease-in-out",
-                "hover:shadow-lg hover:scale-[1.02]",
-                activeBackground?.id === background.id
-                  ? "border-primary ring-2 ring-primary/30"
-                  : "border-transparent hover:border-primary/50",
-                isLoading && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              {/* Improved Image Preview */}
-              <Image
-                src={background.url}
-                alt={background.title || "Background option"}
-                fill
+          {backgrounds.map((background) => {
+            const isImageLoading = loadingStates[background.id] === true;
+            const wasSelected = previousBackgroundRef.current === background.id;
+            const isSelected = activeBackground?.id === background.id;
+            
+            return (
+              <button
+                key={background.id}
+                onClick={() => handleBackgroundChange(background)}
+                disabled={isLoading}
                 className={cn(
-                  "object-cover transition-all duration-500",
-                  "group-hover:scale-110",
-                  isLoading && "blur-sm"
+                  "group relative aspect-square overflow-hidden rounded-lg",
+                  "border-2 transition-all duration-300 ease-in-out",
+                  "hover:shadow-lg hover:scale-[1.02]",
+                  isSelected
+                    ? "border-primary ring-2 ring-primary/30"
+                    : "border-transparent hover:border-primary/50",
+                  isLoading && "opacity-50 cursor-not-allowed",
+                  wasSelected && "animate-pulse-once"
                 )}
-                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                priority={activeBackground?.id === background.id}
-              />
+              >
+                {/* Loading Spinner for Individual Images */}
+                {isImageLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10">
+                    <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                  </div>
+                )}
 
-              {/* Enhanced Selection Overlay */}
-              {activeBackground?.id === background.id && (
-                <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px]
-                              flex items-center justify-center transition-all duration-300">
-                  <Check className="h-6 w-6 text-primary drop-shadow-lg" />
+                {/* Improved Image Preview with Cache Awareness */}
+                <Image
+                  src={background.url}
+                  alt={background.title || "Background option"}
+                  fill
+                  className={cn(
+                    "object-cover transition-all duration-500",
+                    "group-hover:scale-110",
+                    (isImageLoading || isLoading) && "blur-sm brightness-90",
+                    preloadedThumbnails.has(background.url) ? "opacity-100" : "opacity-0"
+                  )}
+                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                  priority={isSelected}
+                  onLoadingComplete={() => {
+                    // Mark as loaded when Next.js finishes loading the image
+                    preloadedThumbnails.set(background.url, true);
+                    setLoadingStates(prev => ({
+                      ...prev,
+                      [background.id]: false
+                    }));
+                  }}
+                />
+
+                {/* Enhanced Selection Overlay */}
+                {isSelected && (
+                  <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px]
+                                flex items-center justify-center transition-all duration-300">
+                    <Check className="h-6 w-6 text-primary drop-shadow-lg" />
+                  </div>
+                )}
+
+                {/* Improved Hover Overlay */}
+                <div className={cn(
+                  "absolute inset-0 flex items-center justify-center",
+                  "bg-black/60 backdrop-blur-[1px]",
+                  "opacity-0 transition-all duration-300",
+                  "group-hover:opacity-100",
+                  isImageLoading && "hidden"
+                )}>
+                  <p className="text-sm font-medium text-white/90 drop-shadow-lg">
+                    {preloadedThumbnails.has(background.url) ? "Select Background" : "Loading..."}
+                  </p>
                 </div>
-              )}
-
-              {/* Improved Hover Overlay */}
-              <div className={cn(
-                "absolute inset-0 flex items-center justify-center",
-                "bg-black/60 backdrop-blur-[1px]",
-                "opacity-0 transition-all duration-300",
-                "group-hover:opacity-100"
-              )}>
-                <p className="text-sm font-medium text-white/90 drop-shadow-lg">
-                  Select Background
-                </p>
-              </div>
-            </button>
-          ))}
+                
+                {/* Cached Indicator (optional) */}
+                {preloadedThumbnails.has(background.url) && !isImageLoading && !isSelected && (
+                  <div className="absolute top-1 right-1 bg-primary/20 rounded-full p-1">
+                    <Check className="h-3 w-3 text-primary" />
+                  </div>
+                )}
+              </button>
+            );
+          })}
         </div>
       </ScrollArea>
 
-      {/* Loading Indicator */}
+      {/* Global Loading Indicator */}
       {isLoading && (
         <div className="absolute inset-0 bg-background/50 backdrop-blur-sm
                       flex items-center justify-center z-10">
