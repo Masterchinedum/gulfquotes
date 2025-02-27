@@ -14,6 +14,7 @@ interface QuoteDownloadProps {
   onAfterDownload?: () => void;
   className?: string;
   filename?: string;
+  quoteSlug?: string; // Add quote slug prop
 }
 
 export function QuoteDownload({
@@ -22,6 +23,7 @@ export function QuoteDownload({
   onAfterDownload,
   className,
   filename,
+  quoteSlug, // Receive the slug
 }: QuoteDownloadProps) {
   // Enhanced download preparation
   const handleBeforeDownload = useCallback(() => {
@@ -54,7 +56,8 @@ export function QuoteDownload({
     containerRef,
     onPrepareDownload: handleBeforeDownload,
     onDownloadComplete: onAfterDownload,
-    filename
+    filename,
+    quoteSlug // Pass it to the hook
   });
 
   return (
