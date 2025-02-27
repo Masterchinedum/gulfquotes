@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Tag } from "@prisma/client";
 import type { GalleryItem } from "@/types/gallery";
+import type { Gallery } from "@prisma/client";
 
 // Base Quote Schema
 export const quoteSchema = z.object({
@@ -92,4 +93,21 @@ export interface QuoteFormData {
   backgroundImage?: string | null;
   galleryImages?: GalleryItem[];
   tags?: Tag[]; // Simple Tag array for form state
+}
+
+export interface BackgroundImage extends Gallery {
+  isActive: boolean;
+  isBackground: boolean;
+}
+
+export interface QuoteBackground {
+  gallery: Gallery;
+  isActive: boolean;
+  isBackground: boolean;
+}
+
+export interface QuoteBackgroundOptions {
+  style?: 'dark' | 'light' | 'gradient' | 'transparent';
+  opacity?: number;
+  blur?: number;
 }

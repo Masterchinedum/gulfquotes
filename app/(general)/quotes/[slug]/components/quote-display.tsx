@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useRef, useMemo, useCallback } from "react";
+import React, { useRef, useMemo, useCallback, useState } from "react";
 import { cn } from "@/lib/utils";
 import { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
 import { Gallery } from "@prisma/client";
@@ -46,8 +46,20 @@ export function QuoteDisplay({
   onDownloadComplete
 }: QuoteDisplayProps) {
   const localRef = useRef<HTMLDivElement>(null);
-  // Cast the ref to MutableRefObject to match QuoteLayout's expectations
   const ref = (containerRef || localRef) as React.MutableRefObject<HTMLDivElement>;
+  
+  // Track background loading state
+  const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
+  
+  // Handle background image load start
+  const handleBackgroundLoadStart = useCallback(() => {
+    setIsBackgroundLoading(true);
+  }, []);
+
+  // Handle background image load complete
+  const handleBackgroundLoadComplete = useCallback(() => {
+    setIsBackgroundLoading(false);
+  }, []);
   
   const fontSize = useMemo(() => {
     if (propFontSize) return propFontSize;
@@ -88,6 +100,8 @@ export function QuoteDisplay({
       className={cn(
         "rounded-lg shadow-xl",
         "select-none",
+        "transition-all duration-500 ease-in-out",
+        isBackgroundLoading && "scale-[0.99] opacity-90",
         className
       )}
       onPrepareDownload={handlePrepareDownload}
@@ -95,7 +109,13 @@ export function QuoteDisplay({
     >
       <QuoteBackground 
         background={backgroundImage || null} 
-        overlayStyle={style.overlayStyle} 
+        overlayStyle={style.overlayStyle}
+        onLoadStart={handleBackgroundLoadStart}
+        onLoadComplete={handleBackgroundLoadComplete}
+        className={cn(
+          "transition-all duration-500 ease-in-out",
+          isBackgroundLoading && "scale-105 blur-sm"
+        )}
       />
       
       <QuoteContent 
@@ -104,7 +124,11 @@ export function QuoteDisplay({
         fontSize={fontSize}
         textColor={style.textColor}
         shadowColor={style.shadowColor}
-        className="z-10"
+        className={cn(
+          "z-10",
+          "transition-all duration-500 ease-in-out",
+          isBackgroundLoading && "opacity-50"
+        )}
       />
     </QuoteLayout>
   );

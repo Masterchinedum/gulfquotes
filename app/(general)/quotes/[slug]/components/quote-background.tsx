@@ -9,6 +9,8 @@ interface QuoteBackgroundProps {
   background: Gallery | string | null;
   overlayStyle?: keyof typeof overlayStyles;
   className?: string;
+  onLoadStart?: () => void;    // Add this
+  onLoadComplete?: () => void; // Add this
 }
 
 // Overlay style configurations
@@ -48,6 +50,8 @@ export function QuoteBackground({
   background,
   overlayStyle = "dark",
   className,
+  onLoadStart,
+  onLoadComplete
 }: QuoteBackgroundProps) {
   const backgroundUrl = typeof background === 'string' 
     ? background 
@@ -75,6 +79,8 @@ export function QuoteBackground({
               }}
               priority
               unoptimized // Prevent Next.js image optimization for download
+              onLoadStart={onLoadStart}    // Changed from onLoadingStart to onLoadStart
+              onLoad={onLoadComplete}         // Add this
             />
           </div>
         ) : (

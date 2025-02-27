@@ -15,7 +15,10 @@ import type { QuoteDisplayData } from "@/lib/services/public-quote/quote-display
 
 interface QuoteActionsProps {
   quote: QuoteDisplayData;
-  backgrounds: Gallery[];
+  backgrounds: Array<Gallery & {
+    isActive?: boolean;
+    isBackground?: boolean;
+  }>;
   activeBackground: Gallery | null;
   onBackgroundChange: (background: Gallery) => Promise<void>;
   containerRef: React.RefObject<HTMLDivElement>;

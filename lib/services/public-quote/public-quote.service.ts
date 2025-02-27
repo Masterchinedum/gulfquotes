@@ -69,8 +69,17 @@ class PublicQuoteService {
             }
           },
           gallery: {
+            // Include all gallery images with their relationships
             include: {
-              gallery: true,
+              gallery: {
+                include: {
+                  _count: {
+                    select: {
+                      quotes: true
+                    }
+                  }
+                }
+              }
             },
           },
           tags: {
@@ -91,7 +100,13 @@ class PublicQuoteService {
         authorProfile: {
           ...quote.authorProfile,
           image: quote.authorProfile.images[0]?.url || null
-        }
+        },
+        // Ensure gallery data is properly structured
+        gallery: quote.gallery.map(g => ({
+          gallery: g.gallery,
+          isActive: g.isActive,
+          isBackground: g.isBackground
+        }))
       };
 
       return transformedQuote as QuoteDisplayData;

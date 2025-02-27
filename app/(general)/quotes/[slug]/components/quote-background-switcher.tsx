@@ -10,7 +10,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Gallery } from "@prisma/client";
 
 interface QuoteBackgroundSwitcherProps {
-  backgrounds: Gallery[];
+  backgrounds: Array<Gallery & {
+    isActive?: boolean;
+    isBackground?: boolean;
+  }>;
   activeBackground: Gallery | null;
   onBackgroundChange: (background: Gallery) => Promise<void>;
   isLoading?: boolean;
@@ -57,9 +60,9 @@ export function QuoteBackgroundSwitcher({
         </div>
       </div>
 
-      {/* Background Grid */}
+      {/* Enhanced Background Grid */}
       <ScrollArea className="h-[280px] rounded-md border">
-        <div className="grid grid-cols-3 gap-4 p-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 p-4">
           {/* Default Background Option */}
           <button
             onClick={() => onBackgroundChange(defaultBackground)}
@@ -67,10 +70,11 @@ export function QuoteBackgroundSwitcher({
             className={cn(
               "group relative aspect-square overflow-hidden rounded-lg",
               "bg-gradient-to-br from-primary/10 to-primary/5",
-              "border-2 transition-all",
+              "border-2 transition-all duration-300 ease-in-out",
               (!activeBackground || activeBackground.id === "default")
                 ? "border-primary ring-2 ring-primary/30"
                 : "border-transparent hover:border-primary/50",
+              "hover:shadow-lg hover:scale-[1.02]",
               isLoading && "opacity-50 cursor-not-allowed"
             )}
           >
@@ -84,7 +88,7 @@ export function QuoteBackgroundSwitcher({
             )}
           </button>
 
-          {/* Available Backgrounds */}
+          {/* Enhanced Background Options */}
           {backgrounds.map((background) => (
             <button
               key={background.id}
@@ -92,36 +96,44 @@ export function QuoteBackgroundSwitcher({
               disabled={isLoading}
               className={cn(
                 "group relative aspect-square overflow-hidden rounded-lg",
-                "border-2 transition-all",
+                "border-2 transition-all duration-300 ease-in-out",
+                "hover:shadow-lg hover:scale-[1.02]",
                 activeBackground?.id === background.id
                   ? "border-primary ring-2 ring-primary/30"
                   : "border-transparent hover:border-primary/50",
                 isLoading && "opacity-50 cursor-not-allowed"
               )}
             >
-              {/* Background Preview */}
+              {/* Improved Image Preview */}
               <Image
                 src={background.url}
                 alt={background.title || "Background option"}
                 fill
-                className="object-cover transition-transform group-hover:scale-110"
-                sizes="(max-width: 768px) 33vw, 200px"
+                className={cn(
+                  "object-cover transition-all duration-500",
+                  "group-hover:scale-110",
+                  isLoading && "blur-sm"
+                )}
+                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                priority={activeBackground?.id === background.id}
               />
 
-              {/* Selection Overlay */}
+              {/* Enhanced Selection Overlay */}
               {activeBackground?.id === background.id && (
-                <div className="absolute inset-0 flex items-center justify-center bg-primary/10">
-                  <Check className="h-6 w-6 text-primary" />
+                <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px]
+                              flex items-center justify-center transition-all duration-300">
+                  <Check className="h-6 w-6 text-primary drop-shadow-lg" />
                 </div>
               )}
 
-              {/* Hover Overlay */}
+              {/* Improved Hover Overlay */}
               <div className={cn(
                 "absolute inset-0 flex items-center justify-center",
-                "bg-black/50 opacity-0 transition-opacity",
+                "bg-black/60 backdrop-blur-[1px]",
+                "opacity-0 transition-all duration-300",
                 "group-hover:opacity-100"
               )}>
-                <p className="text-xs font-medium text-white">
+                <p className="text-sm font-medium text-white/90 drop-shadow-lg">
                   Select Background
                 </p>
               </div>
@@ -129,6 +141,14 @@ export function QuoteBackgroundSwitcher({
           ))}
         </div>
       </ScrollArea>
+
+      {/* Loading Indicator */}
+      {isLoading && (
+        <div className="absolute inset-0 bg-background/50 backdrop-blur-sm
+                      flex items-center justify-center z-10">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      )}
 
       {/* Empty State */}
       {backgrounds.length === 0 && (

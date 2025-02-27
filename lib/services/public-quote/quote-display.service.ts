@@ -17,10 +17,11 @@ export interface QuoteDisplayData extends Quote {
     slug: string;
   };
   gallery: Array<{
-    gallery: Gallery;
-    isActive: boolean;
-    isBackground: boolean;
+    gallery: Gallery; // The gallery item itself
+    isActive: boolean; // Whether this is the active background
+    isBackground: boolean; // Whether this can be used as a background
   }>;
+  backgroundImage: string | null; // Current background image URL
   tags?: Array<{
     id: string;
     name: string;
@@ -62,9 +63,7 @@ class QuoteDisplayService {
             }
           },
           gallery: {
-            where: {
-              isBackground: true
-            },
+            // Remove isBackground filter to get all images
             include: {
               gallery: true,
             },
@@ -105,21 +104,51 @@ class QuoteDisplayService {
    */
   async getQuoteBackgrounds(quoteId: string): Promise<Gallery[]> {
     try {
-      const galleries = await db.quoteToGallery.findMany({
-        where: { 
-          quoteId,
-          isBackground: true,
-          gallery: {
-            isGlobal: true
+      // Get both quote-specific and global backgrounds
+      const [quoteBackgrounds, globalBackgrounds] = await Promise.all([
+        // Get quote's gallery images
+        db.quoteToGallery.findMany({
+          where: { 
+            quoteId,
+            gallery: {
+              // Only get images suitable for backgrounds
+              width: { gte: 800 },
+              height: { gte: 500 }
+            }
+          },
+          include: {
+            gallery: true
           }
-        },
-        include: {
-          gallery: true
-        }
-      });
+        }),
+        // Get global backgrounds not already associated with the quote
+        db.gallery.findMany({
+          where: {
+            isGlobal: true,
+            width: { gte: 800 },
+            height: { gte: 500 },
+            NOT: {
+              quotes: {
+                some: {
+                  quoteId
+                }
+              }
+            }
+          }
+        })
+      ]);
 
-      return galleries.map(g => g.gallery);
-    } catch {
+      // Combine and deduplicate backgrounds
+      const backgrounds = [
+        ...quoteBackgrounds.map(qb => qb.gallery),
+        ...globalBackgrounds
+      ];
+
+      // Remove duplicates based on id
+      return Array.from(
+        new Map(backgrounds.map(bg => [bg.id, bg])).values()
+      );
+    } catch (error) {
+      console.error("[QUOTE_DISPLAY_SERVICE] Background fetch error:", error);
       throw new AppError("Failed to fetch backgrounds", "INTERNAL_ERROR", 500);
     }
   }
