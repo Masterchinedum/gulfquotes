@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { AppError } from "@/lib/api-error";
 import { quoteDisplayService } from "@/lib/services/public-quote/quote-display.service";
 import type { ApiResponse, QuoteErrorCode } from "@/types/api/quotes";
+import db from "@/lib/prisma";
 
 // Quality presets for different optimization targets
 const QUALITY_PRESETS = {
@@ -110,6 +111,11 @@ export async function POST(req: Request): Promise<NextResponse<ApiResponse<{ url
     if (!quote) {
       throw new AppError('Quote not found', 'NOT_FOUND', 404);
     }
+
+    await db.quote.update({
+      where: { id: quote.id },
+      data: { downloadCount: { increment: 1 } }
+    });
     
     // Parse request body
     const body = await req.json() as QuoteDownloadBody;
