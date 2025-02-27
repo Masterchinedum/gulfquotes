@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { CalendarDays, Heart, Share2, Eye } from "lucide-react";
+import { CalendarDays, Users, Book } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
 
@@ -87,30 +87,22 @@ export function QuoteInfoEnhanced({ quote, className }: QuoteInfoEnhancedProps) 
           </div>
         )}
 
-        {/* Statistics */}
-        <div className="grid grid-cols-3 gap-4 pt-2 border-t">
+        {/* Author Statistics */}
+        <div className="grid grid-cols-2 gap-4 pt-2 border-t">
           <div className="flex flex-col items-center">
             <div className="flex items-center gap-1 text-muted-foreground">
-              <Eye className="h-4 w-4" />
-              <span className="text-xs">Views</span>
+              <Users className="h-4 w-4" />
+              <span className="text-xs">Followers</span>
             </div>
-            <p className="font-semibold">{quote.metrics?.views || 0}</p>
+            <p className="font-semibold">0</p>
           </div>
           
           <div className="flex flex-col items-center">
             <div className="flex items-center gap-1 text-muted-foreground">
-              <Heart className="h-4 w-4" />
-              <span className="text-xs">Likes</span>
+              <Book className="h-4 w-4" />
+              <span className="text-xs">Quotes</span>
             </div>
-            <p className="font-semibold">{quote.metrics?.likes || 0}</p>
-          </div>
-          
-          <div className="flex flex-col items-center">
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <Share2 className="h-4 w-4" />
-              <span className="text-xs">Shares</span>
-            </div>
-            <p className="font-semibold">{quote.metrics?.shares || 0}</p>
+            <p className="font-semibold">0</p>
           </div>
         </div>
       </CardContent>
