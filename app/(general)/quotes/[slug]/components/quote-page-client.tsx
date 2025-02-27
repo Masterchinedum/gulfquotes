@@ -73,7 +73,6 @@ export function QuotePageClient({
           <div className="block lg:hidden">
             <RelatedQuotes
               currentQuoteId={quote.id}
-              authorProfileId={quote.authorProfile.id}
               authorName={quote.authorProfile.name}
               authorSlug={quote.authorProfile.slug}
               tags={quote.tags || []}
@@ -100,7 +99,6 @@ export function QuotePageClient({
             {/* Related quotes component */}
             <RelatedQuotes
               currentQuoteId={quote.id}
-              authorProfileId={quote.authorProfile.id}
               authorName={quote.authorProfile.name}
               authorSlug={quote.authorProfile.slug}
               tags={quote.tags || []}

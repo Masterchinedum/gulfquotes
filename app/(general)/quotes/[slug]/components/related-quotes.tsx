@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 
 interface RelatedQuotesProps {
   currentQuoteId: string;
-  authorProfileId: string;
+  authorProfileId?: string; // Make this optional
   authorName: string;
   authorSlug: string;
   tags: Array<{ id: string; name: string; slug: string }>;
@@ -136,7 +136,7 @@ export function RelatedQuotes({
     };
 
     fetchRelatedQuotes();
-  }, [currentQuoteId, authorProfileId, limit, tags]);
+  }, [currentQuoteId, limit, tags]);
 
   const displayAuthorName = () => {
     if (relatedQuotes.length > 0 && relatedQuotes.every(q => q.authorProfile.slug === authorSlug)) {
