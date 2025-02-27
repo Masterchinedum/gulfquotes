@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Share2, Image as ImageIcon, RefreshCw } from "lucide-react";
+import { Download, Share2, Image as ImageIcon} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Gallery } from "@prisma/client";
 import { useToast } from "@/hooks/use-toast";
@@ -80,12 +80,12 @@ export function QuoteActions({
         {/* Background Selection with indicator for temporary changes */}
         {activeTab === "backgrounds" && (
           <div className="pt-4">
-            {/* Visual indicator for temporary changes */}
+            {/* Visual indicator for temporary changes
             <div className="mb-2 p-2 bg-muted/50 rounded-md flex items-center text-sm text-muted-foreground">
               <RefreshCw className="h-4 w-4 mr-2 animate-pulse text-primary/70" />
               <span>Changes are temporary and for this session only</span>
             </div>
-            
+             */}
             <QuoteBackgroundSwitcher
               backgrounds={backgrounds}
               activeBackground={activeBackground}
