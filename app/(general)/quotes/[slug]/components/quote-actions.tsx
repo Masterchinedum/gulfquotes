@@ -101,6 +101,7 @@ export function QuoteActions({
             <QuoteDownload
               containerRef={containerRef}
               filename={`quote-${quote.slug}`}
+              quoteSlug={quote.slug} // Add this line to pass the slug
               onBeforeDownload={() => setIsLoading(true)}
               onAfterDownload={() => setIsLoading(false)}
             />
