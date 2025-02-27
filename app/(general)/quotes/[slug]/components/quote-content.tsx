@@ -10,6 +10,7 @@ interface QuoteContentProps {
   fontSize: number;
   textColor: string;
   shadowColor: string;
+  siteName?: string; // Add site name prop with default value
   className?: string;
 }
 
@@ -21,6 +22,7 @@ export function QuoteContent({
   fontSize,
   textColor,
   shadowColor,
+  siteName = "Quoticon", // Default to "Quoticon" if not provided
   className
 }: QuoteContentProps) {
   // Calculate padding based on container size
@@ -37,9 +39,9 @@ export function QuoteContent({
     >
       {/* Content Container */}
       <div className="relative w-full max-w-[92.5925925926%]"> {/* 1000px / 1080px */}
-        {/* Quote Text */}
-        <div className="space-y-4">
-          {/* Opening Quote Mark */}
+        {/* Quote Text with Quotation Marks */}
+        <div className="relative">
+          {/* Opening Quote Mark - positioned relative to quote text only */}
           <div className={cn(
             "absolute -top-8 -left-4 text-6xl opacity-20",
             textColor
@@ -50,7 +52,7 @@ export function QuoteContent({
           {/* Main Quote Text */}
           <p className={cn(
             "text-center font-serif relative z-10",
-            "leading-snug tracking-wide",
+            "leading-snug tracking-wide mb-4", // Add bottom margin for separation
             textColor
           )}
           style={{
@@ -58,21 +60,22 @@ export function QuoteContent({
             textShadow: `0 2px 4px ${shadowColor}`
           }}>
             {content}
-          </p>
 
-          {/* Closing Quote Mark */}
-          <div className={cn(
-            "absolute -bottom-12 -right-4 text-6xl opacity-20",
-            textColor
-          )}>
-            &rdquo;
-          </div>
+            {/* Closing Quote Mark - positioned relative to quote text only */}
+            <span className={cn(
+              "absolute -bottom-4 -right-4 text-6xl opacity-20 leading-none",
+              textColor
+            )}>
+              &rdquo;
+            </span>
+          </p>
         </div>
 
-        {/* Author Attribution */}
-        <div className="mt-8">
+        {/* Attribution Footer - separated from the quote */}
+        <div className="mt-12 space-y-1 text-center">
+          {/* Author Attribution */}
           <p className={cn(
-            "text-center font-medium",
+            "font-medium",
             "text-xl sm:text-2xl",
             textColor
           )}
@@ -80,6 +83,17 @@ export function QuoteContent({
             textShadow: `0 1px 3px ${shadowColor}`
           }}>
             — {author || "Unknown"}
+          </p>
+          
+          {/* Site Name */}
+          <p className={cn(
+            "text-sm sm:text-base opacity-80",
+            textColor
+          )}
+          style={{
+            textShadow: `0 1px 2px ${shadowColor}`
+          }}>
+            {siteName}.com
           </p>
         </div>
       </div>
