@@ -1,11 +1,9 @@
-// app/(general)/quotes/[slug]/components/quote-page-client.tsx
 "use client"
 
-import React, { useRef, useCallback, useState } from "react"; // Added useState
+import React, { useRef, useCallback, useState } from "react";
 import { Gallery } from "@prisma/client";
 import { QuoteDisplay, ResponsiveQuoteContainer } from "./quote-display";
 import { QuoteActions } from "./quote-actions";
-// import { toast } from "sonner";
 import type { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
 
 interface QuotePageClientProps {
@@ -18,7 +16,7 @@ interface QuotePageClientProps {
 export function QuotePageClient({
   quote,
   backgrounds,
-  activeBackground: initialBackground, // Rename to indicate it's the initial value
+  activeBackground: initialBackground,
   fontSize,
 }: QuotePageClientProps) {
   // Add local state for active background
@@ -36,24 +34,50 @@ export function QuotePageClient({
   }, []);
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="max-w-3xl mx-auto space-y-8">
-        <ResponsiveQuoteContainer>
-          <QuoteDisplay 
-            quote={quote}
-            fontSize={fontSize}
-            backgroundImage={localBackground} // Use local state instead of prop
-            containerRef={containerRef}
-          />
-        </ResponsiveQuoteContainer>
-
-        <QuoteActions 
-          quote={quote}
-          backgrounds={backgrounds}
-          activeBackground={localBackground} // Use local state instead of prop
-          onBackgroundChange={handleBackgroundChange}
-          containerRef={containerRef}
-        />
+    <div className="container mx-auto py-6 px-4 md:py-8">
+      {/* Replace single column with grid layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Main content area (left) */}
+        <div className="col-span-1 lg:col-span-8">
+          {/* Quote display */}
+          <div className="space-y-8">
+            <ResponsiveQuoteContainer>
+              <QuoteDisplay 
+                quote={quote}
+                fontSize={fontSize}
+                backgroundImage={localBackground}
+                containerRef={containerRef}
+              />
+            </ResponsiveQuoteContainer>
+            
+            {/* On mobile, actions appear below the quote */}
+            <div className="block lg:hidden">
+              <QuoteActions 
+                quote={quote}
+                backgrounds={backgrounds}
+                activeBackground={localBackground}
+                onBackgroundChange={handleBackgroundChange}
+                containerRef={containerRef}
+              />
+            </div>
+          </div>
+        </div>
+        
+        {/* Sidebar area (right) */}
+        <div className="col-span-1 lg:col-span-4">
+          {/* Hidden on mobile since we show actions below quote */}
+          <div className="hidden lg:block space-y-6">
+            <QuoteActions 
+              quote={quote}
+              backgrounds={backgrounds}
+              activeBackground={localBackground}
+              onBackgroundChange={handleBackgroundChange}
+              containerRef={containerRef}
+            />
+            
+            {/* We'll add more sidebar components in future steps */}
+          </div>
+        </div>
       </div>
     </div>
   );
