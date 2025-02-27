@@ -26,6 +26,8 @@ model User {
   TwoFactorConfirmation TwoFactorConfirmation?
   quotes                Quote[]                @relation("QuoteAuthor")
   userProfile           UserProfile? 
+  comments              Comment[]
+  replies               Reply[]
 
   @@map("users")
 }
@@ -104,6 +106,7 @@ model Quote {
   authorProfileId  String
   tags             Tag[]          @relation("QuoteToTag")
   gallery          QuoteToGallery[]
+  comments         Comment[]
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
@@ -213,4 +216,39 @@ model QuoteToGallery {
 
   @@unique([quoteId, galleryId])
   @@map("quote_to_galleries")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  isEdited  Boolean  @default(false)
+  editedAt  DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  quote     Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quoteId   String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  replies   Reply[]
+  likes     Int      @default(0)
+
+  @@index([quoteId])
+  @@map("comments")
+}
+
+model Reply {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  isEdited  Boolean  @default(false)
+  editedAt  DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  commentId String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  likes     Int      @default(0)
+
+  @@index([commentId])
+  @@map("replies")
 }
