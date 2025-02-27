@@ -201,7 +201,7 @@ export function RelatedQuotes({
                           {quote.authorProfile.name}
                         </span>
                       </div>
-                      <Badge variant="outline" size="sm">
+                      <Badge variant="outline" className="text-xs py-0">
                         {quote.category.name}
                       </Badge>
                     </div>
