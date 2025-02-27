@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Gallery } from "@prisma/client";
@@ -9,8 +9,8 @@ interface QuoteBackgroundProps {
   background: Gallery | string | null;
   overlayStyle?: keyof typeof overlayStyles;
   className?: string;
-  onLoadStart?: () => void;    // Add this
-  onLoadComplete?: () => void; // Add this
+  onLoadStart?: () => void;
+  onLoadComplete?: () => void;
 }
 
 // Overlay style configurations
@@ -20,6 +20,32 @@ const overlayStyles = {
   gradient: "bg-gradient-to-br from-primary/50 to-secondary/50 mix-blend-overlay",
   transparent: "",
 } as const;
+
+// Image cache for preloaded images
+const preloadedImages = new Map<string, boolean>();
+
+/**
+ * Preloads an image and stores it in the browser cache
+ */
+function preloadImage(src: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    // Skip if already preloaded
+    if (preloadedImages.has(src)) {
+      resolve(true);
+      return;
+    }
+    
+    const img = new Image();
+    img.onload = () => {
+      preloadedImages.set(src, true);
+      resolve(true);
+    };
+    img.onerror = () => {
+      resolve(false);
+    };
+    img.src = src;
+  });
+}
 
 /**
  * Creates a default background gallery item
@@ -54,28 +80,85 @@ export function QuoteBackground({
   onLoadComplete
 }: QuoteBackgroundProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isPreloaded, setIsPreloaded] = useState(false);
+  const [previousUrl, setPreviousUrl] = useState<string | null>(null);
   const backgroundUrl = typeof background === 'string' 
     ? background 
     : background?.url || null;
+  
+  const previousBackground = useRef<string | null>(null);
+  
+  // Preload the image when the background changes
+  useEffect(() => {
+    if (!backgroundUrl) return;
+    
+    // If we already preloaded this image, don't do it again
+    if (preloadedImages.has(backgroundUrl)) {
+      setIsPreloaded(true);
+      return;
+    }
+    
+    const preload = async () => {
+      const success = await preloadImage(backgroundUrl);
+      if (success) {
+        setIsPreloaded(true);
+      }
+    };
+    
+    preload();
+  }, [backgroundUrl]);
+  
+  // Handle background transition when url changes
+  useEffect(() => {
+    if (backgroundUrl !== previousBackground.current) {
+      // Save previous URL for crossfade effect
+      if (previousBackground.current) {
+        setPreviousUrl(previousBackground.current);
+      }
+      
+      // Update the current background reference
+      previousBackground.current = backgroundUrl;
+      
+      // Trigger loading state if not preloaded
+      if (backgroundUrl && !preloadedImages.has(backgroundUrl)) {
+        setIsLoading(true);
+        onLoadStart?.();
+      }
+    }
+  }, [backgroundUrl, onLoadStart]);
 
   // Handle image loading start
   const handleLoadStart = useCallback(() => {
-    setIsLoading(true);
-    onLoadStart?.();
-  }, [onLoadStart]);
+    if (!isPreloaded) {
+      setIsLoading(true);
+      onLoadStart?.();
+    }
+  }, [isPreloaded, onLoadStart]);
 
   // Handle image load complete
   const handleLoadComplete = useCallback(() => {
     setIsLoading(false);
     onLoadComplete?.();
+    
+    // Clear previous URL after transition completes
+    setTimeout(() => {
+      setPreviousUrl(null);
+    }, 500); // Match the duration in the CSS transition
   }, [onLoadComplete]);
 
-  // Handle image load error
+  // Handle image load error with retry
   const handleLoadError = useCallback((e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     console.error("Background image load error:", e);
+    
+    // Remove from preloaded cache so we can try again
+    if (backgroundUrl) {
+      preloadedImages.delete(backgroundUrl);
+    }
+    
     setIsLoading(false);
+    setIsPreloaded(false);
     onLoadComplete?.(); // Complete loading even on error
-  }, [onLoadComplete]);
+  }, [backgroundUrl, onLoadComplete]);
 
   return (
     <div className={cn(
@@ -84,6 +167,22 @@ export function QuoteBackground({
       className
     )}>
       <div className="absolute inset-0 overflow-hidden">
+        {/* Previous background for crossfade effect */}
+        {previousUrl && (
+          <div className="absolute inset-0 z-10 transition-opacity duration-500 opacity-0">
+            <Image
+              src={previousUrl}
+              alt="Previous background"
+              fill
+              className="object-cover w-full h-full select-none pointer-events-none"
+              sizes="1080px"
+              style={{ objectFit: 'cover', objectPosition: 'center' }}
+              priority={false}
+              unoptimized
+            />
+          </div>
+        )}
+        
         {backgroundUrl ? (
           <div className="relative w-full h-full">
             <Image
@@ -94,7 +193,8 @@ export function QuoteBackground({
                 "object-cover w-full h-full",
                 "select-none pointer-events-none quote-background-image",
                 "transition-all duration-500 ease-out",
-                isLoading && "scale-110 blur-sm"
+                isLoading && "scale-110 blur-sm",
+                isPreloaded ? "opacity-100" : "opacity-0"
               )}
               sizes="1080px"
               style={{ 
@@ -103,7 +203,7 @@ export function QuoteBackground({
               }}
               priority
               unoptimized
-              onLoadStart={handleLoadStart}   // Changed from onLoadingStart to onLoadStart
+              onLoadStart={handleLoadStart}
               onLoad={handleLoadComplete}
               onError={handleLoadError}
             />
@@ -135,6 +235,13 @@ export function QuoteBackground({
         "transition-opacity duration-500",
         isLoading && "opacity-0"
       )} />
+      
+      {/* Loading indicator */}
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center z-20">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
     </div>
   );
 }

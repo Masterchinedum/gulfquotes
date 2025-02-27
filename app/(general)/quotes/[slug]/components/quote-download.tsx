@@ -37,6 +37,11 @@ export function QuoteDownload({
       if (backgroundImage) {
         // Ensure image is fully loaded
         backgroundImage.classList.add('download-ready');
+        
+        // Return a promise that resolves after transition completes
+        return new Promise(resolve => {
+          setTimeout(resolve, transitionDuration);
+        });
       }
     }
   }, [containerRef, onBeforeDownload]);
