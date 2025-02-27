@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 
 interface RelatedQuotesProps {
   currentQuoteId: string;
@@ -36,10 +37,8 @@ interface RelatedQuote {
 export function RelatedQuotes({ 
   currentQuoteId,
   categoryId, // Use this for API call
-  authorProfileId,
   authorName,
   authorSlug,
-  tags,
   limit = 3,
   className 
 }: RelatedQuotesProps) {
@@ -142,36 +141,49 @@ export function RelatedQuotes({
   }
 
   return (
-    <Card className={cn("border-muted", className)}>
-      <CardHeader className="pb-3">
+    <Card className={cn("border-muted overflow-hidden", className)}>
+      <CardHeader className="pb-3 border-b">
         <CardTitle>{displayTitle()}</CardTitle>
         <CardDescription>
           Discover more quotes in the same category
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {relatedQuotes.map(quote => (
-          <div key={quote.id} className="group">
-            <Link href={`/quotes/${quote.slug}`} className="block group-hover:underline">
-              <div className="flex items-start gap-3">
-                <div>
-                  <Avatar className="h-8 w-8 border">
-                    <AvatarImage src={`/authors/${quote.authorProfile.slug}.jpg`} alt={quote.authorProfile.name} />
-                    <AvatarFallback>{quote.authorProfile.name.charAt(0)}</AvatarFallback>
+      <CardContent className="pt-4">
+        <div className="space-y-4 divide-y divide-border">
+          {relatedQuotes.map(quote => (
+            <div key={quote.id} className="group pt-4 first:pt-0">
+              <Link 
+                href={`/quotes/${quote.slug}`} 
+                className="block transition-colors duration-200 hover:bg-accent/50 rounded-md p-2 -mx-2"
+              >
+                <div className="flex items-start gap-3">
+                  <Avatar className="h-10 w-10 border shadow-sm">
+                    <AvatarImage 
+                      src={`/authors/${quote.authorProfile.slug}.jpg`} 
+                      alt={quote.authorProfile.name} 
+                    />
+                    <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                      {quote.authorProfile.name.charAt(0)}
+                    </AvatarFallback>
                   </Avatar>
+                  <div className="flex-1 space-y-1">
+                    <p className="text-sm font-medium line-clamp-2 group-hover:text-primary transition-colors">
+                      &quot;{quote.content}&quot;
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">
+                        {quote.authorProfile.name}
+                      </p>
+                      <Badge variant="outline" className="text-xs px-1.5 py-0">
+                        {quote.category.name}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium line-clamp-2">
-                    "{quote.content}"
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {quote.authorProfile.name}
-                  </p>
-                </div>
-              </div>
-            </Link>
-          </div>
-        ))}
+              </Link>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
