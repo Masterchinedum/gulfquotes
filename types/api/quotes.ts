@@ -139,6 +139,7 @@ export type AuthorProfileErrorCode =
 
 // Combined error code type for the AppError class
 export type AppErrorCode = 
+  | "MISSING_PARAMETER"  // Add this line
   | "FETCH_IMAGES_FAILED"
   | "UPDATE_METADATA_FAILED"
   | "DELETE_IMAGE_FAILED"
