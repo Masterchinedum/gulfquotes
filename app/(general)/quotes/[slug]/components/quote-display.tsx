@@ -28,12 +28,53 @@ export async function prepareForDownload(
   document.body.appendChild(clone);
   
   try {
-    // Wait a moment to ensure background is fully rendered
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const dataUrl = await quoteDownloadService.generateImage(clone);
-    return dataUrl;
+    // Mark the clone for download to apply any special download styling
+    clone.classList.add('quote-downloading');
+    
+    // Find background image elements and ensure they're properly loaded
+    const backgroundImages = clone.querySelectorAll('.quote-background-image');
+    
+    // Wait for all background images to load completely
+    const imagePromises = Array.from(backgroundImages).map(img => {
+      const imgElement = img as HTMLImageElement;
+      
+      // If image is already complete, no need to wait
+      if (imgElement.complete && imgElement.naturalWidth > 0) {
+        return Promise.resolve();
+      }
+      
+      // Otherwise, wait for it to load or handle error
+      return new Promise<void>((resolve) => {
+        imgElement.onload = () => resolve();
+        imgElement.onerror = () => {
+          console.error('Failed to load background image for download');
+          resolve(); // Continue even if image fails
+        };
+        
+        // Set a timeout in case the image load hangs
+        setTimeout(resolve, 1000);
+      });
+    });
+    
+    // Wait for background images to load
+    await Promise.all(imagePromises);
+    
+    // Additional wait to ensure CSS transitions complete
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Generate the image with error handling
+    try {
+      const dataUrl = await quoteDownloadService.generateImage(clone);
+      return dataUrl;
+    } catch (error) {
+      console.error('Error generating quote image:', error);
+      throw new Error('Failed to generate image for download');
+    }
   } finally {
-    document.body.removeChild(clone);
+    // Always clean up the DOM
+    if (clone.parentNode) {
+      document.body.removeChild(clone);
+    }
   }
 }
 
@@ -53,29 +94,13 @@ export function QuoteDisplay({
   // Track background loading state
   const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
 
-// Track current background for download
-  const [currentBackground, setCurrentBackground] = useState<Gallery | string | null>(backgroundImage);
+  // Track current background for download - only declare this once
+  const [currentBackground, setCurrentBackground] = useState<Gallery | string | null>(backgroundImage || null);
   
   // Update current background when prop changes
   useEffect(() => {
-    setCurrentBackground(backgroundImage);
-  }, [backgroundImage]);
-  
-  // Track current background for download
-  const [currentBackground, setCurrentBackground] = useState<Gallery | string | null>(backgroundImage);
-  
-  // Update current background when prop changes
-  useEffect(() => {
-    setCurrentBackground(backgroundImage);
-  }, [backgroundImage]);
-  
-  // Track current background for download
-  const [currentBackground, setCurrentBackground] = useState<Gallery | string | null>(backgroundImage);
-  
-  // Update current background when prop changes
-  useEffect(() => {
-    setCurrentBackground(backgroundImage);
-  }, [backgroundImage]);
+    setCurrentBackground(backgroundImage || null);
+  }, [backgroundImage, setCurrentBackground]);
   
   // Handle background image load start
   const handleBackgroundLoadStart = useCallback(() => {

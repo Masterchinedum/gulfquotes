@@ -27,10 +27,12 @@ export function QuotePageClient({
   // Explicitly type the ref as non-null
   const containerRef = useRef<HTMLDivElement>(null) as React.MutableRefObject<HTMLDivElement>;
 
-  // Update to use local state instead of API call
-  const handleBackgroundChange = useCallback((background: Gallery) => {
+  // Update to use local state instead of API call - make it async to return a Promise
+  const handleBackgroundChange = useCallback(async (background: Gallery) => {
     // Simply update local state - no API call
     setLocalBackground(background);
+    // Return a resolved promise to satisfy the interface
+    return Promise.resolve();
   }, []);
 
   return (

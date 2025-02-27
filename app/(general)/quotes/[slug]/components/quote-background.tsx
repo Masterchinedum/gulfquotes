@@ -29,13 +29,13 @@ const preloadedImages = new Map<string, boolean>();
  */
 function preloadImage(src: string): Promise<boolean> {
   return new Promise((resolve) => {
-    // Skip if already preloaded
     if (preloadedImages.has(src)) {
       resolve(true);
       return;
     }
     
-    const img = new Image();
+    // Use window.Image to be explicit about using the browser's built-in Image constructor
+    const img = new window.Image();
     img.onload = () => {
       preloadedImages.set(src, true);
       resolve(true);
