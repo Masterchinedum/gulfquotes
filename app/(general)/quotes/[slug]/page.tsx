@@ -95,8 +95,8 @@ export default async function QuotePage({ params }: PageProps) {
 
     return (
       <Shell>
-        <div className="flex flex-col gap-8 p-8">
-          <div className="mx-auto w-full max-w-5xl">
+        <div className="flex flex-col gap-8 p-4 md:p-8">
+          <div className="mx-auto w-full max-w-7xl">
             <Suspense fallback={<LoadingQuote />}>
               <QuotePageClient 
                 quote={quote}
