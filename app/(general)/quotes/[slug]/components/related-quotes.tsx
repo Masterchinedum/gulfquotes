@@ -1,19 +1,16 @@
 "use client"
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-// import type { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Link from "next/link";
 
 interface RelatedQuotesProps {
   currentQuoteId: string;
-  authorProfileId?: string; // Make this optional
+  categoryId: string; // Add categoryId as a required prop
+  authorProfileId?: string; // Keep this optional
   authorName: string;
   authorSlug: string;
   tags: Array<{ id: string; name: string; slug: string }>;
@@ -36,68 +33,9 @@ interface RelatedQuote {
   };
 }
 
-// Sample quotes for placeholder data
-const placeholderQuotes: RelatedQuote[] = [
-  {
-    id: "q1",
-    slug: "to-be-or-not-to-be",
-    content: "To be, or not to be, that is the question: Whether 'tis nobler in the mind to suffer the slings and arrows of outrageous fortune, or to take arms against a sea of troubles.",
-    backgroundImage: null,
-    authorProfile: {
-      name: "William Shakespeare",
-      slug: "william-shakespeare",
-    },
-    category: {
-      name: "Philosophy",
-      slug: "philosophy",
-    },
-  },
-  {
-    id: "q2",
-    slug: "all-the-worlds-a-stage",
-    content: "All the world's a stage, and all the men and women merely players: they have their exits and their entrances; and one man in his time plays many parts.",
-    backgroundImage: null,
-    authorProfile: {
-      name: "William Shakespeare",
-      slug: "william-shakespeare",
-    },
-    category: {
-      name: "Life",
-      slug: "life",
-    },
-  },
-  {
-    id: "q3",
-    slug: "love-looks-not-with-the-eyes",
-    content: "Love looks not with the eyes, but with the mind, and therefore is winged Cupid painted blind.",
-    backgroundImage: null,
-    authorProfile: {
-      name: "William Shakespeare",
-      slug: "william-shakespeare",
-    },
-    category: {
-      name: "Love",
-      slug: "love",
-    },
-  },
-  {
-    id: "q4",
-    slug: "brevity-soul-of-wit",
-    content: "Brevity is the soul of wit.",
-    backgroundImage: null,
-    authorProfile: {
-      name: "William Shakespeare",
-      slug: "william-shakespeare",
-    },
-    category: {
-      name: "Wisdom",
-      slug: "wisdom",
-    },
-  },
-];
-
 export function RelatedQuotes({ 
   currentQuoteId,
+  categoryId, // Use this for API call
   authorProfileId,
   authorName,
   authorSlug,
@@ -109,41 +47,79 @@ export function RelatedQuotes({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Simulate fetching related quotes
+  // Fetch related quotes from our API endpoint
   useEffect(() => {
     const fetchRelatedQuotes = async () => {
+      if (!categoryId) {
+        setError("Category information is missing");
+        setIsLoading(false);
+        return;
+      }
+      
       try {
         setIsLoading(true);
+        setError(null);
         
-        // In a real implementation, you'd fetch from an API
-        // For now, use the placeholder data and filter out the current quote
+        // Build the API URL with query parameters
+        const url = new URL('/api/quotes/related', window.location.origin);
+        url.searchParams.append('categoryId', categoryId);
+        url.searchParams.append('currentQuoteId', currentQuoteId);
+        url.searchParams.append('limit', limit.toString());
         
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const response = await fetch(url.toString());
         
-        // Filter out current quote from placeholders and limit results
-        const filteredQuotes = placeholderQuotes
-          .filter(quote => quote.id !== currentQuoteId)
-          .slice(0, limit);
-          
-        setRelatedQuotes(filteredQuotes);
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          throw new Error(data.error.message || 'Failed to load related quotes');
+        }
+        
+        if (data.data && Array.isArray(data.data.quotes)) {
+          setRelatedQuotes(data.data.quotes);
+        } else {
+          setRelatedQuotes([]);
+        }
       } catch (err) {
         console.error("Error fetching related quotes:", err);
-        setError("Failed to load related quotes");
+        setError(err instanceof Error ? err.message : "Failed to load related quotes");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchRelatedQuotes();
-  }, [currentQuoteId, limit, tags]);
+  }, [categoryId, currentQuoteId, limit]);
 
-  const displayAuthorName = () => {
+  // Display heading based on what kinds of quotes we're showing
+  const displayTitle = () => {
     if (relatedQuotes.length > 0 && relatedQuotes.every(q => q.authorProfile.slug === authorSlug)) {
       return `More from ${authorName}`;
     }
     return "Related Quotes";
   };
+
+  if (isLoading) {
+    return (
+      <Card className={cn("border-muted", className)}>
+        <CardHeader className="pb-3">
+          <CardTitle>Related Quotes</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {Array(limit).fill(0).map((_, i) => (
+            <div key={i} className="space-y-2">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (error) {
     return (
@@ -155,76 +131,48 @@ export function RelatedQuotes({
     );
   }
 
+  if (relatedQuotes.length === 0) {
+    return (
+      <Card className={cn("border-muted", className)}>
+        <CardContent className="p-6 text-center text-muted-foreground">
+          No related quotes found
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className={cn("border-muted", className)}>
-      <CardContent className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">{displayAuthorName()}</h3>
-          
-          <Link href={`/authors/${authorSlug}`} className="text-sm text-muted-foreground hover:text-primary transition-colors">
-            <span className="flex items-center gap-1">
-              View author 
-              <ExternalLink className="h-3 w-3" />
-            </span>
-          </Link>
-        </div>
-
-        {isLoading ? (
-          <div className="space-y-4">
-            {Array.from({ length: limit }).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-1/2" />
-                <div className="flex items-center space-x-2 pt-2">
-                  <Skeleton className="h-4 w-16" />
+      <CardHeader className="pb-3">
+        <CardTitle>{displayTitle()}</CardTitle>
+        <CardDescription>
+          Discover more quotes in the same category
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {relatedQuotes.map(quote => (
+          <div key={quote.id} className="group">
+            <Link href={`/quotes/${quote.slug}`} className="block group-hover:underline">
+              <div className="flex items-start gap-3">
+                <div>
+                  <Avatar className="h-8 w-8 border">
+                    <AvatarImage src={`/authors/${quote.authorProfile.slug}.jpg`} alt={quote.authorProfile.name} />
+                    <AvatarFallback>{quote.authorProfile.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium line-clamp-2">
+                    "{quote.content}"
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {quote.authorProfile.name}
+                  </p>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {relatedQuotes.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">
-                No related quotes found
-              </p>
-            ) : (
-              relatedQuotes.map((quote) => (
-                <Link href={`/quotes/${quote.slug}`} key={quote.id}>
-                  <div className="border rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer">
-                    <p className="line-clamp-2 text-sm font-medium">
-                      &quot;{quote.content}&quot;
-                    </p>
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          {quote.authorProfile.name}
-                        </span>
-                      </div>
-                      <Badge variant="outline" className="text-xs py-0">
-                        {quote.category.name}
-                      </Badge>
-                    </div>
-                  </div>
-                </Link>
-              ))
-            )}
-          </div>
-        )}
-      </CardContent>
-      
-      {relatedQuotes.length > 0 && (
-        <CardFooter className="px-6 py-4 border-t bg-muted/10">
-          <Button variant="outline" size="sm" className="w-full" asChild>
-            <Link href={`/quotes?author=${authorProfileId}`}>
-              <span className="flex items-center justify-center gap-1">
-                Browse all quotes by {authorName}
-                <ArrowRight className="h-3 w-3" />
-              </span>
             </Link>
-          </Button>
-        </CardFooter>
-      )}
+          </div>
+        ))}
+      </CardContent>
     </Card>
   );
 }
