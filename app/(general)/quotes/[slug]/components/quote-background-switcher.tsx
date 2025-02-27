@@ -1,14 +1,12 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { Check, ImageIcon, Loader2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Gallery } from "@prisma/client";
-
-// Image cache for preloaded thumbnails
-const preloadedThumbnails = new Map<string, boolean>();
+import { useBackgroundPreloader } from "@/hooks/use-background-preloader";
 
 interface QuoteBackgroundSwitcherProps {
   backgrounds: Array<Gallery & {
@@ -28,9 +26,6 @@ export function QuoteBackgroundSwitcher({
   isLoading = false,
   className
 }: QuoteBackgroundSwitcherProps) {
-  // Track loading state for individual images
-  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
-  
   // Reference to previously selected background
   const previousBackgroundRef = useRef<string | null>(null);
 
@@ -55,58 +50,30 @@ export function QuoteBackgroundSwitcher({
     usageCount: 0
   } as Gallery;
 
-  // Preload thumbnails when component mounts
-  useEffect(() => {
-    // Preload the most important images first (active and first few)
-    const priorityImages = backgrounds.filter(
-      bg => bg.id === activeBackground?.id || 
-      backgrounds.indexOf(bg) < 4
-    );
-    
-    priorityImages.forEach(background => {
-      if (!preloadedThumbnails.has(background.url)) {
-        const img = new Image();
-        img.onload = () => {
-          preloadedThumbnails.set(background.url, true);
-          // Update loading state to reflect loaded image
-          setLoadingStates(prev => ({
-            ...prev,
-            [background.id]: false
-          }));
-        };
-        img.src = background.url;
-        // Set initial loading state
-        setLoadingStates(prev => ({
-          ...prev,
-          [background.id]: true
-        }));
-      }
-    });
-  }, [backgrounds, activeBackground]);
+  // Use our new background preloader hook
+  const {
+    isLoading: isImageLoading,
+    isLoaded,
+    preloadImage
+    // Remove 'loadingStates' from here since it's not used directly
+  } = useBackgroundPreloader({
+    initialImages: backgrounds,
+    priorityImages: activeBackground ? 
+      [activeBackground, ...backgrounds.slice(0, 3)] : 
+      backgrounds.slice(0, 4)
+  });
 
   // Handle background change with loading state
   const handleBackgroundChange = async (background: Gallery) => {
     previousBackgroundRef.current = activeBackground?.id || null;
     
-    // Set loading state for this specific background
-    if (!preloadedThumbnails.has(background.url) && background.id !== "default") {
-      setLoadingStates(prev => ({
-        ...prev,
-        [background.id]: true
-      }));
+    // If background isn't loaded yet, start preloading it
+    if (background.url && !isLoaded(background)) {
+      preloadImage(background);
     }
     
     // Call the parent handler
     await onBackgroundChange(background);
-    
-    // After change, mark as loaded
-    if (background.id !== "default") {
-      preloadedThumbnails.set(background.url, true);
-      setLoadingStates(prev => ({
-        ...prev,
-        [background.id]: false
-      }));
-    }
   };
 
   return (
@@ -151,7 +118,8 @@ export function QuoteBackgroundSwitcher({
 
           {/* Enhanced Background Options */}
           {backgrounds.map((background) => {
-            const isImageLoading = loadingStates[background.id] === true;
+            const bgIsLoading = isImageLoading(background);
+            const bgIsLoaded = isLoaded(background);
             const wasSelected = previousBackgroundRef.current === background.id;
             const isSelected = activeBackground?.id === background.id;
             
@@ -172,7 +140,7 @@ export function QuoteBackgroundSwitcher({
                 )}
               >
                 {/* Loading Spinner for Individual Images */}
-                {isImageLoading && (
+                {bgIsLoading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10">
                     <Loader2 className="h-5 w-5 text-primary animate-spin" />
                   </div>
@@ -186,19 +154,11 @@ export function QuoteBackgroundSwitcher({
                   className={cn(
                     "object-cover transition-all duration-500",
                     "group-hover:scale-110",
-                    (isImageLoading || isLoading) && "blur-sm brightness-90",
-                    preloadedThumbnails.has(background.url) ? "opacity-100" : "opacity-0"
+                    (bgIsLoading || isLoading) && "blur-sm brightness-90",
+                    bgIsLoaded ? "opacity-100" : "opacity-0"
                   )}
                   sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                   priority={isSelected}
-                  onLoadingComplete={() => {
-                    // Mark as loaded when Next.js finishes loading the image
-                    preloadedThumbnails.set(background.url, true);
-                    setLoadingStates(prev => ({
-                      ...prev,
-                      [background.id]: false
-                    }));
-                  }}
                 />
 
                 {/* Enhanced Selection Overlay */}
@@ -215,15 +175,15 @@ export function QuoteBackgroundSwitcher({
                   "bg-black/60 backdrop-blur-[1px]",
                   "opacity-0 transition-all duration-300",
                   "group-hover:opacity-100",
-                  isImageLoading && "hidden"
+                  bgIsLoading && "hidden"
                 )}>
                   <p className="text-sm font-medium text-white/90 drop-shadow-lg">
-                    {preloadedThumbnails.has(background.url) ? "Select Background" : "Loading..."}
+                    {bgIsLoaded ? "Select Background" : "Loading..."}
                   </p>
                 </div>
                 
                 {/* Cached Indicator (optional) */}
-                {preloadedThumbnails.has(background.url) && !isImageLoading && !isSelected && (
+                {bgIsLoaded && !bgIsLoading && !isSelected && (
                   <div className="absolute top-1 right-1 bg-primary/20 rounded-full p-1">
                     <Check className="h-3 w-3 text-primary" />
                   </div>
