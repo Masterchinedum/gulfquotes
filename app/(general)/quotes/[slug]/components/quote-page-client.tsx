@@ -4,6 +4,8 @@ import React, { useRef, useCallback, useState } from "react";
 import { Gallery } from "@prisma/client";
 import { QuoteDisplay, ResponsiveQuoteContainer } from "./quote-display";
 import { QuoteActions } from "./quote-actions";
+import { QuoteInfoEnhanced } from "./quote-info-enhanced";
+import { QuoteComments } from "./quote-comments";
 import type { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
 
 interface QuotePageClientProps {
@@ -50,8 +52,11 @@ export function QuotePageClient({
               />
             </ResponsiveQuoteContainer>
             
+            {/* Enhanced Quote Information */}
+            <QuoteInfoEnhanced quote={quote} className="mb-8" />
+            
             {/* On mobile, actions appear below the quote */}
-            <div className="block lg:hidden">
+            <div className="block lg:hidden mb-8">
               <QuoteActions 
                 quote={quote}
                 backgrounds={backgrounds}
@@ -60,6 +65,9 @@ export function QuotePageClient({
                 containerRef={containerRef}
               />
             </div>
+            
+            {/* Comments Section */}
+            <QuoteComments quoteId={quote.id} />
           </div>
         </div>
         
