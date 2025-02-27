@@ -1,7 +1,7 @@
 // app/(general)/quotes/[slug]/components/quote-download.tsx
 "use client"
 
-import React from "react";
+import React, { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,22 +23,45 @@ export function QuoteDownload({
   className,
   filename,
 }: QuoteDownloadProps) {
+  // Enhanced download preparation
+  const handleBeforeDownload = useCallback(() => {
+    if (containerRef.current) {
+      // Ensure any background transitions are complete
+      const transitionDuration = 500; // Match the duration from QuoteBackground
+      
+      // Call original callback if provided
+      onBeforeDownload?.();
+      
+      // Force any pending transitions to complete
+      const backgroundImage = containerRef.current.querySelector('.quote-background-image');
+      if (backgroundImage) {
+        // Ensure image is fully loaded
+        backgroundImage.classList.add('download-ready');
+      }
+    }
+  }, [containerRef, onBeforeDownload]);
+
   const { 
     downloadImage, 
     isLoading, 
     progress
   } = useQuoteDownload({
     containerRef,
-    onPrepareDownload: onBeforeDownload,
+    onPrepareDownload: handleBeforeDownload,
     onDownloadComplete: onAfterDownload,
     filename
   });
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Download Progress */}
+      {/* Download Status */}
       {isLoading && (
-        <Progress value={progress} className="h-2" />
+        <div className="space-y-2">
+          <Progress value={progress} className="h-2" />
+          <p className="text-xs text-center text-muted-foreground">
+            {progress < 100 ? 'Preparing download...' : 'Processing image...'}
+          </p>
+        </div>
       )}
 
       {/* Download Button */}
@@ -50,7 +73,7 @@ export function QuoteDownload({
         className="w-full"
       >
         <Download className="h-4 w-4 mr-2" />
-        Download Quote
+        Download Quote with Current Background
       </Button>
     </div>
   );

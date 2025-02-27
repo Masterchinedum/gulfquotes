@@ -1,16 +1,14 @@
-// app/(general)/quotes/[slug]/components/quote-actions.tsx
 "use client"
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Share2, Image as ImageIcon } from "lucide-react";
+import { Download, Share2, Image as ImageIcon, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Gallery } from "@prisma/client";
+import { useToast } from "@/hooks/use-toast";
 import { QuoteBackgroundSwitcher } from "./quote-background-switcher";
 import { QuoteDownload } from "./quote-download";
 import { QuoteShare } from "./quote-share";
-// import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-// import { Label } from "@/components/ui/label";
 import type { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
 
 interface QuoteActionsProps {
@@ -33,8 +31,33 @@ export function QuoteActions({
   containerRef,
   className
 }: QuoteActionsProps) {
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("backgrounds");
+
+  // Simplified background change handler - no permanent changes
+  const handleBackgroundChange = useCallback(async (background: Gallery) => {
+    try {
+      setIsLoading(true);
+      // Still using async for consistency with interface
+      await onBackgroundChange(background);
+      
+      // Updated toast to indicate temporary change
+      toast({
+        title: "Preview updated",
+        description: "Background changed for preview and download only.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error changing background",
+        description: "Failed to update the preview. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Background preview error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [onBackgroundChange, toast]);
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -54,19 +77,25 @@ export function QuoteActions({
           </TabsTrigger>
         </TabsList>
 
-        {/* Background Selection */}
+        {/* Background Selection with indicator for temporary changes */}
         {activeTab === "backgrounds" && (
           <div className="pt-4">
+            {/* Visual indicator for temporary changes */}
+            <div className="mb-2 p-2 bg-muted/50 rounded-md flex items-center text-sm text-muted-foreground">
+              <RefreshCw className="h-4 w-4 mr-2 animate-pulse text-primary/70" />
+              <span>Changes are temporary and for this session only</span>
+            </div>
+            
             <QuoteBackgroundSwitcher
               backgrounds={backgrounds}
               activeBackground={activeBackground}
-              onBackgroundChange={onBackgroundChange}
+              onBackgroundChange={handleBackgroundChange}
               isLoading={isLoading}
             />
           </div>
         )}
 
-        {/* Download Options */}
+        {/* Rest of the component remains the same */}
         {activeTab === "download" && (
           <div className="pt-4">
             <QuoteDownload
@@ -78,7 +107,6 @@ export function QuoteActions({
           </div>
         )}
 
-        {/* Share Options */}
         {activeTab === "share" && (
           <div className="pt-4">
             <QuoteShare

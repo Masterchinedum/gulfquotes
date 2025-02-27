@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useRef, useMemo, useCallback, useState } from "react";
+import React, { useRef, useMemo, useCallback, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
 import { Gallery } from "@prisma/client";
@@ -12,7 +12,7 @@ import { quoteDownloadService } from "@/lib/services/quote-download.service";
 interface QuoteDisplayProps {
   quote: QuoteDisplayData;
   fontSize?: number;
-  backgroundImage?: Gallery | string | null;
+  backgroundImage?: Gallery | string | null; // Can be dynamically changed by parent
   backgroundStyle?: keyof typeof backgroundStyles;
   className?: string;
   containerRef?: React.RefObject<HTMLDivElement>;
@@ -23,11 +23,13 @@ interface QuoteDisplayProps {
 export async function prepareForDownload(
   element: HTMLElement
 ): Promise<string> {
-  // Clone the element for download
+  // Clone the element for download - this will capture the current background state
   const clone = element.cloneNode(true) as HTMLElement;
   document.body.appendChild(clone);
   
   try {
+    // Wait a moment to ensure background is fully rendered
+    await new Promise(resolve => setTimeout(resolve, 100));
     const dataUrl = await quoteDownloadService.generateImage(clone);
     return dataUrl;
   } finally {
@@ -50,6 +52,30 @@ export function QuoteDisplay({
   
   // Track background loading state
   const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
+
+// Track current background for download
+  const [currentBackground, setCurrentBackground] = useState<Gallery | string | null>(backgroundImage);
+  
+  // Update current background when prop changes
+  useEffect(() => {
+    setCurrentBackground(backgroundImage);
+  }, [backgroundImage]);
+  
+  // Track current background for download
+  const [currentBackground, setCurrentBackground] = useState<Gallery | string | null>(backgroundImage);
+  
+  // Update current background when prop changes
+  useEffect(() => {
+    setCurrentBackground(backgroundImage);
+  }, [backgroundImage]);
+  
+  // Track current background for download
+  const [currentBackground, setCurrentBackground] = useState<Gallery | string | null>(backgroundImage);
+  
+  // Update current background when prop changes
+  useEffect(() => {
+    setCurrentBackground(backgroundImage);
+  }, [backgroundImage]);
   
   // Handle background image load start
   const handleBackgroundLoadStart = useCallback(() => {
@@ -80,14 +106,21 @@ export function QuoteDisplay({
   
   const style = backgroundStyles[backgroundStyle];
 
-  // Handle download preparation with proper dependencies
+  // Handle download preparation - ensure background is loaded
   const handlePrepareDownload = useCallback(() => {
-    if (ref.current) {
+    if (ref.current && !isBackgroundLoading) {
       onPrepareDownload?.();
+    } else if (isBackgroundLoading) {
+      // If background is loading, wait a bit
+      setTimeout(() => {
+        if (ref.current) {
+          onPrepareDownload?.();
+        }
+      }, 500);
     }
-  }, [onPrepareDownload, ref]);
+  }, [onPrepareDownload, ref, isBackgroundLoading]);
 
-  // Handle download completion with proper dependencies  
+  // Handle download completion
   const handleDownloadComplete = useCallback(() => {
     if (ref.current) {
       onDownloadComplete?.();
@@ -108,7 +141,7 @@ export function QuoteDisplay({
       onDownloadComplete={handleDownloadComplete}
     >
       <QuoteBackground 
-        background={backgroundImage || null} 
+        background={currentBackground || null}  // Use currentBackground instead of backgroundImage
         overlayStyle={style.overlayStyle}
         onLoadStart={handleBackgroundLoadStart}
         onLoadComplete={handleBackgroundLoadComplete}

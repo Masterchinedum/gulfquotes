@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react";
+import React, { useCallback, useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Gallery } from "@prisma/client";
@@ -53,12 +53,36 @@ export function QuoteBackground({
   onLoadStart,
   onLoadComplete
 }: QuoteBackgroundProps) {
+  const [isLoading, setIsLoading] = useState(false);
   const backgroundUrl = typeof background === 'string' 
     ? background 
     : background?.url || null;
 
+  // Handle image loading start
+  const handleLoadStart = useCallback(() => {
+    setIsLoading(true);
+    onLoadStart?.();
+  }, [onLoadStart]);
+
+  // Handle image load complete
+  const handleLoadComplete = useCallback(() => {
+    setIsLoading(false);
+    onLoadComplete?.();
+  }, [onLoadComplete]);
+
+  // Handle image load error
+  const handleLoadError = useCallback((e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    console.error("Background image load error:", e);
+    setIsLoading(false);
+    onLoadComplete?.(); // Complete loading even on error
+  }, [onLoadComplete]);
+
   return (
-    <div className={cn("relative w-full h-full", className)}>
+    <div className={cn(
+      "relative w-full h-full transition-all duration-500 ease-out",
+      isLoading && "scale-105 blur-sm",
+      className
+    )}>
       <div className="absolute inset-0 overflow-hidden">
         {backgroundUrl ? (
           <div className="relative w-full h-full">
@@ -67,10 +91,10 @@ export function QuoteBackground({
               alt="Quote background"
               fill
               className={cn(
-                "object-cover",
-                "w-full h-full",
-                "select-none pointer-events-none",
-                "quote-background-image" // Specific class for download handler
+                "object-cover w-full h-full",
+                "select-none pointer-events-none quote-background-image",
+                "transition-all duration-500 ease-out",
+                isLoading && "scale-110 blur-sm"
               )}
               sizes="1080px"
               style={{ 
@@ -78,48 +102,39 @@ export function QuoteBackground({
                 objectPosition: 'center'
               }}
               priority
-              unoptimized // Prevent Next.js image optimization for download
-              onLoadStart={onLoadStart}    // Changed from onLoadingStart to onLoadStart
-              onLoad={onLoadComplete}         // Add this
+              unoptimized
+              onLoadStart={handleLoadStart}   // Changed from onLoadingStart to onLoadStart
+              onLoad={handleLoadComplete}
+              onError={handleLoadError}
             />
           </div>
         ) : (
-          // Solid/Gradient Background (when no image)
-          <div 
-            className={cn(
-              "absolute inset-0",
-              "bg-gradient-to-br from-primary/10 to-secondary/5"
-            )} 
-          />
+          <div className={cn(
+            "absolute inset-0",
+            "bg-gradient-to-br from-primary/10 to-secondary/5",
+            "transition-opacity duration-500"
+          )} />
         )}
       </div>
 
-      {/* Overlay Layer */}
+      {/* Enhanced Overlay Layer */}
       <div className={cn(
         "absolute inset-0",
         overlayStyles[overlayStyle],
-        "transition-opacity duration-200",
-        "opacity-5 mix-blend-overlay",
-        "backdrop-filter backdrop-grayscale"
+        "transition-all duration-500",
+        "backdrop-filter backdrop-grayscale",
+        isLoading ? "opacity-0" : "opacity-5",
+        "mix-blend-overlay"
       )} />
 
-      {/* Optional Texture
-      <div 
-        className={cn(
-          "absolute inset-0",
-          "opacity-5 mix-blend-overlay pointer-events-none",
-          "bg-[url('/textures/noise.png')] bg-repeat"
-        )} 
-      /> */}
-
-      {/* Border Overlay */}
-      <div 
-        className={cn(
-          "absolute inset-0",
-          "border border-white/10 rounded-lg",
-          "pointer-events-none"
-        )} 
-      />
+      {/* Border Overlay with transition */}
+      <div className={cn(
+        "absolute inset-0",
+        "border border-white/10 rounded-lg",
+        "pointer-events-none",
+        "transition-opacity duration-500",
+        isLoading && "opacity-0"
+      )} />
     </div>
   );
 }

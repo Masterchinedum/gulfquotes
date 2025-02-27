@@ -1,11 +1,11 @@
 // app/(general)/quotes/[slug]/components/quote-page-client.tsx
 "use client"
 
-import React, { useRef, useCallback } from "react";
+import React, { useRef, useCallback, useState } from "react"; // Added useState
 import { Gallery } from "@prisma/client";
 import { QuoteDisplay, ResponsiveQuoteContainer } from "./quote-display";
 import { QuoteActions } from "./quote-actions";
-import { toast } from "sonner";
+// import { toast } from "sonner";
 import type { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
 
 interface QuotePageClientProps {
@@ -18,34 +18,20 @@ interface QuotePageClientProps {
 export function QuotePageClient({
   quote,
   backgrounds,
-  activeBackground,
+  activeBackground: initialBackground, // Rename to indicate it's the initial value
   fontSize,
 }: QuotePageClientProps) {
+  // Add local state for active background
+  const [localBackground, setLocalBackground] = useState<Gallery | null>(initialBackground);
+
   // Explicitly type the ref as non-null
   const containerRef = useRef<HTMLDivElement>(null) as React.MutableRefObject<HTMLDivElement>;
 
-  const handleBackgroundChange = useCallback(async (background: Gallery) => {
-    try {
-      const response = await fetch(`/api/quotes/${quote.slug}/background`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          imageUrl: background.url 
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update background');
-      }
-
-      window.location.reload();
-    } catch (error) {
-      toast.error('Failed to update background');
-      console.error('Background update error:', error);
-    }
-  }, [quote.slug]);
+  // Update to use local state instead of API call
+  const handleBackgroundChange = useCallback((background: Gallery) => {
+    // Simply update local state - no API call
+    setLocalBackground(background);
+  }, []);
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -54,7 +40,7 @@ export function QuotePageClient({
           <QuoteDisplay 
             quote={quote}
             fontSize={fontSize}
-            backgroundImage={activeBackground}
+            backgroundImage={localBackground} // Use local state instead of prop
             containerRef={containerRef}
           />
         </ResponsiveQuoteContainer>
@@ -62,7 +48,7 @@ export function QuotePageClient({
         <QuoteActions 
           quote={quote}
           backgrounds={backgrounds}
-          activeBackground={activeBackground}
+          activeBackground={localBackground} // Use local state instead of prop
           onBackgroundChange={handleBackgroundChange}
           containerRef={containerRef}
         />
