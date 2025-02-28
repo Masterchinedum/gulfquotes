@@ -6,6 +6,27 @@ import commentService from "@/lib/services/comment.service";
 import { AppError } from "@/lib/api-error";
 import { CommentData } from "@/schemas/comment.schema";
 
+// Define an interface for the database comment object
+interface DatabaseComment {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  userId: string;
+  content: string;
+  isEdited: boolean;
+  editedAt: Date | null;
+  likes: number;
+  quoteId: string;
+  user?: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  };
+  _count?: {
+    replies: number;
+  };
+}
+
 // Define response types
 interface CommentsResponse {
   data?: {
@@ -68,7 +89,7 @@ export async function GET(
       // Return the comments with proper transformation
       return NextResponse.json({
         data: {
-          items: result.items.map(comment => ({
+          items: result.items.map((comment: DatabaseComment) => ({
             ...comment,
             user: comment.user || { 
               id: comment.userId,
