@@ -1,13 +1,16 @@
 // app/api/quotes/[slug]/comments/[commentId]/replies/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import db from "@/lib/prisma";
 import { z } from "zod";
+import replyService from "@/lib/services/reply.service";
+import { AppError } from "@/lib/api-error";
+// import { Reply, Comment } from "@prisma/client";
+import { ReplyData } from "@/schemas/comment.schema";
 
 // Define response types
 interface RepliesResponse {
   data?: {
-    items: ReplyWithUser[];
+    items: ReplyData[];
     total: number;
     page: number;
     limit: number;
@@ -21,29 +24,13 @@ interface RepliesResponse {
 }
 
 interface ReplyResponse {
-  data?: ReplyWithUser;
+  data?: ReplyData;
   error?: {
     code: string;
     message: string;
     details?: Record<string, string[]>;
   };
 }
-
-// Define the type for replies with user info
-type ReplyWithUser = {
-  id: string;
-  content: string;
-  createdAt: Date;
-  updatedAt: Date;
-  isEdited: boolean;
-  editedAt: Date | null;
-  likes: number;
-  user: {
-    id: string;
-    name: string | null;
-    image: string | null;
-  };
-};
 
 // Define validation schema for creating a reply
 const createReplySchema = z.object({
@@ -69,63 +56,25 @@ export async function GET(
     const page = Math.max(1, Number(searchParams.get("page")) || 1);
     const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit")) || 10));
     
-    // Calculate offset for pagination
-    const skip = (page - 1) * limit;
-
-    // Check if the comment exists
-    const comment = await db.comment.findUnique({
-      where: { id: commentId },
-      select: { id: true }
-    });
-
-    if (!comment) {
-      return NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "Comment not found" } },
-        { status: 404 }
-      );
-    }
-
-    // Get replies for this comment with pagination
-    const [replies, totalCount] = await Promise.all([
-      db.reply.findMany({
-        where: { commentId },
-        orderBy: { createdAt: 'asc' }, // Show oldest replies first
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          content: true,
-          createdAt: true,
-          updatedAt: true,
-          isEdited: true,
-          editedAt: true,
-          likes: true,
-          user: {
-            select: {
-              id: true,
-              name: true,
-              image: true
-            }
-          }
-        }
-      }),
-      db.reply.count({ where: { commentId } })
-    ]);
-
-    // Calculate if there are more pages
-    const hasMore = skip + replies.length < totalCount;
-
-    // Return the replies
-    return NextResponse.json({
-      data: {
-        items: replies,
-        total: totalCount,
+    try {
+      // Use the reply service to list replies
+      const result = await replyService.listReplies({
+        commentId,
         page,
-        limit,
-        hasMore
+        limit
+      });
+      
+      // Return the replies
+      return NextResponse.json({ data: result });
+    } catch (error) {
+      if (error instanceof AppError) {
+        return NextResponse.json(
+          { error: { code: error.code, message: error.message } },
+          { status: error.statusCode }
+        );
       }
-    });
-
+      throw error;
+    }
   } catch (error) {
     console.error("[REPLIES_GET]", error);
     return NextResponse.json(
@@ -142,7 +91,7 @@ export async function POST(
   try {
     // Check authentication
     const session = await auth();
-    if (!session?.user || !session.user.id) {
+    if (!session?.user) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
         { status: 401 }
@@ -155,19 +104,6 @@ export async function POST(
       return NextResponse.json(
         { error: { code: "BAD_REQUEST", message: "Invalid comment ID" } },
         { status: 400 }
-      );
-    }
-
-    // Check if the comment exists
-    const comment = await db.comment.findUnique({
-      where: { id: commentId },
-      select: { id: true }
-    });
-
-    if (!comment) {
-      return NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "Comment not found" } },
-        { status: 404 }
       );
     }
 
@@ -188,29 +124,25 @@ export async function POST(
       );
     }
 
-    // Create the reply
-    const reply = await db.reply.create({
-      data: {
-        content: validationResult.data.content,
+    try {
+      // Use the reply service to create a reply
+      const reply = await replyService.createReply(
         commentId,
-        userId: session.user.id
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            image: true
-          }
-        }
+        validationResult.data,
+        session.user
+      );
+      
+      // Return the newly created reply
+      return NextResponse.json({ data: reply });
+    } catch (error) {
+      if (error instanceof AppError) {
+        return NextResponse.json(
+          { error: { code: error.code, message: error.message } },
+          { status: error.statusCode }
+        );
       }
-    });
-
-    // Return the newly created reply
-    return NextResponse.json({ 
-      data: reply as unknown as ReplyWithUser 
-    });
-
+      throw error;
+    }
   } catch (error) {
     console.error("[REPLIES_POST]", error);
     return NextResponse.json(
