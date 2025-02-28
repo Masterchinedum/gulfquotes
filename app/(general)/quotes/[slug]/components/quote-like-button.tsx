@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,16 @@ export function QuoteLikeButton({
   const [likes, setLikes] = useState(initialLikes);
   const [isLiked, setIsLiked] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    // Sync with latest data from API if needed
+    const fetchLatestLikes = async () => {
+      const response = await fetch(`/api/quotes/${quoteId}/likes`);
+      const data = await response.json();
+      setLikes(data.likes);
+    };
+    fetchLatestLikes();
+  }, [quoteId]);
 
   // Function to handle liking/unliking
   const handleLikeToggle = () => {
