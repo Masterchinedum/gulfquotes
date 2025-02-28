@@ -48,7 +48,6 @@ export function CommentItem({
   setReplyingTo,
   onLoadReplies,
   onToggleLike,
-  onPostReply,
   onDeleteComment,
   onUpdateComment,
   onDeleteReply,
