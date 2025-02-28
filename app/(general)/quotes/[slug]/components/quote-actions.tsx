@@ -1,36 +1,22 @@
 "use client"
 
 import React, { useState, useCallback } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Download, 
-  Share2, 
-  BookmarkIcon,
-  Palette
-} from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Gallery } from "@prisma/client";
-import { useToast } from "@/hooks/use-toast";
-import { QuoteBackgroundSwitcher } from "./quote-background-switcher";
+import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { QuoteDownload } from "./quote-download";
 import { QuoteShare } from "./quote-share";
+import { QuoteBackgroundSwitcher } from "./quote-background-switcher";
+import { useToast } from "@/hooks/use-toast";
+import { Palette, Download, Share2, Bookmark as BookmarkIcon } from "lucide-react";
 import { QuoteLikeButton } from "./quote-like-button";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 import type { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
 
 interface QuoteActionsProps {
   quote: QuoteDisplayData;
-  backgrounds: Array<Gallery & {
-    isActive?: boolean;
-    isBackground?: boolean;
-  }>;
+  backgrounds: Gallery[];
   activeBackground: Gallery | null;
   onBackgroundChange: (background: Gallery) => Promise<void>;
   containerRef: React.RefObject<HTMLDivElement>;
@@ -96,7 +82,7 @@ export function QuoteActions({
         <CardContent>
           <div className="flex items-center justify-between">
             <QuoteLikeButton 
-              initialLikes={Math.floor(Math.random() * 100)}
+              initialLikes={0} // Use a static value or prop
               quoteId={quote.id}
             />
             

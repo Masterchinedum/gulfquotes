@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Heart } from "lucide-react";
+import { ThumbsUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface QuoteLikeButtonProps {
-  initialLikes?: number;
+  initialLikes: number;
   quoteId: string;
   className?: string;
 }
@@ -75,12 +75,10 @@ export function QuoteLikeButton({
       >
         <div className="relative">
           {/* Base heart icon */}
-          <Heart 
+          <ThumbsUp 
             className={cn(
-              "h-5 w-5 transition-colors duration-200",
-              isLiked 
-                ? "fill-red-500 text-red-500" 
-                : "fill-transparent group-hover:text-red-500"
+              "h-4 w-4",
+              isLiked && "fill-primary text-primary"
             )}
           />
           
@@ -94,17 +92,14 @@ export function QuoteLikeButton({
                 transition={{ duration: 0.5 }}
                 className="absolute inset-0 flex items-center justify-center"
               >
-                <Heart className="h-5 w-5 text-red-500" />
+                <ThumbsUp className="h-5 w-5 text-primary" />
               </motion.div>
             )}
           </AnimatePresence>
         </div>
         
         {/* Like count */}
-        <span className={cn(
-          "text-sm font-medium transition-colors",
-          isLiked ? "text-red-500" : "text-muted-foreground group-hover:text-foreground"
-        )}>
+        <span className="text-sm font-medium transition-colors text-muted-foreground group-hover:text-foreground">
           {formatLikes(likes)}
         </span>
       </Button>

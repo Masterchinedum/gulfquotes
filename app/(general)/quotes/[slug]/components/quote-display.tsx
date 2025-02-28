@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useRef, useMemo, useCallback, useState, useEffect } from "react";
+import React, { useRef, useMemo, useCallback, useState } from "react";
 import { cn } from "@/lib/utils";
 import { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
 import { Gallery } from "@prisma/client";
@@ -93,14 +93,14 @@ export function QuoteDisplay({
   
   // Track background loading state
   const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
-
-  // Track current background for download - only declare this once
-  const [currentBackground, setCurrentBackground] = useState<Gallery | string | null>(backgroundImage || null);
   
-  // Update current background when prop changes
-  useEffect(() => {
-    setCurrentBackground(backgroundImage || null);
-  }, [backgroundImage, setCurrentBackground]);
+  // Memoize the background image value to prevent unnecessary re-renders
+  const stableBackgroundImage = useMemo(() => {
+    if (typeof backgroundImage === 'object' && backgroundImage !== null) {
+      return backgroundImage;
+    }
+    return null;
+  }, [backgroundImage]);
   
   // Handle background image load start
   const handleBackgroundLoadStart = useCallback(() => {
@@ -113,6 +113,7 @@ export function QuoteDisplay({
   }, []);
   
   const fontSize = useMemo(() => {
+    // Font size calculation logic (unchanged)
     if (propFontSize) return propFontSize;
     
     const length = quote.content.length;
@@ -166,7 +167,7 @@ export function QuoteDisplay({
       onDownloadComplete={handleDownloadComplete}
     >
       <QuoteBackground 
-        background={currentBackground || null}  // Use currentBackground instead of backgroundImage
+        background={stableBackgroundImage}  // Use memoized background value
         overlayStyle={style.overlayStyle}
         onLoadStart={handleBackgroundLoadStart}
         onLoadComplete={handleBackgroundLoadComplete}
