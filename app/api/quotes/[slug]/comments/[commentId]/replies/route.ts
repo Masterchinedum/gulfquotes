@@ -166,7 +166,9 @@ export async function POST(
       );
       
       // Return the newly created reply
-      return NextResponse.json({ data: reply });
+      return NextResponse.json({ 
+        data: reply as unknown as ReplyData 
+      });
     } catch (error) {
       if (error instanceof AppError) {
         return NextResponse.json(

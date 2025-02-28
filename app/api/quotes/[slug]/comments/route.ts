@@ -65,8 +65,23 @@ export async function GET(
         sortBy
       });
       
-      // Return the comments
-      return NextResponse.json({ data: result });
+      // Return the comments with proper transformation
+      return NextResponse.json({
+        data: {
+          items: result.items.map(comment => ({
+            ...comment,
+            user: comment.user || { 
+              id: comment.userId,
+              name: null, 
+              image: null 
+            }
+          })),
+          total: result.total,
+          hasMore: result.hasMore,
+          page: result.page,
+          limit: result.limit
+        }
+      });
     } catch (error) {
       if (error instanceof AppError) {
         return NextResponse.json(
