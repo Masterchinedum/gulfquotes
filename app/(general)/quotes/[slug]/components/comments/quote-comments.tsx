@@ -8,21 +8,24 @@ import { toast } from "sonner";
 import { CommentData, ReplyData } from "@/schemas/comment.schema";
 import { CommentList } from "./comment-list";
 import { CommentWithReplies, ReplyWithLike } from "./types";
+import { LoginPrompt } from "../login-prompt";
 
 interface QuoteCommentsProps {
-  quoteId: string;
-  className?: string;
+  className?: string; // Remove quoteId as it's not being used
 }
 
 export function QuoteComments({ className }: QuoteCommentsProps) {
   const { slug } = useParams() as { slug: string };
-  const { data: session, status } = useSession();
+  // Only destructure what we use - remove session
+  const { status } = useSession();
   const [comments, setComments] = useState<CommentWithReplies[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeSort, setActiveSort] = useState<"recent" | "popular">("recent");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const isAuthenticated = status === "authenticated";
 
   // Fetch comments on component mount and when parameters change
   useEffect(() => {
@@ -42,7 +45,7 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
         // Transform data to include isLiked property
         const transformedComments = data.data.items.map((comment: CommentData) => ({
           ...comment,
-          isLiked: false, // We'll implement like status in a future phase
+          isLiked: false, // We'll update this when we get user-specific likes
           replies: [] // Initialize empty replies array
         }));
         
@@ -128,7 +131,12 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
 
   // Function to handle replying to a comment
   const handlePostReply = async (commentId: string, content: string) => {
-    if (!content.trim() || !session?.user) {
+    if (!isAuthenticated) {
+      setShowLoginPrompt(true);
+      return;
+    }
+    
+    if (!content.trim()) {
       toast.error("Reply content cannot be empty");
       return;
     }
@@ -217,13 +225,13 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
       
       // Optimistically update UI by removing the reply from its parent comment
       setComments(prev => prev.map(comment => {
-        if (comment.replies && comment.replies.some(reply => reply.id === replyId)) {
-          // Update the reply count
-          const updatedCount = (comment._count?.replies || 0) - 1;
+        if (comment.replies) {
           return {
             ...comment,
             replies: comment.replies.filter(reply => reply.id !== replyId),
-            _count: { replies: updatedCount }
+            _count: {
+              replies: Math.max(0, (comment._count?.replies || 0) - 1)
+            }
           };
         }
         return comment;
@@ -310,14 +318,15 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
     }
   };
 
-  // Function to handle like toggling (placeholder for now)
+  // Function to handle like toggling
   const handleToggleLike = (id: string) => {
-    if (status !== "authenticated") {
-      toast.error("You must be signed in to like comments");
+    if (!isAuthenticated) {
+      // Show login prompt instead of toast
+      setShowLoginPrompt(true);
       return;
     }
     
-    // Optimistic update for now - API integration will come in a later phase
+    // Optimistic update for now - API integration will come later
     setComments(prev => prev.map(comment => {
       if (comment.id === id) {
         const isNowLiked = !comment.isLiked;
@@ -351,24 +360,40 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
   };
 
   return (
-    <CommentList
-      comments={comments}
-      isLoading={isLoading}
-      hasMore={hasMore}
-      isLoadingMore={isLoadingMore}
-      activeSort={activeSort}
-      quoteSlug={slug}
-      onSortChange={(sort) => setActiveSort(sort)}
-      onCommentAdded={handleCommentAdded}
-      onLoadMore={handleLoadMore}
-      onLoadReplies={handleLoadReplies}
-      onToggleLike={handleToggleLike}
-      onPostReply={handlePostReply}
-      onDeleteComment={handleDeleteComment}
-      onUpdateComment={handleUpdateComment}
-      onDeleteReply={handleDeleteReply}
-      onUpdateReply={handleUpdateReply}
-      className={className}
-    />
+    <>
+      {showLoginPrompt && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50 p-4">
+          <div className="max-w-md w-full">
+            <LoginPrompt 
+              title="Sign in to interact"
+              description="You need to be signed in to like comments or replies."
+              callToAction="Sign in now"
+              redirectUrl={`/quotes/${slug}`}
+              onClose={() => setShowLoginPrompt(false)}
+            />
+          </div>
+        </div>
+      )}
+      
+      <CommentList
+        comments={comments}
+        isLoading={isLoading}
+        hasMore={hasMore}
+        isLoadingMore={isLoadingMore}
+        activeSort={activeSort}
+        quoteSlug={slug}
+        onSortChange={(sort) => setActiveSort(sort)}
+        onCommentAdded={handleCommentAdded}
+        onLoadMore={handleLoadMore}
+        onLoadReplies={handleLoadReplies}
+        onToggleLike={handleToggleLike}
+        onPostReply={handlePostReply}
+        onDeleteComment={handleDeleteComment}
+        onUpdateComment={handleUpdateComment}
+        onDeleteReply={handleDeleteReply}
+        onUpdateReply={handleUpdateReply}
+        className={className}
+      />
+    </>
   );
 }
