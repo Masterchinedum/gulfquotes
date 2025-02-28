@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
 import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { CommentData, ReplyData } from "@/schemas/comment.schema";
 import { ReplyForm } from "./reply-form";
 import { ReplyItem } from "./reply-item";
+import { useCommentAuth } from "@/hooks/use-comment-auth";
 
 interface CommentItemProps {
   comment: CommentData & {
@@ -53,18 +54,13 @@ export function CommentItem({
   onDeleteReply,
   onUpdateReply
 }: CommentItemProps) {
-  const { data: session, status } = useSession();
+//   const { data: session, status } = useSession();
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(comment.content);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Check if user can modify the comment
-  const canModifyComment = () => {
-    if (!session?.user) return false;
-    return session.user.id === comment.user.id || 
-           session.user.role === "AUTHOR" || 
-           session.user.role === "ADMIN";
-  };
+  // Use the hook with the comment owner's ID
+  const { canModify } = useCommentAuth(comment.user.id);
 
   // Handle edit submit
   const handleEditSubmit = async () => {
@@ -161,7 +157,7 @@ export function CommentItem({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    {canModifyComment() ? (
+                    {canModify ? (
                       <>
                         <DropdownMenuItem onClick={() => setIsEditing(true)}>
                           <Edit className="h-4 w-4 mr-2" />
