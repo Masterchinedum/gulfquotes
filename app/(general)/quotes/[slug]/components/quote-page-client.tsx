@@ -52,7 +52,7 @@ export function QuotePageClient({
                 quote={quote}
                 fontSize={fontSize}
                 backgroundImage={localBackground}
-                containerRef={containerRef}
+                containerRef={containerRef as React.RefObject<HTMLDivElement>}
               />
             </ResponsiveQuoteContainer>
           </div>
@@ -67,7 +67,7 @@ export function QuotePageClient({
               backgrounds={backgrounds}
               activeBackground={localBackground}
               onBackgroundChange={handleBackgroundChange}
-              containerRef={containerRef}
+              containerRef={containerRef as React.RefObject<HTMLDivElement>}
             />
           </div>
 
@@ -97,7 +97,7 @@ export function QuotePageClient({
               backgrounds={backgrounds}
               activeBackground={localBackground}
               onBackgroundChange={handleBackgroundChange}
-              containerRef={containerRef}
+              containerRef={containerRef as React.RefObject<HTMLDivElement>}
             />
             
             {/* Related quotes component */}
