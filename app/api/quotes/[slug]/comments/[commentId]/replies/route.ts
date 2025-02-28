@@ -7,6 +7,24 @@ import { AppError } from "@/lib/api-error";
 // import { Reply, Comment } from "@prisma/client";
 import { ReplyData } from "@/schemas/comment.schema";
 
+// Define an interface for the database reply object
+interface DatabaseReply {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  userId: string;
+  content: string;
+  isEdited: boolean;
+  editedAt: Date | null;
+  likes: number;
+  commentId: string;
+  user?: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  };
+}
+
 // Define response types
 interface RepliesResponse {
   data?: {
@@ -67,7 +85,7 @@ export async function GET(
       // Return the replies
       return NextResponse.json({
         data: {
-          items: result.items.map(reply => ({
+          items: result.items.map((reply: DatabaseReply) => ({
             ...reply,
             user: reply.user || { 
               id: reply.userId,
