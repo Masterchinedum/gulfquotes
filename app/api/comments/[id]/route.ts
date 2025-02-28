@@ -33,11 +33,11 @@ function hasAuthorOrAdminRole(role?: UserRole): boolean {
 
 // PATCH endpoint to update a comment
 export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+  req: NextRequest
 ): Promise<NextResponse<CommentResponse>> {
   try {
-    const { id } = params;
+    // Extract id from URL
+    const id = req.url.split('/comments/')[1]?.split('/')[0];
     if (!id) {
       return NextResponse.json(
         { error: { code: "BAD_REQUEST", message: "Comment ID is required" } },
@@ -120,11 +120,11 @@ export async function PATCH(
 
 // DELETE endpoint to delete a comment
 export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+  req: NextRequest
 ): Promise<NextResponse> {
   try {
-    const { id } = params;
+    // Extract id from URL
+    const id = req.url.split('/comments/')[1]?.split('/')[0];
     if (!id) {
       return NextResponse.json(
         { error: { code: "BAD_REQUEST", message: "Comment ID is required" } },
