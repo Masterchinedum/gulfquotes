@@ -65,7 +65,22 @@ export async function GET(
       });
       
       // Return the replies
-      return NextResponse.json({ data: result });
+      return NextResponse.json({
+        data: {
+          items: result.items.map(reply => ({
+            ...reply,
+            user: reply.user || { 
+              id: reply.userId,
+              name: null, 
+              image: null 
+            }
+          })),
+          total: result.total,
+          page: result.page,
+          limit: result.limit,
+          hasMore: result.hasMore
+        }
+      });
     } catch (error) {
       if (error instanceof AppError) {
         return NextResponse.json(
