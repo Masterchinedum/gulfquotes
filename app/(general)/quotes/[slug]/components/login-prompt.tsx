@@ -16,6 +16,7 @@ interface LoginPromptProps {
   useModal?: boolean;
   className?: string;
   variant?: "default" | "compact" | "inline";
+  onClose?: () => void; // Add this line
 }
 
 export function LoginPrompt({
@@ -24,8 +25,8 @@ export function LoginPrompt({
   callToAction = "Sign in",
   redirectUrl,
   useModal = true,
-  className,
-  variant = "default"
+  className,  variant = "default",
+  onClose // Add this to the destructuring
 }: LoginPromptProps) {
   const router = useRouter();
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
@@ -76,6 +77,7 @@ export function LoginPrompt({
   // Default variant with full card
   return (
     <Card className={cn("border-dashed border-muted-foreground/30", className)}>
+      {/* Add a close button in the header if onClose is provided */}
       <CardHeader className="space-y-1">
         <CardTitle className="flex items-center gap-2">
           <LockIcon className="h-5 w-5" />
@@ -84,6 +86,11 @@ export function LoginPrompt({
         <CardDescription>
           {description}
         </CardDescription>
+        {onClose && (
+          <Button onClick={onClose} className="absolute top-2 right-2">
+            Close
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="flex justify-center">
         <div className="rounded-full bg-muted p-3">
