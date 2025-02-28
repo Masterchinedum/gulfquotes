@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+// Delete this line since we're using the hook instead
 // import { useSession } from "next-auth/react";
 import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -54,13 +55,11 @@ export function CommentItem({
   onDeleteReply,
   onUpdateReply
 }: CommentItemProps) {
-//   const { data: session, status } = useSession();
+  // Replace session with the auth hook
+  const { canModify, isAuthenticated } = useCommentAuth(comment.user.id);
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(comment.content);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Use the hook with the comment owner's ID
-  const { canModify } = useCommentAuth(comment.user.id);
 
   // Handle edit submit
   const handleEditSubmit = async () => {
@@ -194,7 +193,7 @@ export function CommentItem({
               size="sm" 
               className="h-8 px-2 text-xs"
               onClick={() => onToggleLike(comment.id)}
-              disabled={status !== "authenticated"}
+              disabled={!isAuthenticated} // Replace status check with isAuthenticated
             >
               <ThumbsUp className={cn("h-3 w-3 mr-1", comment.isLiked && "fill-primary text-primary")} />
               {comment.likes > 0 && comment.likes}
@@ -232,7 +231,7 @@ export function CommentItem({
           </div>
 
           {/* Reply form */}
-          {status === "authenticated" && replyingTo === comment.id && (
+          {isAuthenticated && replyingTo === comment.id && ( // Replace status check with isAuthenticated
             <ReplyForm 
               commentId={comment.id}
               quoteSlug={window.location.pathname.split('/quotes/')[1]?.split('/')[0] || ''}

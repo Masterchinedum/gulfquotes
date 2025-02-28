@@ -3,7 +3,8 @@
 
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { useSession } from "next-auth/react";
+// Remove this line if not used elsewhere
+// import { useSession } from "next-auth/react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { 
@@ -24,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { ReplyData } from "@/schemas/comment.schema";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { useCommentAuth } from "@/hooks/use-comment-auth";
 
 interface ReplyItemProps {
   reply: ReplyData & { isLiked?: boolean };
@@ -38,18 +40,20 @@ export function ReplyItem({
   onDeleteReply,
   onUpdateReply
 }: ReplyItemProps) {
-  const { data: session, status } = useSession();
+  // Add the auth hook
+  const { canModify, isAuthenticated } = useCommentAuth(reply.user.id);
+  
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(reply.content);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Check if user can modify (edit/delete) this reply
-  const canModifyReply = () => {
-    if (!session?.user) return false;
-    return session.user.id === reply.user.id || 
-           session.user.role === "AUTHOR" || 
-           session.user.role === "ADMIN";
-  };
+  // Remove this function - we'll use the hook's canModify instead
+  // const canModifyReply = () => {
+  //   if (!session?.user) return false;
+  //   return session.user.id === reply.user.id || 
+  //          session.user.role === "AUTHOR" || 
+  //          session.user.role === "ADMIN";
+  // };
 
   // Handle edit submit
   const handleEditSubmit = async () => {
@@ -155,7 +159,7 @@ export function ReplyItem({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {canModifyReply() ? (
+                  {canModify ? ( // Was canModifyReply()
                     <>
                       <DropdownMenuItem onClick={() => setIsEditing(true)}>
                         <Edit className="h-4 w-4 mr-2" />
@@ -190,7 +194,7 @@ export function ReplyItem({
             size="sm" 
             className="h-7 px-2 text-xs"
             onClick={() => onToggleLike(reply.id)}
-            disabled={status !== "authenticated"}
+            disabled={!isAuthenticated} // Replace status check
           >
             <ThumbsUp 
               className={cn(
