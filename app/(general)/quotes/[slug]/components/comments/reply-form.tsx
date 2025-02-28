@@ -12,6 +12,8 @@ import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { createReplySchema, type CreateReplyInput } from "@/schemas/comment.schema";
+// Import the login prompt component
+import { LoginPrompt } from "../login-prompt";
 
 interface ReplyFormProps {
   commentId: string;
@@ -26,7 +28,7 @@ export function ReplyForm({
   onReplyAdded,
   onCancel
 }: ReplyFormProps) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -67,6 +69,20 @@ export function ReplyForm({
     }
   }
 
+  // Show login prompt if not authenticated
+  if (status === "unauthenticated") {
+    return (
+      <div className="ml-10">
+        <LoginPrompt 
+          variant="compact" 
+          description="Sign in to reply to this comment"
+          callToAction="Sign in to reply"
+          redirectUrl={`/quotes/${quoteSlug}`}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex gap-3 mt-3 ml-2">
       <Avatar className="h-7 w-7">
@@ -78,18 +94,20 @@ export function ReplyForm({
       </Avatar>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col gap-2">
+        <form 
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex-1 flex flex-col gap-2"
+        >
           <FormField
             control={form.control}
             name="content"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex-1 space-y-0">
                 <FormControl>
                   <Textarea 
-                    placeholder="Write a reply..."
-                    className="w-full resize-none text-sm"
+                    placeholder="Add your reply..."
+                    className="resize-none min-h-20"
                     disabled={isSubmitting}
-                    rows={2}
                     {...field}
                   />
                 </FormControl>
@@ -101,23 +119,20 @@ export function ReplyForm({
             {onCancel && (
               <Button 
                 type="button" 
-                variant="ghost" 
+                variant="outline" 
                 size="sm"
                 onClick={onCancel}
                 disabled={isSubmitting}
-                className="text-xs"
               >
                 Cancel
               </Button>
             )}
-            
             <Button 
               type="submit" 
-              size="sm" 
-              disabled={isSubmitting || !form.formState.isValid}
-              className="text-xs"
+              size="sm"
+              disabled={isSubmitting}
             >
-              {isSubmitting ? "Posting..." : "Reply"}
+              {isSubmitting ? "Submitting..." : "Reply"}
             </Button>
           </div>
         </form>

@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
+// Import the login prompt component
+import { LoginPrompt } from "../login-prompt";
 
 // Comment schema
 const commentSchema = z.object({
@@ -101,17 +103,13 @@ export function CommentForm({ quoteSlug, onCommentAdded, className }: CommentFor
   // Show login prompt if not authenticated
   if (status === "unauthenticated") {
     return (
-      <div className={`flex flex-col gap-4 p-4 bg-muted/30 rounded-lg ${className}`}>
-        <p className="text-sm text-center text-muted-foreground">
-          You need to be signed in to comment on this quote.
-        </p>
-        <Button 
-          variant="outline" 
-          className="w-full" 
-          onClick={() => router.push(`/auth/login?callbackUrl=${encodeURIComponent(window.location.href)}`)}
-        >
-          Sign in to comment
-        </Button>
+      <div className={className}>
+        <LoginPrompt 
+          variant="inline" 
+          description="Sign in to add your comment to this quote."
+          callToAction="Sign in now"
+          redirectUrl={`/quotes/${quoteSlug}`} 
+        />
       </div>
     );
   }
@@ -129,46 +127,44 @@ export function CommentForm({ quoteSlug, onCommentAdded, className }: CommentFor
   }
 
   return (
-    <div className={`flex gap-3 ${className}`}>
-      <Avatar className="h-9 w-9">
-        <AvatarImage src={session?.user?.image || ""} alt={session?.user?.name || "User"} />
-        <AvatarFallback>{session?.user?.name?.[0] || "U"}</AvatarFallback>
-      </Avatar>
-      
+    <div className={`bg-card border rounded-lg p-4 ${className}`}>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col gap-2">
-          <FormField
-            control={form.control}
-            name="content"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Share your thoughts on this quote..." 
-                    className="w-full resize-none"
-                    disabled={isSubmitting}
-                    {...field}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          
-          <div className="flex justify-end">
-            <Button 
-              type="submit" 
-              size="sm" 
-              disabled={isSubmitting || !form.formState.isValid}
-            >
-              {isSubmitting ? (
-                <>Posting...</>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-1" />
-                  Comment
-                </>
-              )}
-            </Button>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <div className="flex gap-3">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={session?.user?.image || undefined} alt={session?.user?.name || "User"} />
+              <AvatarFallback>{session?.user?.name?.[0] || "U"}</AvatarFallback>
+            </Avatar>
+            
+            <div className="flex-1 space-y-2">
+              <FormField
+                control={form.control}
+                name="content"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Add a comment..." 
+                        className="resize-none min-h-24"
+                        disabled={isSubmitting}
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
+              <div className="flex justify-end">
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="flex items-center gap-1"
+                >
+                  {isSubmitting ? "Posting..." : "Post"}
+                  <Send className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </div>
           </div>
         </form>
       </Form>
