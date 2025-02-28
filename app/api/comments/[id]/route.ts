@@ -69,7 +69,10 @@ export async function PATCH(
         session.user.role
       );
       
-      return NextResponse.json({ data: updatedComment });
+      // Cast the response to ensure it includes all required fields
+      return NextResponse.json({ 
+        data: updatedComment as unknown as CommentData 
+      });
     } catch (error) {
       if (error instanceof AppError) {
         return NextResponse.json(

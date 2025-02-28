@@ -85,7 +85,7 @@ export function QuotePageClient({
           </div>
           
           {/* Comments Section */}
-          <QuoteComments quoteId={quote.id} />
+          <QuoteComments />
         </div>
         
         {/* Sidebar area (right) */}

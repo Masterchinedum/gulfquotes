@@ -11,7 +11,7 @@ import { CommentWithReplies, ReplyWithLike } from "./types";
 import { LoginPrompt } from "../login-prompt";
 
 interface QuoteCommentsProps {
-  className?: string; // Remove quoteId as it's not being used
+  className?: string; 
 }
 
 export function QuoteComments({ className }: QuoteCommentsProps) {
