@@ -23,19 +23,21 @@ export function QuotePageClient({
   activeBackground: initialBackground,
   fontSize,
 }: QuotePageClientProps) {
-  // Add local state for active background
+  // Add memoization to prevent unnecessary updates
   const [localBackground, setLocalBackground] = useState<Gallery | null>(initialBackground);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Explicitly type the ref as non-null
-  const containerRef = useRef<HTMLDivElement>(null) as React.MutableRefObject<HTMLDivElement>;
-
-  // Update to use local state instead of API call - make it async to return a Promise
+  // Memoize the background change handler
   const handleBackgroundChange = useCallback(async (background: Gallery) => {
-    // Simply update local state - no API call
-    setLocalBackground(background);
-    // Return a resolved promise to satisfy the interface
-    return Promise.resolve();
-  }, []);
+    try {
+      // Only update if background actually changed
+      if (background.id !== localBackground?.id) {
+        setLocalBackground(background);
+      }
+    } catch (error) {
+      console.error("Failed to update background:", error);
+    }
+  }, [localBackground]);
 
   return (
     <div className="container mx-auto py-6 px-4 md:py-8">

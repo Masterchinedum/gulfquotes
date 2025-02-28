@@ -202,6 +202,7 @@ export function CommentItem({
           
           {/* Comment Actions */}
           <div className="flex items-center gap-2 mt-1 ml-1">
+            {/* Like Button */}
             <Button 
               variant="ghost" 
               size="sm" 
@@ -209,27 +210,37 @@ export function CommentItem({
               onClick={() => onToggleLike(comment.id)}
               disabled={status !== "authenticated"}
             >
-              <ThumbsUp 
-                className={cn(
-                  "h-3 w-3 mr-1", 
-                  comment.isLiked && "fill-primary text-primary"
-                )} 
-              />
+              <ThumbsUp className={cn("h-3 w-3 mr-1", comment.isLiked && "fill-primary text-primary")} />
               {comment.likes > 0 && comment.likes}
               <span className="ml-1">Like</span>
             </Button>
             
+            {/* View Replies Button - Add this */}
+            {comment._count?.replies > 0 && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 px-2 text-xs"
+                onClick={() => {
+                  if (!comment.replies || comment.replies.length === 0) {
+                    onLoadReplies(comment.id);
+                  }
+                }}
+              >
+                <MessageSquare className="h-3 w-3 mr-1" />
+                <span>View Replies ({comment._count.replies})</span>
+              </Button>
+            )}
+            
+            {/* Reply Button - Keep this separate */}
             <Button 
               variant="ghost" 
               size="sm" 
               className="h-8 px-2 text-xs"
-              onClick={handleReplyToggle}
+              onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
             >
               <MessageSquare className="h-3 w-3 mr-1" />
-              <span>
-                {replyingTo === comment.id ? "Cancel" : "Reply"} 
-                {comment._count?.replies ? ` (${comment._count.replies})` : ""}
-              </span>
+              <span>{replyingTo === comment.id ? "Cancel" : "Reply"}</span>
             </Button>
           </div>
 

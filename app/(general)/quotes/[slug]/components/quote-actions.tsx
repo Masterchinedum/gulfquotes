@@ -14,6 +14,11 @@ import { Palette, Download, Share2, Bookmark as BookmarkIcon } from "lucide-reac
 import { QuoteLikeButton } from "./quote-like-button";
 import type { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
 
+QuoteActions.whyDidYouRender = {
+  logOnDifferentValues: true,
+  customName: 'QuoteActions'
+};
+
 interface QuoteActionsProps {
   quote: QuoteDisplayData;
   backgrounds: Gallery[];
@@ -36,10 +41,9 @@ export function QuoteActions({
   const [isLoading, setIsLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
+  // Remove isLoading from dependencies to prevent loops
   const handleBackgroundChange = useCallback(
     async (background: Gallery) => {
-      if (isLoading) return;
-
       try {
         setIsLoading(true);
         await onBackgroundChange(background);
@@ -58,18 +62,23 @@ export function QuoteActions({
         setIsLoading(false);
       }
     },
-    [onBackgroundChange, isLoading, toast]
+    [onBackgroundChange, toast] // Removed isLoading from dependencies
   );
 
-  const handleSaveToggle = () => {
-    setIsSaved(!isSaved);
+  // Memoize this to prevent unnecessary re-renders
+  const handleSaveToggle = useCallback(() => {
+    setIsSaved((prev) => !prev);
     toast({
-      title: isSaved ? "Quote removed from collection" : "Quote saved to collection",
-      description: isSaved 
-        ? "This quote has been removed from your saved collection"
-        : "This quote has been added to your saved collection"
+      title: !isSaved ? "Quote saved to collection" : "Quote removed from collection",
+      description: !isSaved 
+        ? "This quote has been added to your saved collection"
+        : "This quote has been removed from your saved collection"
     });
-  };
+  }, [isSaved, toast]);
+
+  // Memoize loading state handlers
+  const handleLoadingStart = useCallback(() => setIsLoading(true), []);
+  const handleLoadingEnd = useCallback(() => setIsLoading(false), []);
 
   return (
     <div className={cn("space-y-6", className)}>
@@ -82,7 +91,7 @@ export function QuoteActions({
         <CardContent>
           <div className="flex items-center justify-between">
             <QuoteLikeButton 
-              initialLikes={0} // Use a static value or prop
+              initialLikes={quote.likes || 0}
               quoteId={quote.id}
             />
             
@@ -153,8 +162,8 @@ export function QuoteActions({
                   containerRef={containerRef}
                   filename={`quote-${quote.slug}`}
                   quoteSlug={quote.slug}
-                  onBeforeDownload={() => setIsLoading(true)}
-                  onAfterDownload={() => setIsLoading(false)}
+                  onBeforeDownload={handleLoadingStart}
+                  onAfterDownload={handleLoadingEnd}
                 />
               </div>
             )}
@@ -168,8 +177,8 @@ export function QuoteActions({
                 <QuoteShare
                   quote={quote}
                   containerRef={containerRef}
-                  onShareStart={() => setIsLoading(true)}
-                  onShareComplete={() => setIsLoading(false)}
+                  onShareStart={handleLoadingStart}
+                  onShareComplete={handleLoadingEnd}
                 />
               </div>
             )}
