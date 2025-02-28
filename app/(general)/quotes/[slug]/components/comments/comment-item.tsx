@@ -85,16 +85,6 @@ export function CommentItem({
     }
   };
 
-  // Toggle replies visibility and load if needed
-  const handleReplyToggle = () => {
-    if (comment._count?.replies && comment._count.replies > 0 && 
-        (!comment.replies || comment.replies.length === 0)) {
-      // Load replies if we have some but haven't loaded them yet
-      onLoadReplies(comment.id);
-    }
-    setReplyingTo(replyingTo === comment.id ? null : comment.id);
-  };
-
   // Handle delete with confirmation
   const handleDelete = async () => {
     if (window.confirm("Are you sure you want to delete this comment?")) {
@@ -216,19 +206,20 @@ export function CommentItem({
             </Button>
             
             {/* View Replies Button - Add this */}
-            {comment._count?.replies > 0 && (
+            {(comment._count?.replies || 0) > 0 && (
               <Button 
                 variant="ghost" 
                 size="sm" 
                 className="h-8 px-2 text-xs"
                 onClick={() => {
+                  // First, ensure replies are loaded
                   if (!comment.replies || comment.replies.length === 0) {
                     onLoadReplies(comment.id);
                   }
                 }}
               >
                 <MessageSquare className="h-3 w-3 mr-1" />
-                <span>View Replies ({comment._count.replies})</span>
+                <span>View Replies ({comment._count?.replies || 0})</span>
               </Button>
             )}
             

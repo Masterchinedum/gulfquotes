@@ -91,7 +91,7 @@ export function QuoteActions({
         <CardContent>
           <div className="flex items-center justify-between">
             <QuoteLikeButton 
-              initialLikes={quote.likes || 0}
+              initialLikes={quote.metrics?.likes || 0}
               quoteId={quote.id}
             />
             
