@@ -1,19 +1,13 @@
 // app/api/replies/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import db from "@/lib/prisma";
 import { z } from "zod";
-import { UserRole } from "@prisma/client";
+import replyService from "@/lib/services/reply.service";
+import { AppError } from "@/lib/api-error";
+import type { ReplyData } from "@/schemas/comment.schema";
 
 interface ReplyResponse {
-  data?: {
-    id: string;
-    content: string;
-    isEdited: boolean;
-    editedAt: Date | null;
-    createdAt: Date;
-    updatedAt: Date;
-  };
+  data?: ReplyData;
   error?: {
     code: string;
     message: string;
@@ -25,11 +19,6 @@ interface ReplyResponse {
 const updateReplySchema = z.object({
   content: z.string().min(1, "Reply cannot be empty").max(500, "Reply is too long")
 });
-
-// Function to check if user has AUTHOR or ADMIN role
-function hasAuthorOrAdminRole(role?: UserRole): boolean {
-  return role === 'AUTHOR' || role === 'ADMIN';
-}
 
 // PATCH endpoint to update a reply
 export async function PATCH(
@@ -71,44 +60,25 @@ export async function PATCH(
       );
     }
     
-    // Check if reply exists
-    const existingReply = await db.reply.findUnique({
-      where: { id },
-      select: { id: true, userId: true }
-    });
-
-    if (!existingReply) {
-      return NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "Reply not found" } },
-        { status: 404 }
+    try {
+      // Use the reply service to update the reply
+      const updatedReply = await replyService.updateReply(
+        id, 
+        validationResult.data, 
+        session.user.id,
+        session.user.role
       );
-    }
-    
-    // Check authorization: user must be the reply owner or have AUTHOR/ADMIN role
-    const isOwner = existingReply.userId === session.user.id;
-    const isAuthorOrAdmin = hasAuthorOrAdminRole(session.user.role as UserRole);
-    
-    if (!isOwner && !isAuthorOrAdmin) {
-      return NextResponse.json(
-        { error: { code: "FORBIDDEN", message: "You don't have permission to update this reply" } },
-        { status: 403 }
-      );
-    }
-    
-    // Update the reply
-    const updatedReply = await db.reply.update({
-      where: { id },
-      data: {
-        content: validationResult.data.content,
-        isEdited: true,
-        editedAt: new Date()
+      
+      return NextResponse.json({ data: updatedReply });
+    } catch (error) {
+      if (error instanceof AppError) {
+        return NextResponse.json(
+          { error: { code: error.code, message: error.message } },
+          { status: error.statusCode }
+        );
       }
-    });
-
-    return NextResponse.json({ 
-      data: updatedReply 
-    });
-    
+      throw error;
+    }
   } catch (error) {
     console.error("[REPLY_PATCH]", error);
     return NextResponse.json(
@@ -141,40 +111,27 @@ export async function DELETE(
       );
     }
     
-    // Check if reply exists
-    const existingReply = await db.reply.findUnique({
-      where: { id },
-      select: { id: true, userId: true }
-    });
-
-    if (!existingReply) {
-      return NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "Reply not found" } },
-        { status: 404 }
+    try {
+      // Use the reply service to delete the reply
+      await replyService.deleteReply(
+        id, 
+        session.user.id,
+        session.user.role
       );
+      
+      return NextResponse.json({ 
+        success: true,
+        message: "Reply deleted successfully" 
+      });
+    } catch (error) {
+      if (error instanceof AppError) {
+        return NextResponse.json(
+          { error: { code: error.code, message: error.message } },
+          { status: error.statusCode }
+        );
+      }
+      throw error;
     }
-    
-    // Check authorization: user must be the reply owner or have AUTHOR/ADMIN role
-    const isOwner = existingReply.userId === session.user.id;
-    const isAuthorOrAdmin = hasAuthorOrAdminRole(session.user.role as UserRole);
-    
-    if (!isOwner && !isAuthorOrAdmin) {
-      return NextResponse.json(
-        { error: { code: "FORBIDDEN", message: "You don't have permission to delete this reply" } },
-        { status: 403 }
-      );
-    }
-    
-    // Delete the reply
-    await db.reply.delete({
-      where: { id }
-    });
-
-    return NextResponse.json({ 
-      success: true,
-      message: "Reply deleted successfully" 
-    });
-    
   } catch (error) {
     console.error("[REPLY_DELETE]", error);
     return NextResponse.json(
