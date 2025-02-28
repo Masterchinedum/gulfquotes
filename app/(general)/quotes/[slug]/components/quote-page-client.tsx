@@ -5,7 +5,7 @@ import { Gallery } from "@prisma/client";
 import { QuoteDisplay, ResponsiveQuoteContainer } from "./quote-display";
 import { QuoteActions } from "./quote-actions";
 import { QuoteInfoEnhanced } from "./quote-info-enhanced";
-import { QuoteComments } from "./quote-comments";
+import { QuoteComments } from "./comments/quote-comments";
 import { RelatedQuotes } from "./related-quotes";
 // import { QuoteLikeButton } from "./quote-like-button";
 import type { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";

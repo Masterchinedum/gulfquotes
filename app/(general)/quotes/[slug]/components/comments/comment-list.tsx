@@ -32,6 +32,10 @@ interface CommentListProps {
   onToggleLike: (commentId: string) => void;
   onPostReply: (commentId: string, content: string) => Promise<void>;
   onDeleteComment: (commentId: string) => Promise<void>;
+  onUpdateComment?: (commentId: string, content: string) => Promise<void>;
+  onDeleteReply?: (replyId: string) => Promise<void>;
+  onUpdateReply?: (replyId: string, content: string) => Promise<void>;
+  className?: string;
 }
 
 export function CommentList({
@@ -48,6 +52,9 @@ export function CommentList({
   onToggleLike,
   onPostReply,
   onDeleteComment,
+  onUpdateComment,
+  onDeleteReply,
+  onUpdateReply,
 }: CommentListProps) {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
@@ -127,6 +134,9 @@ export function CommentList({
                   onToggleLike={onToggleLike}
                   onPostReply={onPostReply}
                   onDeleteComment={onDeleteComment}
+                  onUpdateComment={onUpdateComment}
+                  onDeleteReply={onDeleteReply}
+                  onUpdateReply={onUpdateReply}
                 />
               ))
             )}
