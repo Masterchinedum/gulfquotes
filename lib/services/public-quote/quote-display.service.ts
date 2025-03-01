@@ -4,8 +4,9 @@ import db from "@/lib/prisma";
 import { AppError } from "@/lib/api-error";
 import type { Quote, Gallery } from "@prisma/client";
 import html2canvas from 'html2canvas';
-// Add import for bookmark service
+// Add imports for services
 import { quoteBookmarkService } from "@/lib/services/bookmark";
+import { quoteLikeService } from "@/lib/services/like"; // Add this line
 
 export interface QuoteDisplayData extends Quote {
   authorProfile: {
