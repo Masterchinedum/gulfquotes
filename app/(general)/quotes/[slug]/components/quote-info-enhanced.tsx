@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CalendarDays, Users, Book } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
+import { AuthorFollowButton } from "@/app/(general)/authors/components/author-follow-button";
 
 interface QuoteInfoEnhancedProps {
   quote: QuoteDisplayData;
@@ -26,26 +27,38 @@ export function QuoteInfoEnhanced({ quote, className }: QuoteInfoEnhancedProps) 
     <Card className={cn("overflow-hidden", className)}>
       <CardContent className="p-6 space-y-6">
         {/* Author Information */}
-        <div className="flex items-start space-x-4">
-          <Avatar className="h-12 w-12 border-2 border-primary/10">
-            <AvatarImage src={quote.authorProfile?.image || ""} alt={quote.authorProfile?.name || "Author"} />
-            <AvatarFallback className="bg-primary/10">
-              {quote.authorProfile?.name?.charAt(0) || "A"}
-            </AvatarFallback>
-          </Avatar>
-          
-          <div className="space-y-1">
-            <Link 
-              href={`/authors/${quote.authorProfile.slug}`}
-              className="font-semibold text-lg hover:text-primary transition-colors"
-            >
-              {quote.authorProfile.name}
-            </Link>
-            {quote.authorProfile.bio && (
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {quote.authorProfile.bio}
-              </p>
-            )}
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-4">
+              <Avatar className="h-12 w-12 border-2 border-primary/10">
+                <AvatarImage src={quote.authorProfile?.image || ""} alt={quote.authorProfile?.name || "Author"} />
+                <AvatarFallback className="bg-primary/10">
+                  {quote.authorProfile?.name?.charAt(0) || "A"}
+                </AvatarFallback>
+              </Avatar>
+              
+              <div className="space-y-1">
+                <Link 
+                  href={`/authors/${quote.authorProfile.slug}`}
+                  className="font-semibold text-lg hover:text-primary transition-colors"
+                >
+                  {quote.authorProfile.name}
+                </Link>
+                {quote.authorProfile.bio && (
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {quote.authorProfile.bio}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Add follow button */}
+            <AuthorFollowButton
+              authorSlug={quote.authorProfile.slug}
+              initialFollowers={quote.authorProfile.followers || 0}
+              initialFollowed={quote.authorProfile.isFollowed}
+              size="sm"
+            />
           </div>
         </div>
 
@@ -94,7 +107,7 @@ export function QuoteInfoEnhanced({ quote, className }: QuoteInfoEnhancedProps) 
               <Users className="h-4 w-4" />
               <span className="text-xs">Followers</span>
             </div>
-            <p className="font-semibold">0</p>
+            <p className="font-semibold">{quote.authorProfile.followers || 0}</p>
           </div>
           
           <div className="flex flex-col items-center">
@@ -102,7 +115,7 @@ export function QuoteInfoEnhanced({ quote, className }: QuoteInfoEnhancedProps) 
               <Book className="h-4 w-4" />
               <span className="text-xs">Quotes</span>
             </div>
-            <p className="font-semibold">{quote.authorProfile.quoteCount ?? 0}</p>
+            <p className="font-semibold">{quote.authorProfile.quoteCount || 0}</p>
           </div>
         </div>
       </CardContent>

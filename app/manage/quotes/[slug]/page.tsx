@@ -72,6 +72,7 @@ export default async function EditQuotePage({
           bio: true,
           createdAt: true,
           updatedAt: true,
+          followers: true, // Add this line to select the followers field
         },
         orderBy: {
           name: 'asc'
