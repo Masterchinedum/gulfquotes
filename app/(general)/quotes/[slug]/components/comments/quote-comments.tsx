@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
@@ -330,25 +330,8 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
     }
   };
 
-  // Add this helper function before handleToggleLike
-  const findReplyInComments = (replyId: string): { 
-    found: boolean; 
-    parentCommentId?: string;
-    reply?: ReplyWithLike;
-  } => {
-    for (const comment of comments) {
-      if (comment.replies) {
-        const foundReply = comment.replies.find(reply => reply.id === replyId);
-        if (foundReply) {
-          return { found: true, parentCommentId: comment.id, reply: foundReply };
-        }
-      }
-    }
-    return { found: false };
-  };
-
-  // Then simplify the check in handleToggleLike
-  const handleToggleLike = async (id: string) => {
+  // Wrap handleToggleLike in useCallback
+  const handleToggleLike = useCallback(async (id: string) => {
     if (!isAuthenticated) {
       setShowLoginPrompt(true);
       return;
@@ -365,8 +348,21 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
       recentlyToggledIds.current.delete(id);
     }, 500); // Prevent clicking again for 500ms
     
-    // Determine if this is a comment or reply
-    const { found: isReply } = findReplyInComments(id);
+    // Define the function inline to avoid dependency issues
+    const findReplyResult = (() => {
+      for (const comment of comments) {
+        if (comment.replies) {
+          const foundReply = comment.replies.find(reply => reply.id === id);
+          if (foundReply) {
+            return { found: true, parentCommentId: comment.id, reply: foundReply };
+          }
+        }
+      }
+      return { found: false };
+    })();
+    
+    // Use the result directly
+    const isReply = findReplyResult.found;
     const isComment = !isReply;
     
     // Add to loading set
@@ -453,12 +449,15 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
     } catch (error) {
       console.error("Error toggling like:", error);
       
-      // More specific error messages depending on the error
-      if (error instanceof Response && error.status === 401) {
-        toast.error("Please sign in to like this content");
-        setShowLoginPrompt(true);
-      } else if (error instanceof Response && error.status === 429) {
-        toast.error("You're liking too quickly. Please wait a moment.");
+      if (error instanceof Response) {
+        if (error.status === 401) {
+          setShowLoginPrompt(true);
+          // Don't show an error toast - just show the login prompt
+        } else if (error.status === 429) {
+          toast.error("You're liking too quickly. Please wait a moment.");
+        } else {
+          toast.error("Failed to update like status");
+        }
       } else {
         toast.error("Failed to update like status");
       }
@@ -502,21 +501,41 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
         return newSet;
       });
     }
-  };
+  }, [isAuthenticated, comments, setComments, setShowLoginPrompt, setLikingIds]);
+
+  useEffect(() => {
+    // Only run if authenticated and has URL parameters
+    if (status === "authenticated" && typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      const action = url.searchParams.get('action');
+      const targetId = url.searchParams.get('target');
+      
+      if (action === 'like' && targetId) {
+        // Clean up URL to prevent repeated actions
+        window.history.replaceState({}, '', `/quotes/${slug}`);
+        
+        // Execute the like action
+        handleToggleLike(targetId);
+      }
+    }
+  }, [status, slug, handleToggleLike]);
 
   return (
     <>
       {showLoginPrompt && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50 p-4">
-          <div className="max-w-md w-full">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50 p-4 animate-in fade-in">
+          <div className="max-w-md w-full" onClick={(e) => e.stopPropagation()}>
             <LoginPrompt 
               title="Sign in to interact"
-              description="You need to be signed in to like comments or replies."
+              description="You need to be signed in to like comments and replies."
               callToAction="Sign in now"
-              redirectUrl={`/quotes/${slug}`}
+              // Include the action and target ID in the URL
+              redirectUrl={`/quotes/${slug}?action=like&target=${id}`}
               onClose={() => setShowLoginPrompt(false)}
             />
           </div>
+          {/* Allow clicking outside to dismiss the prompt */}
+          <div className="absolute inset-0 -z-10" onClick={() => setShowLoginPrompt(false)} />
         </div>
       )}
       

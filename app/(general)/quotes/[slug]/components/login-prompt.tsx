@@ -16,7 +16,9 @@ interface LoginPromptProps {
   useModal?: boolean;
   className?: string;
   variant?: "default" | "compact" | "inline";
-  onClose?: () => void; // Add this line
+  onClose?: () => void;
+  action?: string;
+  targetId?: string;
 }
 
 export function LoginPrompt({
@@ -25,12 +27,25 @@ export function LoginPrompt({
   callToAction = "Sign in",
   redirectUrl,
   useModal = true,
-  className,  variant = "default",
-  onClose // Add this to the destructuring
+  className,
+  variant = "default",
+  onClose,
+  action,
+  targetId
 }: LoginPromptProps) {
   const router = useRouter();
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
-  const loginUrl = `/auth/login?callbackUrl=${encodeURIComponent(redirectUrl || currentUrl)}`;
+  
+  // Build callback URL with action parameters if specified
+  let callbackUrl = redirectUrl || currentUrl;
+  if (action && targetId) {
+    const url = new URL(callbackUrl, window.location.origin);
+    url.searchParams.append('action', action);
+    url.searchParams.append('target', targetId);
+    callbackUrl = url.toString();
+  }
+  
+  const loginUrl = `/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`;
   
   // Handle the click if not using modal
   const handleClick = () => {

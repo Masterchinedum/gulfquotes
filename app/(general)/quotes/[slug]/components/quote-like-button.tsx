@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useRouter } from "next/navigation";
+import { LoginPrompt } from "../login-prompt";
 
 interface QuoteLikeButtonProps {
   initialLikes: number;
@@ -23,7 +23,6 @@ export function QuoteLikeButton({
 }: QuoteLikeButtonProps) {
   // Authentication state
   const { data: status } = useSession();
-  const router = useRouter();
   
   // Component state
   const [likes, setLikes] = useState(initialLikes);
@@ -31,6 +30,7 @@ export function QuoteLikeButton({
   const [isAnimating, setIsAnimating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   // Fetch initial like status and count
   useEffect(() => {
@@ -64,9 +64,8 @@ export function QuoteLikeButton({
   const handleLikeToggle = async () => {
     // Require authentication
     if (status !== "authenticated") {
-      // Could redirect to login or show a login modal
-      toast("Please sign in to like quotes");
-      router.push(`/login?callbackUrl=/quotes/${quoteId}`);
+      // Replace the direct toast+redirect with the modal approach to match other components
+      setShowLoginPrompt(true);
       return;
     }
     
@@ -136,47 +135,65 @@ export function QuoteLikeButton({
   }
 
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <Button
-        onClick={handleLikeToggle}
-        variant="ghost"
-        size="sm"
-        disabled={isLoading}
-        className={cn(
-          "group relative flex items-center gap-2 hover:bg-transparent",
-          isLiked && "text-red-500"
-        )}
-      >
-        <div className="relative">
-          {/* Base icon */}
-          <ThumbsUp 
-            className={cn(
-              "h-4 w-4",
-              isLiked && "fill-primary text-primary"
-            )}
-          />
-          
-          {/* Animated pop effect when liking */}
-          <AnimatePresence>
-            {isAnimating && (
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0.5 }}
-                animate={{ scale: 1.5, opacity: 0 }}
-                exit={{ scale: 2, opacity: 0 }}
-                transition={{ duration: 0.5 }}
-                className="absolute inset-0 flex items-center justify-center"
-              >
-                <ThumbsUp className="h-5 w-5 text-primary" />
-              </motion.div>
-            )}
-          </AnimatePresence>
+    <>
+      {showLoginPrompt && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50 p-4">
+          <div className="max-w-md w-full">
+            <LoginPrompt 
+              title="Sign in to like"
+              description="You need to be signed in to like quotes."
+              callToAction="Sign in now"
+              redirectUrl={`/quotes/${quoteId}`}
+              action="like"
+              targetId={quoteId}
+              onClose={() => setShowLoginPrompt(false)}
+            />
+          </div>
         </div>
-        
-        {/* Like count */}
-        <span className="text-sm font-medium transition-colors text-muted-foreground group-hover:text-foreground">
-          {formatLikes(likes)}
-        </span>
-      </Button>
-    </div>
+      )}
+      
+      <div className={cn("flex items-center gap-2", className)}>
+        <Button
+          onClick={handleLikeToggle}
+          variant="ghost"
+          size="sm"
+          disabled={isLoading}
+          className={cn(
+            "group relative flex items-center gap-2 hover:bg-transparent",
+            isLiked && "text-red-500"
+          )}
+        >
+          <div className="relative">
+            {/* Base icon */}
+            <ThumbsUp 
+              className={cn(
+                "h-4 w-4",
+                isLiked && "fill-primary text-primary"
+              )}
+            />
+            
+            {/* Animated pop effect when liking */}
+            <AnimatePresence>
+              {isAnimating && (
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0.5 }}
+                  animate={{ scale: 1.5, opacity: 0 }}
+                  exit={{ scale: 2, opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <ThumbsUp className="h-5 w-5 text-primary" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          
+          {/* Like count */}
+          <span className="text-sm font-medium transition-colors text-muted-foreground group-hover:text-foreground">
+            {formatLikes(likes)}
+          </span>
+        </Button>
+      </div>
+    </>
   );
 }
