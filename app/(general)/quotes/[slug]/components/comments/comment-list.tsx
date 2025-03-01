@@ -35,6 +35,7 @@ interface CommentListProps {
   onUpdateComment?: (commentId: string, content: string) => Promise<void>;
   onDeleteReply?: (replyId: string) => Promise<void>;
   onUpdateReply?: (replyId: string, content: string) => Promise<void>;
+  likingIds?: Set<string>; // Add this property
   className?: string;
 }
 
@@ -55,6 +56,7 @@ export function CommentList({
   onUpdateComment,
   onDeleteReply,
   onUpdateReply,
+  likingIds,
 }: CommentListProps) {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
@@ -137,6 +139,7 @@ export function CommentList({
                   onUpdateComment={onUpdateComment}
                   onDeleteReply={onDeleteReply}
                   onUpdateReply={onUpdateReply}
+                  likingIds={likingIds} // Pass the prop here
                 />
               ))
             )}
