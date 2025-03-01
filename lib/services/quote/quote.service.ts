@@ -62,7 +62,7 @@ class QuoteServiceImpl implements QuoteService {
     });
   }
 
-  async getById(id: string, userId?: string): Promise<Quote | null> {
+  async getById(id: string, userId?: string): Promise<Quote | EnhancedQuote | null> {
     const quote = await db.quote.findUnique({
       where: { id },
       include: {
@@ -77,13 +77,13 @@ class QuoteServiceImpl implements QuoteService {
       return {
         ...quote,
         isLiked: likeStatus[quote.id] || false
-      };
+      } as EnhancedQuote;
     }
 
     return quote;
   }
 
-  async getBySlug(slug: string, userId?: string): Promise<Quote | null> {
+  async getBySlug(slug: string, userId?: string): Promise<Quote | EnhancedQuote | null> {
     const quote = await db.quote.findUnique({
       where: { slug },
       include: {
@@ -98,7 +98,7 @@ class QuoteServiceImpl implements QuoteService {
       return {
         ...quote,
         isLiked: likeStatus[quote.id] || false
-      };
+      } as EnhancedQuote;
     }
 
     return quote;

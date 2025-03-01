@@ -110,7 +110,8 @@ model Quote {
   tags             Tag[]          @relation("QuoteToTag")
   gallery          QuoteToGallery[]
   comments         Comment[]
-  likes            QuoteLike[]
+  userLikes        QuoteLike[]    // Rename existing relation field
+  likes            Int            @default(0)  // Add a numeric counter
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
