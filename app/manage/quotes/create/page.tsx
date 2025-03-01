@@ -32,6 +32,7 @@ export default async function NewQuotePage() {
         bio: true,
         createdAt: true,
         updatedAt: true,
+        followers: true,
       },
       orderBy: {
         name: 'asc'
