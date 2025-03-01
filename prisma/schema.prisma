@@ -31,6 +31,7 @@ model User {
   quoteLikes            QuoteLike[]
   commentLikes          CommentLike[]
   replyLikes            ReplyLike[]
+  quoteBookmarks        QuoteBookmark[]  // Add this line
 
   @@map("users")
 }
@@ -112,6 +113,8 @@ model Quote {
   comments         Comment[]
   userLikes        QuoteLike[]    // Rename existing relation field
   likes            Int            @default(0)  // Add a numeric counter
+  userBookmarks    QuoteBookmark[] // Add this line
+  bookmarks        Int            @default(0)  // Add this line
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
@@ -296,4 +299,16 @@ model ReplyLike {
 
   @@unique([replyId, userId])
   @@map("reply_likes")
+}
+
+model QuoteBookmark {
+  id        String   @id @default(cuid())
+  quote     Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quoteId   String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([quoteId, userId])
+  @@map("quote_bookmarks")
 }
