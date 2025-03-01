@@ -14,11 +14,6 @@ import { Palette, Download, Share2, Bookmark as BookmarkIcon } from "lucide-reac
 import { QuoteLikeButton } from "./quote-like-button";
 import type { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
 
-QuoteActions.whyDidYouRender = {
-  logOnDifferentValues: true,
-  customName: 'QuoteActions'
-};
-
 interface QuoteActionsProps {
   quote: QuoteDisplayData;
   backgrounds: Gallery[];

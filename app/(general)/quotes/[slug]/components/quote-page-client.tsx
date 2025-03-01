@@ -30,14 +30,18 @@ export function QuotePageClient({
   // Memoize the background change handler
   const handleBackgroundChange = useCallback(async (background: Gallery) => {
     try {
-      // Only update if background actually changed
-      if (background.id !== localBackground?.id) {
-        setLocalBackground(background);
-      }
+      // Use a function updater to avoid dependency on localBackground
+      setLocalBackground((current) => {
+        // Only update if background actually changed
+        if (background.id !== current?.id) {
+          return background;
+        }
+        return current; // No change needed
+      });
     } catch (error) {
       console.error("Failed to update background:", error);
     }
-  }, [localBackground]);
+  }, []); // Empty dependency array since we use a function updater
 
   return (
     <div className="container mx-auto py-6 px-4 md:py-8">

@@ -1,12 +1,12 @@
 "use client"
 
-import React, { useRef } from "react";
+import React, { useCallback } from "react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { Check, ImageIcon, Loader2 } from "lucide-react";
+import { Check, ImageIcon } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Gallery } from "@prisma/client";
-import { useBackgroundPreloader } from "@/hooks/use-background-preloader";
+// import { useBackgroundPreloader } from "@/hooks/use-background-preloader";
 
 interface QuoteBackgroundSwitcherProps {
   backgrounds: Array<Gallery & {
@@ -26,9 +26,6 @@ export function QuoteBackgroundSwitcher({
   isLoading = false,
   className
 }: QuoteBackgroundSwitcherProps) {
-  // Reference to previously selected background
-  const previousBackgroundRef = useRef<string | null>(null);
-
   // Create a default background option
   const defaultBackground: Gallery = {
     id: "default",
@@ -50,31 +47,23 @@ export function QuoteBackgroundSwitcher({
     usageCount: 0
   } as Gallery;
 
-  // Use our new background preloader hook
-  const {
-    isLoading: isImageLoading,
-    isLoaded,
-    preloadImage
-    // Remove 'loadingStates' from here since it's not used directly
-  } = useBackgroundPreloader({
-    initialImages: backgrounds,
-    priorityImages: activeBackground ? 
-      [activeBackground, ...backgrounds.slice(0, 3)] : 
-      backgrounds.slice(0, 4)
-  });
+  // Comment out or temporarily disable this hook
+  // useBackgroundPreloader({
+  //   initialImages: backgrounds,
+  //   priorityImages: activeBackground ? 
+  //     [activeBackground, ...backgrounds.slice(0, 3)] : 
+  //     backgrounds.slice(0, 4)
+  // });
 
-  // Handle background change with loading state
-  const handleBackgroundChange = async (background: Gallery) => {
-    previousBackgroundRef.current = activeBackground?.id || null;
-    
-    // If background isn't loaded yet, start preloading it
-    if (background.url && !isLoaded(background)) {
-      preloadImage(background);
+  // Simplify the handleBackgroundChange function by breaking the dependency cycle
+  const handleBackgroundChange = useCallback(async (background: Gallery) => {
+    try {
+      // Just call the parent handler directly
+      await onBackgroundChange(background);
+    } catch (error) {
+      console.error("Error changing background:", error);
     }
-    
-    // Call the parent handler
-    await onBackgroundChange(background);
-  };
+  }, [onBackgroundChange]); // Removed activeBackground dependency since it's not used in the function
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -118,9 +107,6 @@ export function QuoteBackgroundSwitcher({
 
           {/* Enhanced Background Options */}
           {backgrounds.map((background) => {
-            const bgIsLoading = isImageLoading(background);
-            const bgIsLoaded = isLoaded(background);
-            const wasSelected = previousBackgroundRef.current === background.id;
             const isSelected = activeBackground?.id === background.id;
             
             return (
@@ -129,61 +115,20 @@ export function QuoteBackgroundSwitcher({
                 onClick={() => handleBackgroundChange(background)}
                 disabled={isLoading}
                 className={cn(
-                  "group relative aspect-square overflow-hidden rounded-lg",
-                  "border-2 transition-all duration-300 ease-in-out",
-                  "hover:shadow-lg hover:scale-[1.02]",
-                  isSelected
-                    ? "border-primary ring-2 ring-primary/30"
-                    : "border-transparent hover:border-primary/50",
-                  isLoading && "opacity-50 cursor-not-allowed",
-                  wasSelected && "animate-pulse-once"
+                  "group relative aspect-square overflow-hidden rounded-lg border-2 transition-all",
+                  isSelected ? "border-primary ring-2 ring-primary/30" : "border-transparent hover:border-primary/50",
+                  isLoading && "opacity-50 cursor-not-allowed"
                 )}
               >
-                {/* Loading Spinner for Individual Images */}
-                {bgIsLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10">
-                    <Loader2 className="h-5 w-5 text-primary animate-spin" />
-                  </div>
+                {background.url && (
+                  <Image 
+                    src={background.url} 
+                    alt={background.title || "Background option"} 
+                    fill
+                    className="object-cover w-full h-full"
+                  />
                 )}
-
-                {/* Improved Image Preview with Cache Awareness */}
-                <Image
-                  src={background.url}
-                  alt={background.title || "Background option"}
-                  fill
-                  className={cn(
-                    "object-cover transition-all duration-500",
-                    "group-hover:scale-110",
-                    (bgIsLoading || isLoading) && "blur-sm brightness-90",
-                    bgIsLoaded ? "opacity-100" : "opacity-0"
-                  )}
-                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                  priority={isSelected}
-                />
-
-                {/* Enhanced Selection Overlay */}
                 {isSelected && (
-                  <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px]
-                                flex items-center justify-center transition-all duration-300">
-                    <Check className="h-6 w-6 text-primary drop-shadow-lg" />
-                  </div>
-                )}
-
-                {/* Improved Hover Overlay */}
-                <div className={cn(
-                  "absolute inset-0 flex items-center justify-center",
-                  "bg-black/60 backdrop-blur-[1px]",
-                  "opacity-0 transition-all duration-300",
-                  "group-hover:opacity-100",
-                  bgIsLoading && "hidden"
-                )}>
-                  <p className="text-sm font-medium text-white/90 drop-shadow-lg">
-                    {bgIsLoaded ? "Select Background" : "Loading..."}
-                  </p>
-                </div>
-                
-                {/* Cached Indicator (optional) */}
-                {bgIsLoaded && !bgIsLoading && !isSelected && (
                   <div className="absolute top-1 right-1 bg-primary/20 rounded-full p-1">
                     <Check className="h-3 w-3 text-primary" />
                   </div>

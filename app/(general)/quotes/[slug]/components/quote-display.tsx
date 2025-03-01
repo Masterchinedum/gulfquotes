@@ -9,10 +9,6 @@ import { QuoteLayout } from "./quote-layout";
 import { QuoteContent } from "./quote-content";
 import { quoteDownloadService } from "@/lib/services/quote-download.service";
 
-QuoteDisplay.whyDidYouRender = {
-  logOnDifferentValues: true,
-  customName: 'QuoteDisplay'
-};
 
 interface QuoteDisplayProps {
   quote: QuoteDisplayData;
