@@ -338,7 +338,6 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
     
     // Determine if this is a comment or reply
     let isComment = true;
-    let commentId = id;
     
     // Check if it's a reply by searching through all comments
     for (const comment of comments) {
@@ -510,6 +509,7 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
         onUpdateComment={handleUpdateComment}
         onDeleteReply={handleDeleteReply}
         onUpdateReply={handleUpdateReply}
+        likingIds={likingIds} // Add this
         className={className}
       />
     </>
