@@ -4,14 +4,15 @@ import React, { useState, useCallback } from "react";
 import { Gallery } from "@prisma/client";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+// import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { QuoteDownload } from "./quote-download";
 import { QuoteShare } from "./quote-share";
 import { QuoteBackgroundSwitcher } from "./quote-background-switcher";
 import { useToast } from "@/hooks/use-toast";
-import { Palette, Download, Share2, Bookmark as BookmarkIcon } from "lucide-react";
+import { Palette, Download, Share2 } from "lucide-react";
 import { QuoteLikeButton } from "./quote-like-button";
+import { QuoteBookmarkButton } from "./quote-bookmark-button"; // Import the new component
 import type { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
 
 interface QuoteActionsProps {
@@ -34,9 +35,13 @@ export function QuoteActions({
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<string>("customize");
   const [isLoading, setIsLoading] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
+  
+  // Remove the local bookmark state since QuoteBookmarkButton manages its own state
+  // const [isSaved, setIsSaved] = useState(false);
 
-  // Remove isLoading from dependencies to prevent loops
+  // Remove handleSaveToggle function as we don't need it anymore
+
+  // Background change handler
   const handleBackgroundChange = useCallback(
     async (background: Gallery) => {
       try {
@@ -57,19 +62,8 @@ export function QuoteActions({
         setIsLoading(false);
       }
     },
-    [onBackgroundChange, toast] // Removed isLoading from dependencies
+    [onBackgroundChange, toast]
   );
-
-  // Memoize this to prevent unnecessary re-renders
-  const handleSaveToggle = useCallback(() => {
-    setIsSaved((prev) => !prev);
-    toast({
-      title: !isSaved ? "Quote saved to collection" : "Quote removed from collection",
-      description: !isSaved 
-        ? "This quote has been added to your saved collection"
-        : "This quote has been removed from your saved collection"
-    });
-  }, [isSaved, toast]);
 
   // Memoize loading state handlers
   const handleLoadingStart = useCallback(() => setIsLoading(true), []);
@@ -87,24 +81,15 @@ export function QuoteActions({
           <div className="flex items-center justify-between">
             <QuoteLikeButton 
               initialLikes={quote.metrics?.likes || 0}
-              quoteId={quote.slug}  // <-- Changed from quote.id to quote.slug
+              quoteId={quote.slug}
             />
             
-            <Button
-              onClick={handleSaveToggle}
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "flex items-center gap-2", 
-                isSaved && "text-primary"
-              )}
-            >
-              <BookmarkIcon className={cn(
-                "h-5 w-5",
-                isSaved ? "fill-primary" : "fill-transparent"
-              )} />
-              <span>{isSaved ? "Saved" : "Save"}</span>
-            </Button>
+            {/* Replace the Button with QuoteBookmarkButton */}
+            <QuoteBookmarkButton 
+              initialBookmarks={quote.metrics?.bookmarks || 0}
+              quoteId={quote.slug}
+              showCount={false}  // Hide count to match previous design
+            />
           </div>
         </CardContent>
       </Card>
