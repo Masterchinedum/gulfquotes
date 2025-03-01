@@ -1,7 +1,7 @@
 // lib/services/follow/author-follow.service.ts
 import db from "@/lib/prisma";
 import { AppError } from "@/lib/api-error";
-import { Prisma, AuthorFollow } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { FollowService, FollowStatusMap, FollowToggleResponse } from "./types";
 
 class AuthorFollowServiceImpl implements FollowService {

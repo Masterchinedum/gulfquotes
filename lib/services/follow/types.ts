@@ -1,6 +1,4 @@
 // lib/services/follow/types.ts
-import { AuthorFollow } from "@prisma/client";
-
 /**
  * Record that maps author profile IDs to their follow status (true/false)
  */
@@ -11,6 +9,19 @@ export type FollowStatusMap = Record<string, boolean>;
  */
 export interface FollowToggleResponse {
   followed: boolean;
+  followers: number;
+}
+
+/**
+ * Type for author data returned in follow lists
+ */
+export interface FollowedAuthorData {
+  id: string;
+  name: string;
+  slug: string;
+  bio?: string | null;
+  image?: string | null;
+  quoteCount?: number;
   followers: number;
 }
 
@@ -42,7 +53,7 @@ export interface FollowService {
    * Get all authors followed by a user
    */
   getFollowedAuthors(userId: string, page?: number, limit?: number): Promise<{
-    items: any[];
+    items: FollowedAuthorData[];
     total: number;
     hasMore: boolean;
     page: number;

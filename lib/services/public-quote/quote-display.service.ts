@@ -7,6 +7,7 @@ import html2canvas from 'html2canvas';
 // Add imports for services
 import { quoteBookmarkService } from "@/lib/services/bookmark";
 import { quoteLikeService } from "@/lib/services/like"; // Add this line
+import { authorFollowService } from "@/lib/services/follow"; // Add this import at the top of the file
 
 export interface QuoteDisplayData extends Quote {
   authorProfile: {
@@ -15,6 +16,8 @@ export interface QuoteDisplayData extends Quote {
     image?: string | null; 
     bio?: string | null;  // Add bio field
     quoteCount?: number; // Add quoteCount field
+    followers?: number;      // Add followers count
+    isFollowed?: boolean;    // Add follow status
   };
   category: {
     name: string;
@@ -52,9 +55,11 @@ class QuoteDisplayService {
         include: {
           authorProfile: {
             select: {
+              id: true,  // Make sure to include id
               name: true,
               slug: true,
               bio: true,
+              followers: true,  // Add followers count
               images: {
                 select: {
                   url: true
@@ -94,18 +99,21 @@ class QuoteDisplayService {
         throw new AppError("Quote not found", "NOT_FOUND", 404);
       }
 
-      // If userId is provided, get like and bookmark status
+      // If userId is provided, get like, bookmark, and follow status
       let isLiked = false;
       let isBookmarked = false;
+      let isFollowed = false;
       
       if (userId) {
-        const [likeStatus, bookmarkStatus] = await Promise.all([
+        const [likeStatus, bookmarkStatus, followStatus] = await Promise.all([
           quoteLikeService.getUserLikes(userId, [quote.id]),
-          quoteBookmarkService.getUserBookmarks(userId, [quote.id])
+          quoteBookmarkService.getUserBookmarks(userId, [quote.id]),
+          authorFollowService.getFollowStatus(quote.authorProfile.id, userId)
         ]);
         
         isLiked = likeStatus[quote.id] || false;
         isBookmarked = bookmarkStatus[quote.id] || false;
+        isFollowed = followStatus;
       }
 
       // Transform the data to match QuoteDisplayData interface
@@ -114,7 +122,8 @@ class QuoteDisplayService {
         authorProfile: {
           ...quote.authorProfile,
           image: quote.authorProfile.images[0]?.url || null,
-          images: undefined // Remove the images array from the transformed data
+          images: undefined, // Remove the images array from the transformed data
+          isFollowed,       // Add follow status
         },
         isLiked,
         isBookmarked
