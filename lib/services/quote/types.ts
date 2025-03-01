@@ -35,11 +35,15 @@ export interface QuoteImageData extends Omit<QuoteImageResource, 'context'> {
 
 export type SortOption = 'recent' | 'popular' | 'length' | 'alphabetical';
 
+export interface EnhancedQuote extends Quote {
+  isLiked?: boolean;
+}
+
 export interface QuoteService {
-  list(params: import('@/types/api/quotes').ListQuotesParams): Promise<ListQuotesResult>;
+  list(params: import('@/types/api/quotes').ListQuotesParams & { userId?: string }): Promise<ListQuotesResult>;
   create(data: CreateQuoteInput & { authorId: string; images?: QuoteImageData[] }): Promise<Quote>;
-  getById(id: string): Promise<Quote | null>;
-  getBySlug(slug: string): Promise<Quote | null>;
+  getById(id: string, userId?: string): Promise<Quote | null>;
+  getBySlug(slug: string, userId?: string): Promise<Quote | null>;
   update(id: string, data: UpdateQuoteInput): Promise<Quote>;
   delete(id: string): Promise<Quote>;
   search(query: string): Promise<Quote[]>;

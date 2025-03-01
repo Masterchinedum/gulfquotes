@@ -4,7 +4,7 @@ import { AppError } from "@/lib/api-error";
 import { auth } from "@/auth";
 import { CreateQuoteInput, UpdateQuoteInput } from "@/schemas/quote";
 import { slugify } from "@/lib/utils";
-import type { QuoteService, ListQuotesResult, QuoteImageData } from "./types";
+import type { QuoteService, ListQuotesResult, QuoteImageData, EnhancedQuote } from "./types";
 import type { ListQuotesParams } from "@/types/api/quotes";
 import type { GalleryItem } from "@/types/gallery";
 import type { MediaLibraryItem } from "@/types/cloudinary";
@@ -22,6 +22,7 @@ import {
   removeImage as removeQuoteImage,
   removeImageAssociation as removeQuoteImageAssociation
 } from "./image-operations";
+import { quoteLikeService } from "@/lib/services/like";
 
 class QuoteServiceImpl implements QuoteService {
   async create(data: CreateQuoteInput & { authorId: string }): Promise<Quote> {
@@ -61,27 +62,49 @@ class QuoteServiceImpl implements QuoteService {
     });
   }
 
-  async getById(id: string): Promise<Quote | null> {
-    return db.quote.findUnique({
+  async getById(id: string, userId?: string): Promise<Quote | null> {
+    const quote = await db.quote.findUnique({
       where: { id },
       include: {
         category: true,
         authorProfile: true,
       }
     });
+
+    if (quote && userId) {
+      // Add like information if user ID is provided
+      const likeStatus = await quoteLikeService.getUserLikes(userId, [quote.id]);
+      return {
+        ...quote,
+        isLiked: likeStatus[quote.id] || false
+      };
+    }
+
+    return quote;
   }
 
-  async getBySlug(slug: string): Promise<Quote | null> {
-    return db.quote.findUnique({
+  async getBySlug(slug: string, userId?: string): Promise<Quote | null> {
+    const quote = await db.quote.findUnique({
       where: { slug },
       include: {
         category: true,
         authorProfile: true,
       }
     });
+
+    if (quote && userId) {
+      // Add like information if user ID is provided
+      const likeStatus = await quoteLikeService.getUserLikes(userId, [quote.id]);
+      return {
+        ...quote,
+        isLiked: likeStatus[quote.id] || false
+      };
+    }
+
+    return quote;
   }
 
-  async list(params: ListQuotesParams): Promise<ListQuotesResult> {
+  async list(params: ListQuotesParams & { userId?: string }): Promise<ListQuotesResult> {
     const page = params.page || 1;
     const limit = params.limit || 10;
     const skip = (page - 1) * limit;
@@ -110,6 +133,17 @@ class QuoteServiceImpl implements QuoteService {
       }),
       db.quote.count({ where: whereConditions })
     ]);
+
+    // Add like status for all quotes if userId is provided
+    if (params.userId && items.length > 0) {
+      const quoteIds = items.map(item => item.id);
+      const likeStatus = await quoteLikeService.getUserLikes(params.userId, quoteIds);
+      
+      // Merge like status into quotes
+      items.forEach(quote => {
+        (quote as EnhancedQuote).isLiked = likeStatus[quote.id] || false;
+      });
+    }
 
     return {
       items,
