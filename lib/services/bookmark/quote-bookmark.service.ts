@@ -268,7 +268,16 @@ class QuoteBookmarkServiceImpl implements BookmarkService {
             }
           },
           include: {
-            authorProfile: true,
+            authorProfile: {
+              include: {
+                images: {
+                  take: 1, // Get just the first image
+                  select: {
+                    url: true
+                  }
+                }
+              }
+            },
             category: true
           },
           skip,
@@ -280,8 +289,17 @@ class QuoteBookmarkServiceImpl implements BookmarkService {
         })
       ]);
       
+      // Transform the items to include image property
+      const transformedItems = items.map(item => ({
+        ...item,
+        authorProfile: {
+          ...item.authorProfile,
+          image: item.authorProfile.images?.[0]?.url || null
+        }
+      }));
+      
       return {
-        items,
+        items: transformedItems,
         total,
         hasMore: total > skip + items.length,
         page,
