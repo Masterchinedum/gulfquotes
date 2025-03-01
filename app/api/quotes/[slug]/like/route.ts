@@ -11,6 +11,10 @@ interface LikeResponse {
     liked: boolean;
     likes: number;
   };
+  error?: {
+    code: QuoteErrorCode;
+    message: string;
+  };
 }
 
 /**
