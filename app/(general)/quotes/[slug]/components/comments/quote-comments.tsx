@@ -25,6 +25,7 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [likingIds, setLikingIds] = useState<Set<string>>(new Set());
+  const [lastAttemptedLikeId, setLastAttemptedLikeId] = useState<string | null>(null);
   const isAuthenticated = status === "authenticated";
   const recentlyToggledIds = useRef(new Set<string>());
 
@@ -333,6 +334,7 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
   // Wrap handleToggleLike in useCallback
   const handleToggleLike = useCallback(async (id: string) => {
     if (!isAuthenticated) {
+      setLastAttemptedLikeId(id); // Save which ID triggered the login prompt
       setShowLoginPrompt(true);
       return;
     }
@@ -529,8 +531,8 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
               title="Sign in to interact"
               description="You need to be signed in to like comments and replies."
               callToAction="Sign in now"
-              // Include the action and target ID in the URL
-              redirectUrl={`/quotes/${slug}?action=like&target=${id}`}
+              // Use the stored ID in the URL
+              redirectUrl={`/quotes/${slug}?action=like&target=${lastAttemptedLikeId || ''}`}
               onClose={() => setShowLoginPrompt(false)}
             />
           </div>

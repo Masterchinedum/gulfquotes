@@ -105,10 +105,12 @@ export function CommentForm({ quoteSlug, onCommentAdded, className }: CommentFor
     return (
       <div className={className}>
         <LoginPrompt 
-          variant="inline" 
-          description="Sign in to add your comment to this quote."
+          title="Sign in to interact"
+          description="You need to be signed in to like comments and replies."
           callToAction="Sign in now"
-          redirectUrl={`/quotes/${quoteSlug}`} 
+          // Use the stored ID in the URL
+          redirectUrl={`/quotes/${quoteSlug}?action=like&target=${lastAttemptedLikeId || ''}`}
+          onClose={() => setShowLoginPrompt(false)}
         />
       </div>
     );

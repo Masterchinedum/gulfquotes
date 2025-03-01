@@ -54,6 +54,7 @@ export interface CommentData {
   isEdited: boolean;
   editedAt: Date | null;
   likes: number;
+
   isLiked?: boolean; // Add this property
   user: {
     id: string;
@@ -74,6 +75,7 @@ export interface ReplyData {
   isEdited: boolean;
   editedAt: Date | null;
   likes: number;
+  isLiked?: boolean; // Add this property to match CommentData
   user: {
     id: string;
     name: string | null;
