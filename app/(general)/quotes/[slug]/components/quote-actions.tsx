@@ -92,7 +92,7 @@ export function QuoteActions({
           <div className="flex items-center justify-between">
             <QuoteLikeButton 
               initialLikes={quote.metrics?.likes || 0}
-              quoteId={quote.id}
+              quoteId={quote.slug}  // <-- Changed from quote.id to quote.slug
             />
             
             <Button

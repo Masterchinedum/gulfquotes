@@ -16,6 +16,8 @@ interface QuoteLikeButtonProps {
   className?: string;
 }
 
+console.log("quote like button is called")
+
 export function QuoteLikeButton({
   initialLikes = 0,
   quoteId,
@@ -42,7 +44,11 @@ export function QuoteLikeButton({
       }
 
       try {
-        const response = await fetch(`/api/quotes/${quoteId}/like/status`);
+        // Use the same endpoint but with GET method for fetching status
+        const response = await fetch(`/api/quotes/${quoteId}/like`, {
+          method: 'GET'
+        });
+        
         if (!response.ok) throw new Error("Failed to fetch like status");
         
         const data = await response.json();
