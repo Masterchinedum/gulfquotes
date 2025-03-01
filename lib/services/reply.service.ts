@@ -8,15 +8,24 @@ import {
   CreateReplyInput,
   UpdateReplyInput 
 } from "@/schemas/comment.schema";
+import { replyLikeService } from "@/lib/services/like";
 
+// Create an enhanced Reply interface that includes like status
+interface ReplyWithLikeStatus extends Reply {
+  isLiked?: boolean;
+}
+
+// Update the params interface to include userId
 export interface ReplyListParams {
   commentId: string;
   page?: number;
   limit?: number;
+  userId?: string; // Add this for like status
 }
 
+// Update the result interface to use the enhanced type
 export interface ReplyListResult {
-  items: Reply[];
+  items: ReplyWithLikeStatus[]; // Changed from Reply[]
   total: number;
   hasMore: boolean;
   page: number;
@@ -93,7 +102,30 @@ class ReplyService {
   }
 
   /**
-   * Lists replies for a comment with pagination
+   * Gets a reply with like status
+   */
+  async getReplyWithLikeStatus(id: string, userId: string): Promise<ReplyWithLikeStatus | null> {
+    try {
+      const reply = await this.getById(id);
+      
+      if (!reply) {
+        return null;
+      }
+      
+      const likeStatus = await replyLikeService.getUserLikes(userId, [id]);
+      
+      return {
+        ...reply,
+        isLiked: likeStatus[id] || false
+      };
+    } catch (error) {
+      console.error("Error getting reply with like status:", error);
+      throw new AppError("Failed to get reply with like status", "INTERNAL_ERROR", 500);
+    }
+  }
+
+  /**
+   * Lists replies for a comment with pagination and optional like status
    */
   async listReplies(params: ReplyListParams): Promise<ReplyListResult> {
     const page = params.page || 1;
@@ -131,6 +163,17 @@ class ReplyService {
           where: { commentId: params.commentId }
         })
       ]);
+
+      // Add like status for all replies if userId is provided
+      if (params.userId && items.length > 0) {
+        const replyIds = items.map(reply => reply.id);
+        const likeStatus = await replyLikeService.getUserLikes(params.userId, replyIds);
+        
+        // Merge like status into replies
+        items.forEach(reply => {
+          (reply as ReplyWithLikeStatus).isLiked = likeStatus[reply.id] || false;
+        });
+      }
 
       return {
         items,
