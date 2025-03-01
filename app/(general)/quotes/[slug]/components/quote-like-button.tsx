@@ -5,10 +5,14 @@ import { ThumbsUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import { useSession } from "next-auth/react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useRouter } from "next/navigation";
 
 interface QuoteLikeButtonProps {
   initialLikes: number;
-  quoteId: string;
+  quoteId: string; // This is actually the slug
   className?: string;
 }
 
@@ -17,38 +21,98 @@ export function QuoteLikeButton({
   quoteId,
   className,
 }: QuoteLikeButtonProps) {
-  // Client-side state for likes count and liked status
+  // Authentication state
+  const { data: status } = useSession();
+  const router = useRouter();
+  
+  // Component state
   const [likes, setLikes] = useState(initialLikes);
   const [isLiked, setIsLiked] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
+  // Fetch initial like status and count
   useEffect(() => {
-    // Sync with latest data from API if needed
-    const fetchLatestLikes = async () => {
-      const response = await fetch(`/api/quotes/${quoteId}/likes`);
-      const data = await response.json();
-      setLikes(data.likes);
+    const fetchLikeStatus = async () => {
+      // Skip API call if not authenticated
+      if (status !== "authenticated") {
+        setInitialLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/quotes/${quoteId}/like/status`);
+        if (!response.ok) throw new Error("Failed to fetch like status");
+        
+        const data = await response.json();
+        setIsLiked(data.data.liked);
+        setLikes(data.data.likes);
+      } catch (error) {
+        console.error("Error fetching like status:", error);
+        // Fallback to initialLikes if API call fails
+        setLikes(initialLikes);
+      } finally {
+        setInitialLoading(false);
+      }
     };
-    fetchLatestLikes();
-  }, [quoteId]);
+
+    fetchLikeStatus();
+  }, [quoteId, status, initialLikes]);
 
   // Function to handle liking/unliking
-  const handleLikeToggle = () => {
-    // Set animation state
+  const handleLikeToggle = async () => {
+    // Require authentication
+    if (status !== "authenticated") {
+      // Could redirect to login or show a login modal
+      toast("Please sign in to like quotes");
+      router.push(`/login?callbackUrl=/quotes/${quoteId}`);
+      return;
+    }
+    
+    // Start animation
     setIsAnimating(true);
     
-    // Toggle liked state
+    // Optimistic update
     setIsLiked((prev) => !prev);
-    
-    // Update likes count
     setLikes((prev) => (isLiked ? prev - 1 : prev + 1));
     
-    // API call placeholder - would normally save to database
-    // For now, we'll just log to console
-    console.log(`${isLiked ? 'Unlike' : 'Like'} quote: ${quoteId}`);
+    // Set loading state
+    setIsLoading(true);
     
-    // Reset animation state after animation completes
-    setTimeout(() => setIsAnimating(false), 500);
+    try {
+      // Call API to persist the like
+      const response = await fetch(`/api/quotes/${quoteId}/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) throw new Error("Failed to toggle like");
+      
+      const result = await response.json();
+      
+      // Update with actual server state
+      setIsLiked(result.data.liked);
+      setLikes(result.data.likes);
+      
+      // Optional success toast
+      // toast.success(result.data.liked ? "Quote liked" : "Quote unliked");
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      
+      // Revert optimistic update on error
+      setIsLiked((prev) => !prev);
+      setLikes((prev) => (!isLiked ? prev - 1 : prev + 1));
+      
+      // Show error toast
+      toast.error("Failed to update like status");
+    } finally {
+      // Reset states
+      setIsLoading(false);
+      setTimeout(() => setIsAnimating(false), 500);
+    }
   };
 
   // Format likes for display (e.g., 1000 -> 1K)
@@ -62,19 +126,29 @@ export function QuoteLikeButton({
     return count.toString();
   };
 
+  // Show skeleton loader while initial data is loading
+  if (initialLoading) {
+    return (
+      <div className={cn("flex items-center gap-2", className)}>
+        <Skeleton className="h-8 w-16 rounded-md" />
+      </div>
+    );
+  }
+
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <Button
         onClick={handleLikeToggle}
         variant="ghost"
         size="sm"
+        disabled={isLoading}
         className={cn(
           "group relative flex items-center gap-2 hover:bg-transparent",
           isLiked && "text-red-500"
         )}
       >
         <div className="relative">
-          {/* Base heart icon */}
+          {/* Base icon */}
           <ThumbsUp 
             className={cn(
               "h-4 w-4",
