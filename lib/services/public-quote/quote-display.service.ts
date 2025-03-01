@@ -12,19 +12,20 @@ export interface QuoteDisplayData extends Quote {
   authorProfile: {
     name: string;
     slug: string;
-    image?: string | null; // Add image property
+    image?: string | null; 
     bio?: string | null;  // Add bio field
+    quoteCount?: number; // Add quoteCount field
   };
   category: {
     name: string;
     slug: string;
   };
   gallery: Array<{
-    gallery: Gallery; // The gallery item itself
-    isActive: boolean; // Whether this is the active background
-    isBackground: boolean; // Whether this can be used as a background
+    gallery: Gallery;
+    isActive: boolean; 
+    isBackground: boolean; 
   }>;
-  backgroundImage: string | null; // Current background image URL
+  backgroundImage: string | null;
   tags?: Array<{
     id: string;
     name: string;
@@ -59,6 +60,11 @@ class QuoteDisplayService {
                   url: true
                 },
                 take: 1
+              },
+              _count: {
+                select: {
+                  quotes: true
+                }
               }
             }
           },
@@ -114,7 +120,13 @@ class QuoteDisplayService {
         isBookmarked
       };
 
-      return transformedQuote as QuoteDisplayData;
+      return {
+        ...transformedQuote,
+        authorProfile: {
+          ...transformedQuote.authorProfile,
+          quoteCount: quote.authorProfile._count.quotes
+        }
+      } as QuoteDisplayData;
     } catch (error) {
       if (error instanceof AppError) throw error;
       throw new AppError("Failed to fetch quote", "INTERNAL_ERROR", 500);

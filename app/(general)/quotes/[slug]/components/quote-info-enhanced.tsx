@@ -102,7 +102,7 @@ export function QuoteInfoEnhanced({ quote, className }: QuoteInfoEnhancedProps) 
               <Book className="h-4 w-4" />
               <span className="text-xs">Quotes</span>
             </div>
-            <p className="font-semibold">0</p>
+            <p className="font-semibold">{quote.authorProfile.quoteCount ?? 0}</p>
           </div>
         </div>
       </CardContent>
