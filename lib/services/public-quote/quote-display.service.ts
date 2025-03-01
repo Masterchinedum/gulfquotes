@@ -4,6 +4,8 @@ import db from "@/lib/prisma";
 import { AppError } from "@/lib/api-error";
 import type { Quote, Gallery } from "@prisma/client";
 import html2canvas from 'html2canvas';
+// Add import for bookmark service
+import { quoteBookmarkService } from "@/lib/services/bookmark";
 
 export interface QuoteDisplayData extends Quote {
   authorProfile: {
@@ -31,14 +33,17 @@ export interface QuoteDisplayData extends Quote {
     views: number;
     likes: number;
     shares: number;
+    bookmarks?: number; // Add this line
   };
+  isLiked?: boolean;
+  isBookmarked?: boolean; // Add this line
 }
 
 class QuoteDisplayService {
   /**
    * Fetch a quote by its slug with necessary relations
    */
-  async getQuoteBySlug(slug: string): Promise<QuoteDisplayData | null> {
+  async getQuoteBySlug(slug: string, userId?: string): Promise<QuoteDisplayData | null> {
     try {
       const quote = await db.quote.findUnique({
         where: { slug },
@@ -82,6 +87,20 @@ class QuoteDisplayService {
         throw new AppError("Quote not found", "NOT_FOUND", 404);
       }
 
+      // If userId is provided, get like and bookmark status
+      let isLiked = false;
+      let isBookmarked = false;
+      
+      if (userId) {
+        const [likeStatus, bookmarkStatus] = await Promise.all([
+          quoteLikeService.getUserLikes(userId, [quote.id]),
+          quoteBookmarkService.getUserBookmarks(userId, [quote.id])
+        ]);
+        
+        isLiked = likeStatus[quote.id] || false;
+        isBookmarked = bookmarkStatus[quote.id] || false;
+      }
+
       // Transform the data to match QuoteDisplayData interface
       const transformedQuote = {
         ...quote,
@@ -89,7 +108,9 @@ class QuoteDisplayService {
           ...quote.authorProfile,
           image: quote.authorProfile.images[0]?.url || null,
           images: undefined // Remove the images array from the transformed data
-        }
+        },
+        isLiked,
+        isBookmarked
       };
 
       return transformedQuote as QuoteDisplayData;
