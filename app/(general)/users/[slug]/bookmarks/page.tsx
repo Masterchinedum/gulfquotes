@@ -1,5 +1,7 @@
+//app/(general)/users/[slug]/bookmarks/page.tsx
+
 import { auth } from "@/auth";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { Shell } from "@/components/shells/shell";
 import { BookmarkIcon } from "lucide-react";
 import { quoteBookmarkService } from "@/lib/services/bookmark";
@@ -8,35 +10,56 @@ import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
+import db from "@/lib/prisma";
 
 export const metadata = {
-  title: "My Bookmarked Quotes",
-  description: "View and manage quotes you've bookmarked"
+  title: "Bookmarked Quotes",
+  description: "View quotes bookmarked by this user"
 };
 
 interface BookmarkPageProps {
-  searchParams: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{
     page?: string;
     sort?: string;
-  };
+  }>;
 }
 
 export default async function BookmarksPage({
+  params,
   searchParams
 }: BookmarkPageProps) {
   const session = await auth();
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
   
-  // Redirect to login if not authenticated
-  if (!session?.user) {
-    redirect("/login?callbackUrl=/profile/bookmarks");
+  // Get user info from slug
+  const userProfile = await db.user.findUnique({
+    where: { id: resolvedParams.slug },
+    select: { 
+      id: true,
+      name: true,
+      image: true
+    }
+  });
+
+  if (!userProfile) {
+    notFound();
+  }
+  
+  // Check permissions - only allow users to see their own bookmarks
+  const isOwnProfile = session?.user?.id === userProfile.id;
+  if (!isOwnProfile) {
+    redirect(`/users/${resolvedParams.slug}`);
   }
 
-  const page = Number(searchParams?.page) || 1;
+  const page = Number(resolvedSearchParams?.page) || 1;
+  const slug = resolvedParams.slug;
 
   try {
     // Get bookmarked quotes
     const result = await quoteBookmarkService.getBookmarkedQuotes(
-      session.user.id,
+      userProfile.id,
       page,
       12
     );
@@ -92,12 +115,12 @@ export default async function BookmarksPage({
                 {(result.hasMore || page > 1) && (
                   <div className="flex justify-center gap-2 pt-4">
                     {page > 1 && (
-                      <Link href={`/profile/bookmarks?page=${page - 1}`}>
+                      <Link href={`/users/${slug}/bookmarks?page=${page - 1}`}>
                         <Button variant="outline">Previous</Button>
                       </Link>
                     )}
                     {result.hasMore && (
-                      <Link href={`/profile/bookmarks?page=${page + 1}`}>
+                      <Link href={`/users/${slug}/bookmarks?page=${page + 1}`}>
                         <Button variant="outline">Next</Button>
                       </Link>
                     )}
@@ -131,7 +154,7 @@ export default async function BookmarksPage({
         <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
           <h3 className="font-semibold">Something went wrong</h3>
           <p className="text-sm text-muted-foreground">
-            Failed to load your bookmarked quotes. Please try again later.
+            Failed to load bookmarked quotes. Please try again later.
           </p>
           <Button variant="outline" onClick={() => window.location.reload()} className="mt-4">
             Try again
