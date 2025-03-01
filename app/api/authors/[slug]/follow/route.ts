@@ -11,7 +11,7 @@ export type AuthorErrorCode =
   | "RATE_LIMITED" 
   | "NOT_FOUND" 
   | "INTERNAL_ERROR"
-  | "BAD_REQUEST";  // Add this line
+  | "BAD_REQUEST"; 
 
 // Define response types
 interface FollowResponse {
