@@ -47,7 +47,7 @@ class ReplyService {
         data: {
           content: data.content,
           commentId,
-          userId: user.id,
+          userId: user.id!, // Add non-null assertion operator
           likes: 0
         },
         include: {
@@ -231,112 +231,6 @@ class ReplyService {
         throw error;
       }
       throw new AppError("Failed to delete reply", "INTERNAL_ERROR", 500);
-    }
-  }
-
-  /**
-   * Toggles a like on a reply
-   */
-  async toggleLike(replyId: string, userId: string): Promise<{ liked: boolean; likes: number }> {
-    try {
-      // Check if reply exists
-      const reply = await db.reply.findUnique({
-        where: { id: replyId },
-        select: { id: true, likes: true }
-      });
-
-      if (!reply) {
-        throw new AppError("Reply not found", "NOT_FOUND", 404);
-      }
-
-      // Check if user already liked this reply
-      const existingLike = await db.replyLike.findUnique({
-        where: {
-          replyId_userId: {
-            replyId,
-            userId
-          }
-        }
-      });
-
-      // If like exists, remove it (unlike)
-      if (existingLike) {
-        await db.replyLike.delete({
-          where: {
-            replyId_userId: {
-              replyId,
-              userId
-            }
-          }
-        });
-
-        const updatedReply = await db.reply.update({
-          where: { id: replyId },
-          data: {
-            likes: { decrement: 1 }
-          },
-          select: { likes: true }
-        });
-
-        return {
-          liked: false,
-          likes: updatedReply.likes
-        };
-      } 
-      // Otherwise, add a like
-      else {
-        await db.replyLike.create({
-          data: {
-            replyId,
-            userId
-          }
-        });
-
-        const updatedReply = await db.reply.update({
-          where: { id: replyId },
-          data: {
-            likes: { increment: 1 }
-          },
-          select: { likes: true }
-        });
-
-        return {
-          liked: true,
-          likes: updatedReply.likes
-        };
-      }
-    } catch (error) {
-      console.error("Error toggling reply like:", error);
-      if (error instanceof AppError) {
-        throw error;
-      }
-      throw new AppError("Failed to toggle reply like", "INTERNAL_ERROR", 500);
-    }
-  }
-
-  /**
-   * Gets user like status for multiple replies
-   */
-  async getUserLikes(replyIds: string[], userId: string): Promise<Record<string, boolean>> {
-    try {
-      const likes = await db.replyLike.findMany({
-        where: {
-          replyId: { in: replyIds },
-          userId
-        },
-        select: { replyId: true }
-      });
-      
-      // Create a map of replyId to liked status
-      const likeMap: Record<string, boolean> = {};
-      likes.forEach(like => {
-        likeMap[like.replyId] = true;
-      });
-      
-      return likeMap;
-    } catch (error) {
-      console.error("Error getting user reply likes:", error);
-      throw new AppError("Failed to get user reply likes", "INTERNAL_ERROR", 500);
     }
   }
 }

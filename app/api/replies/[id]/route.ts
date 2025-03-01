@@ -69,7 +69,9 @@ export async function PATCH(
         session.user.role
       );
       
-      return NextResponse.json({ data: updatedReply });
+      return NextResponse.json({ 
+        data: updatedReply as unknown as ReplyData 
+      });
     } catch (error) {
       if (error instanceof AppError) {
         return NextResponse.json(

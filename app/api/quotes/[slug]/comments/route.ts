@@ -169,8 +169,10 @@ export async function POST(
         session.user
       );
       
-      // Return the newly created comment
-      return NextResponse.json({ data: comment });
+      // Return the newly created comment with proper type assertion
+      return NextResponse.json({ 
+        data: comment as unknown as CommentData 
+      });
     } catch (error) {
       if (error instanceof AppError) {
         return NextResponse.json(
