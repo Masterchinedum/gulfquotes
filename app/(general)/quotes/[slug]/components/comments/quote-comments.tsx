@@ -48,11 +48,11 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
         
         const data = await response.json();
         
-        // Use the isLiked property from the API if available
+        // Currently produces a type error
         const transformedComments = data.data.items.map((comment: CommentData) => ({
           ...comment,
-          isLiked: comment.isLiked || false,
-          replies: [] // Initialize empty replies array
+          isLiked: comment.isLiked || false, // Error: Property 'isLiked' doesn't exist on type 'CommentData'
+          replies: []
         }));
         
         setComments(transformedComments);
