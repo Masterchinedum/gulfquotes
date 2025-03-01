@@ -10,7 +10,8 @@ export type AuthorErrorCode =
   | "UNAUTHORIZED" 
   | "RATE_LIMITED" 
   | "NOT_FOUND" 
-  | "INTERNAL_ERROR";
+  | "INTERNAL_ERROR"
+  | "BAD_REQUEST";  // Add this line
 
 // Define response types
 interface FollowResponse {
@@ -27,10 +28,7 @@ interface FollowResponse {
 /**
  * GET handler to check if an author is followed by the current user
  */
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { slug: string } }
-): Promise<NextResponse<FollowResponse>> {
+export async function GET(req: NextRequest): Promise<NextResponse<FollowResponse>> {
   try {
     // Check authentication
     const session = await auth();
@@ -41,9 +39,18 @@ export async function GET(
       );
     }
 
+    // Extract slug from URL
+    const slug = req.url.split('/authors/')[1]?.split('/')[0];
+    if (!slug) {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "Invalid author slug" } },
+        { status: 400 }
+      );
+    }
+
     // Get the author by slug
     const authorProfile = await db.authorProfile.findUnique({
-      where: { slug: params.slug },
+      where: { slug },
       select: { id: true, followers: true }
     });
 
@@ -84,10 +91,7 @@ export async function GET(
 /**
  * POST handler to toggle follow status
  */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { slug: string } }
-): Promise<NextResponse<FollowResponse>> {
+export async function POST(req: NextRequest): Promise<NextResponse<FollowResponse>> {
   try {
     // Check authentication
     const session = await auth();
@@ -98,9 +102,18 @@ export async function POST(
       );
     }
 
+    // Extract slug from URL
+    const slug = req.url.split('/authors/')[1]?.split('/')[0];
+    if (!slug) {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "Invalid author slug" } },
+        { status: 400 }
+      );
+    }
+
     // Get the author by slug
     const authorProfile = await db.authorProfile.findUnique({
-      where: { slug: params.slug },
+      where: { slug },
       select: { id: true }
     });
 
