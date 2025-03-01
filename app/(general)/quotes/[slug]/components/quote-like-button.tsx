@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LoginPrompt } from "../login-prompt";
+import { LoginPrompt } from "./login-prompt";
 
 interface QuoteLikeButtonProps {
   initialLikes: number;
