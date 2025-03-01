@@ -1,4 +1,3 @@
-// app/(general)/quotes/[slug]/components/comments/quote-comments.tsx
 "use client"
 
 import { useState, useEffect } from "react";
@@ -25,6 +24,7 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [likingIds, setLikingIds] = useState<Set<string>>(new Set());
   const isAuthenticated = status === "authenticated";
 
   // Fetch comments on component mount and when parameters change
@@ -36,16 +36,21 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
         url.searchParams.append('page', '1');
         url.searchParams.append('limit', '10');
         url.searchParams.append('sortBy', activeSort);
+        
+        // Add user ID parameter if authenticated to get like status
+        if (isAuthenticated) {
+          url.searchParams.append('includeUserLikes', 'true');
+        }
 
         const response = await fetch(url);
         if (!response.ok) throw new Error("Failed to fetch comments");
         
         const data = await response.json();
         
-        // Transform data to include isLiked property
+        // Use the isLiked property from the API if available
         const transformedComments = data.data.items.map((comment: CommentData) => ({
           ...comment,
-          isLiked: false, // We'll update this when we get user-specific likes
+          isLiked: comment.isLiked || false,
           replies: [] // Initialize empty replies array
         }));
         
@@ -61,7 +66,7 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
     }
     
     fetchComments();
-  }, [slug, activeSort]);
+  }, [slug, activeSort, isAuthenticated]);
 
   // Function to handle loading more comments
   const handleLoadMore = async () => {
@@ -184,21 +189,27 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
   // Function to handle fetching replies for a comment
   const handleLoadReplies = async (commentId: string) => {
     try {
-      const url = `/api/quotes/${slug}/comments/${commentId}/replies`;
-      const response = await fetch(url);
+      const url = new URL(`/api/quotes/${slug}/comments/${commentId}/replies`, window.location.origin);
+      
+      // Add user ID parameter if authenticated to get like status
+      if (isAuthenticated) {
+        url.searchParams.append('includeUserLikes', 'true');
+      }
+      
+      const response = await fetch(url.toString());
       
       if (!response.ok) throw new Error("Failed to fetch replies");
       
       const data = await response.json();
       
-      // Update the comments state with fetched replies
+      // Update the comments state with fetched replies (using isLiked from API if available)
       setComments(prev => prev.map(comment => {
         if (comment.id === commentId) {
           return {
             ...comment,
             replies: data.data.items.map((reply: ReplyData): ReplyWithLike => ({
               ...reply,
-              isLiked: false
+              isLiked: reply.isLiked || false
             })),
             _count: {
               replies: data.data.total
@@ -319,21 +330,38 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
   };
 
   // Function to handle like toggling
-  const handleToggleLike = (id: string) => {
+  const handleToggleLike = async (id: string) => {
     if (!isAuthenticated) {
-      // Show login prompt instead of toast
       setShowLoginPrompt(true);
       return;
     }
     
-    // Optimistic update for now - API integration will come later
+    // Determine if this is a comment or reply
+    let isComment = true;
+    let commentId = id;
+    
+    // Check if it's a reply by searching through all comments
+    for (const comment of comments) {
+      if (comment.replies) {
+        const foundReply = comment.replies.find(reply => reply.id === id);
+        if (foundReply) {
+          isComment = false;
+          break;
+        }
+      }
+    }
+    
+    // Add to loading set
+    setLikingIds(prev => new Set(prev).add(id));
+    
+    // Optimistic update
     setComments(prev => prev.map(comment => {
       if (comment.id === id) {
         const isNowLiked = !comment.isLiked;
         return {
           ...comment,
           isLiked: isNowLiked,
-          likes: isNowLiked ? comment.likes + 1 : comment.likes - 1,
+          likes: isNowLiked ? comment.likes + 1 : Math.max(0, comment.likes - 1),
         };
       }
       
@@ -347,7 +375,7 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
               return {
                 ...reply,
                 isLiked: isNowLiked,
-                likes: isNowLiked ? reply.likes + 1 : reply.likes - 1,
+                likes: isNowLiked ? reply.likes + 1 : Math.max(0, reply.likes - 1),
               };
             }
             return reply;
@@ -357,6 +385,96 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
       
       return comment;
     }));
+    
+    try {
+      // Determine the API endpoint based on whether it's a comment or reply
+      const endpoint = isComment 
+        ? `/api/comments/${id}/like` 
+        : `/api/replies/${id}/like`;
+        
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) throw new Error("Failed to toggle like");
+      
+      const result = await response.json();
+      
+      // Update UI with server response (handles any potential sync issues)
+      setComments(prev => prev.map(comment => {
+        if (comment.id === id) {
+          return {
+            ...comment,
+            isLiked: result.data.liked,
+            likes: result.data.likes,
+          };
+        }
+        
+        // Check in replies
+        if (comment.replies && comment.replies.length > 0) {
+          return {
+            ...comment,
+            replies: comment.replies.map(reply => {
+              if (reply.id === id) {
+                return {
+                  ...reply,
+                  isLiked: result.data.liked,
+                  likes: result.data.likes,
+                };
+              }
+              return reply;
+            })
+          };
+        }
+        
+        return comment;
+      }));
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      toast.error("Failed to update like status");
+      
+      // Revert the optimistic update on error
+      setComments(prev => prev.map(comment => {
+        if (comment.id === id) {
+          const revertedIsLiked = !comment.isLiked;
+          return {
+            ...comment,
+            isLiked: revertedIsLiked,
+            likes: revertedIsLiked ? comment.likes + 1 : Math.max(0, comment.likes - 1),
+          };
+        }
+        
+        // Check in replies
+        if (comment.replies && comment.replies.length > 0) {
+          return {
+            ...comment,
+            replies: comment.replies.map(reply => {
+              if (reply.id === id) {
+                const revertedIsLiked = !reply.isLiked;
+                return {
+                  ...reply,
+                  isLiked: revertedIsLiked,
+                  likes: revertedIsLiked ? reply.likes + 1 : Math.max(0, reply.likes - 1),
+                };
+              }
+              return reply;
+            })
+          };
+        }
+        
+        return comment;
+      }));
+    } finally {
+      // Remove from loading set
+      setLikingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    }
   };
 
   return (

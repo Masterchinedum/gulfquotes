@@ -27,18 +27,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useCommentAuth } from "@/hooks/use-comment-auth";
 
+// Update the props interface
 interface ReplyItemProps {
   reply: ReplyData & { isLiked?: boolean };
   onToggleLike: (replyId: string) => void;
   onDeleteReply: (replyId: string) => Promise<void>;
   onUpdateReply: (replyId: string, content: string) => Promise<void>;
+  likingIds?: Set<string>; // Add this
 }
 
 export function ReplyItem({ 
   reply, 
   onToggleLike, 
   onDeleteReply,
-  onUpdateReply
+  onUpdateReply,
+  likingIds
 }: ReplyItemProps) {
   // Add the auth hook
   const { canModify, isAuthenticated } = useCommentAuth(reply.user.id);
@@ -194,14 +197,20 @@ export function ReplyItem({
             size="sm" 
             className="h-7 px-2 text-xs"
             onClick={() => onToggleLike(reply.id)}
-            disabled={!isAuthenticated} // Replace status check
+            disabled={!isAuthenticated || likingIds?.has(reply.id)}
           >
-            <ThumbsUp 
-              className={cn(
-                "h-3 w-3 mr-1", 
-                reply.isLiked && "fill-primary text-primary"
-              )} 
-            />
+            {likingIds?.has(reply.id) ? (
+              <span className="flex items-center">
+                <span className="h-3 w-3 mr-1 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              </span>
+            ) : (
+              <ThumbsUp 
+                className={cn(
+                  "h-3 w-3 mr-1", 
+                  reply.isLiked && "fill-primary text-primary"
+                )} 
+              />
+            )}
             {reply.likes > 0 && reply.likes}
           </Button>
         </div>
