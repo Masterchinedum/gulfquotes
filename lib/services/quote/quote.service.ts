@@ -23,6 +23,7 @@ import {
   removeImageAssociation as removeQuoteImageAssociation
 } from "./image-operations";
 import { quoteLikeService } from "@/lib/services/like";
+import { quoteBookmarkService } from "@/lib/services/bookmark";
 
 class QuoteServiceImpl implements QuoteService {
   async create(data: CreateQuoteInput & { authorId: string }): Promise<Quote> {
@@ -72,11 +73,16 @@ class QuoteServiceImpl implements QuoteService {
     });
 
     if (quote && userId) {
-      // Add like information if user ID is provided
-      const likeStatus = await quoteLikeService.getUserLikes(userId, [quote.id]);
+      // Get like and bookmark information in parallel if user ID is provided
+      const [likeStatus, bookmarkStatus] = await Promise.all([
+        quoteLikeService.getUserLikes(userId, [quote.id]),
+        quoteBookmarkService.getUserBookmarks(userId, [quote.id])
+      ]);
+      
       return {
         ...quote,
-        isLiked: likeStatus[quote.id] || false
+        isLiked: likeStatus[quote.id] || false,
+        isBookmarked: bookmarkStatus[quote.id] || false
       } as EnhancedQuote;
     }
 
@@ -93,11 +99,16 @@ class QuoteServiceImpl implements QuoteService {
     });
 
     if (quote && userId) {
-      // Add like information if user ID is provided
-      const likeStatus = await quoteLikeService.getUserLikes(userId, [quote.id]);
+      // Get like and bookmark information in parallel if user ID is provided
+      const [likeStatus, bookmarkStatus] = await Promise.all([
+        quoteLikeService.getUserLikes(userId, [quote.id]),
+        quoteBookmarkService.getUserBookmarks(userId, [quote.id])
+      ]);
+      
       return {
         ...quote,
-        isLiked: likeStatus[quote.id] || false
+        isLiked: likeStatus[quote.id] || false,
+        isBookmarked: bookmarkStatus[quote.id] || false
       } as EnhancedQuote;
     }
 
@@ -134,14 +145,18 @@ class QuoteServiceImpl implements QuoteService {
       db.quote.count({ where: whereConditions })
     ]);
 
-    // Add like status for all quotes if userId is provided
+    // Add like and bookmark status for all quotes if userId is provided
     if (params.userId && items.length > 0) {
       const quoteIds = items.map(item => item.id);
-      const likeStatus = await quoteLikeService.getUserLikes(params.userId, quoteIds);
+      const [likeStatus, bookmarkStatus] = await Promise.all([
+        quoteLikeService.getUserLikes(params.userId, quoteIds),
+        quoteBookmarkService.getUserBookmarks(params.userId, quoteIds)
+      ]);
       
-      // Merge like status into quotes
+      // Merge like and bookmark status into quotes
       items.forEach(quote => {
         (quote as EnhancedQuote).isLiked = likeStatus[quote.id] || false;
+        (quote as EnhancedQuote).isBookmarked = bookmarkStatus[quote.id] || false;
       });
     }
 

@@ -37,6 +37,7 @@ export type SortOption = 'recent' | 'popular' | 'length' | 'alphabetical';
 
 export interface EnhancedQuote extends Quote {
   isLiked?: boolean;
+  isBookmarked?: boolean; // Add this line
 }
 
 export interface QuoteService {
