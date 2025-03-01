@@ -1,7 +1,7 @@
 // app/(general)/quotes/[slug]/components/comments/reply-item.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatDistanceToNow } from "date-fns";
 // Remove this line if not used elsewhere
 // import { useSession } from "next-auth/react";
@@ -49,6 +49,22 @@ export function ReplyItem({
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(reply.content);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasLiked, setHasLiked] = useState(false);
+  const [prevLikeCount, setPrevLikeCount] = useState(reply.likes);
+
+  // Add this useEffect to create a brief animation when like status changes
+  useEffect(() => {
+    if (reply.isLiked && !hasLiked) {
+      setHasLiked(true);
+      const timer = setTimeout(() => setHasLiked(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [reply.isLiked, hasLiked]);
+
+  // Add useEffect to detect changes in likes count
+  useEffect(() => {
+    setPrevLikeCount(reply.likes);
+  }, [reply.likes]);
 
   // Remove this function - we'll use the hook's canModify instead
   // const canModifyReply = () => {
@@ -198,6 +214,8 @@ export function ReplyItem({
             className="h-7 px-2 text-xs"
             onClick={() => onToggleLike(reply.id)}
             disabled={!isAuthenticated || likingIds?.has(reply.id)}
+            aria-label={`${reply.isLiked ? 'Unlike' : 'Like'} reply from ${reply.user.name}`}
+            aria-pressed={reply.isLiked}
           >
             {likingIds?.has(reply.id) ? (
               <span className="flex items-center">
@@ -206,12 +224,20 @@ export function ReplyItem({
             ) : (
               <ThumbsUp 
                 className={cn(
-                  "h-3 w-3 mr-1", 
-                  reply.isLiked && "fill-primary text-primary"
+                  "h-3 w-3 mr-1 transition-transform", 
+                  reply.isLiked && "fill-primary text-primary",
+                  hasLiked && "scale-125" // Add this to create a "pulse" effect when liked
                 )} 
               />
             )}
-            {reply.likes > 0 && reply.likes}
+            {reply.likes > 0 && (
+              <span className={cn(
+                "transition-all",
+                reply.likes !== prevLikeCount && "text-primary scale-110"
+              )}>
+                {reply.likes}
+              </span>
+            )}
           </Button>
         </div>
       </div>

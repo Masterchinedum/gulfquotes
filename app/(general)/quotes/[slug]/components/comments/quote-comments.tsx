@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
@@ -26,6 +26,7 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [likingIds, setLikingIds] = useState<Set<string>>(new Set());
   const isAuthenticated = status === "authenticated";
+  const recentlyToggledIds = useRef(new Set<string>());
 
   // Fetch comments on component mount and when parameters change
   useEffect(() => {
@@ -329,26 +330,44 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
     }
   };
 
-  // Function to handle like toggling
+  // Add this helper function before handleToggleLike
+  const findReplyInComments = (replyId: string): { 
+    found: boolean; 
+    parentCommentId?: string;
+    reply?: ReplyWithLike;
+  } => {
+    for (const comment of comments) {
+      if (comment.replies) {
+        const foundReply = comment.replies.find(reply => reply.id === replyId);
+        if (foundReply) {
+          return { found: true, parentCommentId: comment.id, reply: foundReply };
+        }
+      }
+    }
+    return { found: false };
+  };
+
+  // Then simplify the check in handleToggleLike
   const handleToggleLike = async (id: string) => {
     if (!isAuthenticated) {
       setShowLoginPrompt(true);
       return;
     }
     
-    // Determine if this is a comment or reply
-    let isComment = true;
-    
-    // Check if it's a reply by searching through all comments
-    for (const comment of comments) {
-      if (comment.replies) {
-        const foundReply = comment.replies.find(reply => reply.id === id);
-        if (foundReply) {
-          isComment = false;
-          break;
-        }
-      }
+    // Prevent double-clicking
+    if (recentlyToggledIds.current.has(id)) {
+      return;
     }
+    
+    // Mark this ID as recently toggled
+    recentlyToggledIds.current.add(id);
+    setTimeout(() => {
+      recentlyToggledIds.current.delete(id);
+    }, 500); // Prevent clicking again for 500ms
+    
+    // Determine if this is a comment or reply
+    const { found: isReply } = findReplyInComments(id);
+    const isComment = !isReply;
     
     // Add to loading set
     setLikingIds(prev => new Set(prev).add(id));
@@ -433,7 +452,16 @@ export function QuoteComments({ className }: QuoteCommentsProps) {
       }));
     } catch (error) {
       console.error("Error toggling like:", error);
-      toast.error("Failed to update like status");
+      
+      // More specific error messages depending on the error
+      if (error instanceof Response && error.status === 401) {
+        toast.error("Please sign in to like this content");
+        setShowLoginPrompt(true);
+      } else if (error instanceof Response && error.status === 429) {
+        toast.error("You're liking too quickly. Please wait a moment.");
+      } else {
+        toast.error("Failed to update like status");
+      }
       
       // Revert the optimistic update on error
       setComments(prev => prev.map(comment => {
