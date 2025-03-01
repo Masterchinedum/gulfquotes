@@ -22,7 +22,7 @@ export function QuoteLikeButton({
   className,
 }: QuoteLikeButtonProps) {
   // Authentication state
-  const { data: status } = useSession();
+  const { status } = useSession();
   
   // Component state
   const [likes, setLikes] = useState(initialLikes);

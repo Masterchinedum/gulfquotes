@@ -5,7 +5,7 @@ import { replyLikeService } from "@/lib/services/like";
 import { AppError } from "@/lib/api-error";
 
 interface LikeResponse {
-  data: {
+  data?: {
     liked: boolean;
     likes: number;
   };

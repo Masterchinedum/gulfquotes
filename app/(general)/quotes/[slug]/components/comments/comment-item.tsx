@@ -42,6 +42,7 @@ interface CommentItemProps {
   onUpdateComment?: (commentId: string, content: string) => Promise<void>;
   onDeleteReply?: (replyId: string) => Promise<void>;
   onUpdateReply?: (replyId: string, content: string) => Promise<void>;
+  likingIds?: Set<string>; // Add this property
 }
 
 export function CommentItem({ 
@@ -53,7 +54,8 @@ export function CommentItem({
   onDeleteComment,
   onUpdateComment,
   onDeleteReply,
-  onUpdateReply
+  onUpdateReply,
+  likingIds
 }: CommentItemProps) {
   // Replace session with the auth hook
   const { canModify, isAuthenticated } = useCommentAuth(comment.user.id);
@@ -193,11 +195,20 @@ export function CommentItem({
               size="sm" 
               className="h-8 px-2 text-xs"
               onClick={() => onToggleLike(comment.id)}
-              disabled={!isAuthenticated} // Replace status check with isAuthenticated
+              disabled={!isAuthenticated || likingIds?.has(comment.id)} // Add the condition
             >
-              <ThumbsUp className={cn("h-3 w-3 mr-1", comment.isLiked && "fill-primary text-primary")} />
-              {comment.likes > 0 && comment.likes}
-              <span className="ml-1">Like</span>
+              {likingIds?.has(comment.id) ? (
+                <span className="flex items-center">
+                  <span className="h-3 w-3 mr-1 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  <span className="ml-1">Liking...</span>
+                </span>
+              ) : (
+                <>
+                  <ThumbsUp className={cn("h-3 w-3 mr-1", comment.isLiked && "fill-primary text-primary")} />
+                  {comment.likes > 0 && comment.likes}
+                  <span className="ml-1">Like</span>
+                </>
+              )}
             </Button>
             
             {/* View Replies Button - Add this */}

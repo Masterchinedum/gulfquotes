@@ -7,7 +7,7 @@ import { AppError } from "@/lib/api-error";
 import type { QuoteErrorCode } from "@/types/api/quotes";
 
 interface LikeResponse {
-  data: {
+  data?: {
     liked: boolean;
     likes: number;
   };
