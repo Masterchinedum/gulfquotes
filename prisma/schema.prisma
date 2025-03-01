@@ -31,7 +31,8 @@ model User {
   quoteLikes            QuoteLike[]
   commentLikes          CommentLike[]
   replyLikes            ReplyLike[]
-  quoteBookmarks        QuoteBookmark[]  // Add this line
+  quoteBookmarks        QuoteBookmark[]
+  followedAuthors       AuthorFollow[]  // Add this line
 
   @@map("users")
 }
@@ -141,10 +142,12 @@ model AuthorProfile {
   influences String?
   bio        String        @db.Text
   slug       String        @unique
+  followers  Int           @default(0)  // Add follower count
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
   images     AuthorImage[]
   quotes     Quote[]
+  userFollowers AuthorFollow[] // Add this relation
 
   @@map("author_profiles")
 }
@@ -311,4 +314,17 @@ model QuoteBookmark {
 
   @@unique([quoteId, userId])
   @@map("quote_bookmarks")
+}
+
+// Add this new model to track follow relationships
+model AuthorFollow {
+  id             String       @id @default(cuid())
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  authorProfile  AuthorProfile @relation(fields: [authorProfileId], references: [id], onDelete: Cascade)
+  authorProfileId String
+  createdAt      DateTime     @default(now())
+
+  @@unique([userId, authorProfileId])
+  @@map("author_follows")
 }
