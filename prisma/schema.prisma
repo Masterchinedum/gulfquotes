@@ -28,6 +28,9 @@ model User {
   userProfile           UserProfile? 
   comments              Comment[]
   replies               Reply[]
+  quoteLikes            QuoteLike[]
+  commentLikes          CommentLike[]
+  replyLikes            ReplyLike[]
 
   @@map("users")
 }
@@ -107,6 +110,7 @@ model Quote {
   tags             Tag[]          @relation("QuoteToTag")
   gallery          QuoteToGallery[]
   comments         Comment[]
+  likes            QuoteLike[]
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
@@ -230,7 +234,8 @@ model Comment {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   replies   Reply[]
-  likes     Int      @default(0)
+  userLikes CommentLike[]  // RENAMED from "likes" to "userLikes"
+  likes     Int      @default(0)  // Keep the count field as "likes"
 
   @@index([quoteId])
   @@map("comments")
@@ -247,8 +252,47 @@ model Reply {
   commentId String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  likes     Int      @default(0)
+  userLikes ReplyLike[]  // RENAMED from "likes" to "userLikes"
+  likes     Int      @default(0)  // Keep the count field as "likes"
 
   @@index([commentId])
   @@map("replies")
+}
+
+// Like models for tracking user interactions
+
+model QuoteLike {
+  id        String   @id @default(cuid())
+  quote     Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quoteId   String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([quoteId, userId])
+  @@map("quote_likes")
+}
+
+model CommentLike {
+  id        String   @id @default(cuid())
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  commentId String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([commentId, userId])
+  @@map("comment_likes")
+}
+
+model ReplyLike {
+  id        String   @id @default(cuid())
+  reply     Reply    @relation(fields: [replyId], references: [id], onDelete: Cascade)
+  replyId   String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([replyId, userId])
+  @@map("reply_likes")
 }
