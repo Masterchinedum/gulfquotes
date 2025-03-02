@@ -72,8 +72,9 @@ body,
   background-position: center;
 }
 
-
-
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
 
 
 @layer base {
