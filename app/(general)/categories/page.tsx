@@ -12,39 +12,44 @@ export const metadata: Metadata = {
   description: "Explore our collection of quotes by category",
 };
 
+// Custom search params interface to avoid clashing with Next.js types
+interface CustomSearchParams {
+  page?: string;
+  limit?: string;
+  search?: string;
+  sortBy?: string;
+  order?: string;
+}
+
 interface CategoryPageProps {
-  searchParams: {
-    page?: string;
-    limit?: string;
-    search?: string;
-    sortBy?: string;
-    order?: string;
-  };
+  searchParams: Promise<CustomSearchParams>;
 }
 
 export default async function CategoriesPage({ searchParams }: CategoryPageProps) {
-  // Parse search parameters
-  const page = parseInt(searchParams.page || "1", 10);
-  const limit = parseInt(searchParams.limit || "20", 10);
-  const search = searchParams.search;
-  const sortBy = (searchParams.sortBy as "name" | "popular" | "recent") || "name";
-  const order = (searchParams.order as "asc" | "desc") || "asc";
+  // Await the searchParams promise before using it
+  const params = {
+    page: parseInt((await searchParams)?.page || "1", 10),
+    limit: parseInt((await searchParams)?.limit || "20", 10),
+    search: (await searchParams)?.search,
+    sortBy: ((await searchParams)?.sortBy as "name" | "popular" | "recent") || "name",
+    order: ((await searchParams)?.order as "asc" | "desc") || "asc"
+  };
 
   try {
     // Fetch categories and total count
     const categoriesData = await categoryService.getAllCategories({
-      page,
-      limit,
-      search,
-      sortBy,
-      order,
+      page: params.page,
+      limit: params.limit,
+      search: params.search,
+      sortBy: params.sortBy,
+      order: params.order,
     });
 
     // Get total categories count for the hero section
     const totalCategories = await categoryService.getTotalCategoriesCount();
 
     // Calculate total pages for pagination
-    const totalPages = Math.ceil(categoriesData.total / limit);
+    const totalPages = Math.ceil(categoriesData.total / params.limit);
 
     return (
       <Shell>
@@ -57,7 +62,7 @@ export default async function CategoriesPage({ searchParams }: CategoryPageProps
           {/* Filters and Sorting */}
           <CategoriesFilter 
             totalItems={categoriesData.total} 
-            currentPage={page} 
+            currentPage={params.page} 
             totalPages={totalPages} 
           />
           
@@ -66,20 +71,18 @@ export default async function CategoriesPage({ searchParams }: CategoryPageProps
             categories={categoriesData.items} 
             isLoading={false}
             emptyMessage={
-              search 
-                ? `No categories found for "${search}"`
+              params.search 
+                ? `No categories found for "${params.search}"`
                 : "No categories found"
             }
           />
-          
-          {/* Pagination will be handled by the CategoriesFilter component */}
           
           {/* Show result count at bottom for better UX */}
           {categoriesData.total > 0 && (
             <div className="text-center text-sm text-muted-foreground">
               Showing {categoriesData.items.length} of {categoriesData.total} categories
-              {search && (
-                <> for &quot;<span className="font-medium">{search}</span>&quot;</>
+              {params.search && (
+                <> for &quot;<span className="font-medium">{params.search}</span>&quot;</>
               )}
             </div>
           )}
