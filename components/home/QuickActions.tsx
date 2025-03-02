@@ -10,11 +10,11 @@ import { cn } from "@/lib/utils";
 
 export function QuickActions() {
   const router = useRouter();
-  const { status } = useSession();
+  const { status, data: session } = useSession(); // Get session data
 
   return (
     <div className="flex flex-col sm:flex-row gap-4 justify-center">
-      {/* Start Collection Button */}
+      {/* Start Collection Button - Updated to go to bookmarks */}
       {status === "authenticated" ? (
         <Button 
           size="lg" 
@@ -22,10 +22,10 @@ export function QuickActions() {
             "text-base font-medium",
             "flex items-center gap-2"
           )}
-          onClick={() => router.push("/quotes/create")}
+          onClick={() => router.push(`/users/${session?.user?.id}/bookmarks`)}
         >
           <BookMarked className="h-5 w-5" />
-          Start Collection
+          Your Collection
         </Button>
       ) : (
         <LoginButton mode="modal">
@@ -50,7 +50,7 @@ export function QuickActions() {
           "text-base font-medium",
           "flex items-center gap-2"
         )}
-        onClick={() => router.push("/browse")}
+        onClick={() => router.push("/quotes")}
       >
         <Library className="h-5 w-5" />
         Browse Quotes

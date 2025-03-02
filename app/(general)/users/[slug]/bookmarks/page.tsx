@@ -1,5 +1,3 @@
-//app/(general)/users/[slug]/bookmarks/page.tsx
-
 import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import { Shell } from "@/components/shells/shell";
@@ -32,6 +30,35 @@ export default async function BookmarksPage({
   const session = await auth();
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
+  
+  // Check if user is logged in first
+  if (!session?.user) {
+    return (
+      <Shell>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-10">
+          <div className="flex flex-col items-center justify-center text-center py-12 space-y-6">
+            <div className="rounded-full bg-muted p-6">
+              <BookmarkIcon className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <div className="space-y-2 max-w-md">
+              <h3 className="text-2xl font-semibold">Sign in to view your collection</h3>
+              <p className="text-muted-foreground">
+                Create an account or sign in to save your favorite quotes and access your personal collection.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link href="/auth/login">
+                <Button>Sign In</Button>
+              </Link>
+              <Link href="/auth/register">
+                <Button variant="outline">Create Account</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </Shell>
+    );
+  }
   
   // Get user info from slug
   const userProfile = await db.user.findUnique({
