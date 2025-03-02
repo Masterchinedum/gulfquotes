@@ -13,6 +13,9 @@ interface AuthorQuoteItemProps {
 }
 
 export function AuthorQuoteItem({ quote, className }: AuthorQuoteItemProps) {
+  // Extract tags safely with a default empty array
+  const tags = quote.tags || [];
+  
   return (
     <Card className={cn("hover:bg-muted/30 transition-colors", className)}>
       <CardContent className="p-4 space-y-3">
@@ -34,17 +37,17 @@ export function AuthorQuoteItem({ quote, className }: AuthorQuoteItemProps) {
               </Badge>
             </Link>
             
-            {quote.tags?.length > 0 && (
+            {tags.length > 0 && (
               <div className="flex flex-wrap gap-1 items-center">
-                {quote.tags.slice(0, 2).map(tag => (
+                {tags.slice(0, 2).map(tag => (
                   <Link key={tag.id} href={`/tags/${tag.slug}`}>
                     <Badge variant="secondary" className="bg-muted/50 hover:bg-muted text-xs">
                       {tag.name}
                     </Badge>
                   </Link>
                 ))}
-                {quote.tags.length > 2 && (
-                  <span className="text-xs">+{quote.tags.length - 2}</span>
+                {tags.length > 2 && (
+                  <span className="text-xs">+{tags.length - 2}</span>
                 )}
               </div>
             )}
