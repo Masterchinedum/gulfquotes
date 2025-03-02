@@ -12,9 +12,7 @@ import type { Metadata } from "next";
 
 // Define interface for page props
 interface AuthorPageProps {
-  params: {
-    slug: string;
-  };
+  params: Promise<{ slug: string }>;
 }
 
 // Define an error type for our application errors
