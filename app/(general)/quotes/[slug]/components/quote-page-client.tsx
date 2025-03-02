@@ -15,6 +15,7 @@ interface QuotePageClientProps {
   backgrounds: Gallery[];
   activeBackground: Gallery | null;
   fontSize: number;
+  isDailyQuote?: boolean; // New prop
 }
 
 export function QuotePageClient({
