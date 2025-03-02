@@ -1,5 +1,4 @@
 // lib/services/daily-quote.ts
-// import { addDays } from "date-fns";
 import db from "@/lib/prisma";
 import { AppError } from "@/lib/api-error";
 import { Prisma } from "@prisma/client";
@@ -11,6 +10,7 @@ export interface DailyQuoteService {
   getCurrentDailyQuote(): Promise<QuoteDisplayData>;
   selectNewDailyQuote(): Promise<QuoteDisplayData>;
   getQuoteHistory(limit?: number): Promise<DailyQuote[]>;
+  getActiveRecord(): Promise<DailyQuote | null>; // Add this method to interface
 }
 
 class DailyQuoteServiceImpl implements DailyQuoteService {
@@ -38,7 +38,11 @@ class DailyQuoteServiceImpl implements DailyQuoteService {
 
       // If an active quote exists, return it
       if (activeDailyQuote) {
-        return await quoteDisplayService.getQuoteBySlug(activeDailyQuote.quote.slug);
+        const quoteData = await quoteDisplayService.getQuoteBySlug(activeDailyQuote.quote.slug);
+        if (!quoteData) {
+          throw new AppError("Quote data not found", "NOT_FOUND", 404);
+        }
+        return quoteData;
       }
 
       // Otherwise, select a new daily quote
@@ -48,6 +52,23 @@ class DailyQuoteServiceImpl implements DailyQuoteService {
       if (error instanceof AppError) throw error;
       throw new AppError("Failed to get daily quote", "INTERNAL_ERROR", 500);
     }
+  }
+
+  /**
+   * Get the currently active daily quote record
+   */
+  async getActiveRecord(): Promise<DailyQuote | null> {
+    return await db.dailyQuote.findFirst({
+      where: {
+        isActive: true,
+        expirationDate: {
+          gt: new Date()
+        }
+      },
+      orderBy: {
+        selectionDate: 'desc'
+      }
+    });
   }
 
   /**
@@ -96,14 +117,19 @@ class DailyQuoteServiceImpl implements DailyQuoteService {
 
         if (eligibleQuotes.length === 0) {
           // If no eligible quotes, get quotes used least recently
+          // Fix the ordering syntax for Prisma
           const quote = await tx.quote.findFirst({
             orderBy: {
               dailyQuoteHistory: {
-                _max: {
-                  selectionDate: 'asc'
-                }
+                _count: 'asc'
               }
-            }
+            },
+            // Alternatively use this if you need quotes that have never been used
+            // where: {
+            //   dailyQuoteHistory: {
+            //     none: {}
+            //   }
+            // }
           });
           
           if (!quote) {
@@ -181,7 +207,11 @@ class DailyQuoteServiceImpl implements DailyQuoteService {
       }
     });
 
-    return await quoteDisplayService.getQuoteBySlug(quote.slug);
+    const quoteData = await quoteDisplayService.getQuoteBySlug(quote.slug);
+    if (!quoteData) {
+      throw new AppError("Failed to get quote display data", "NOT_FOUND", 404);
+    }
+    return quoteData;
   }
 
   /**
