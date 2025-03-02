@@ -1,4 +1,6 @@
 // components/categories/CategoriesHero.tsx
+"use client";
+
 import { cn } from "@/lib/utils";
 import { BookMarked, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
