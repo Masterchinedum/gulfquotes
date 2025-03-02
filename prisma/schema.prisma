@@ -116,6 +116,7 @@ model Quote {
   likes            Int            @default(0)  // Add a numeric counter
   userBookmarks    QuoteBookmark[] // Add this line
   bookmarks        Int            @default(0)  // Add this line
+  dailyQuoteHistory DailyQuote[]
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
@@ -327,4 +328,21 @@ model AuthorFollow {
 
   @@unique([userId, authorProfileId])
   @@map("author_follows")
+}
+
+// Add this new model for the Daily Quote feature
+model DailyQuote {
+  id             String   @id @default(cuid())
+  quote          Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quoteId        String
+  selectionDate  DateTime @default(now())
+  expirationDate DateTime
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([quoteId])
+  @@index([isActive])
+  @@index([expirationDate])
+  @@map("daily_quotes")
 }
