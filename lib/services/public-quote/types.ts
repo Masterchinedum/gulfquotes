@@ -1,8 +1,12 @@
 // lib/services/public-quote/types.ts
-import type { Quote, Gallery } from "@prisma/client";
+import type { Gallery } from "@prisma/client";
 
-export interface QuoteDisplayData extends Quote {
+export interface QuoteDisplayData {
+  id: string;
+  slug: string;
+  content: string;
   authorProfile: {
+    id: string;
     name: string;
     slug: string;
     image?: string | null;
@@ -27,6 +31,8 @@ export interface QuoteDisplayData extends Quote {
     likes: number;
     shares: number;
   };
+  isLiked?: boolean;
+  isBookmarked?: boolean;
 }
 
 export interface QuoteDisplayConfig {

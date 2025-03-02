@@ -51,6 +51,7 @@ class PublicQuoteService {
         include: {
           authorProfile: {
             select: {
+              id: true,       // Add this field
               name: true,
               slug: true,
               images: {
@@ -69,18 +70,9 @@ class PublicQuoteService {
             }
           },
           gallery: {
-            // Include all gallery images with their relationships
             include: {
-              gallery: {
-                include: {
-                  _count: {
-                    select: {
-                      quotes: true
-                    }
-                  }
-                }
-              }
-            },
+              gallery: true
+            }
           },
           tags: {
             select: {
@@ -98,10 +90,12 @@ class PublicQuoteService {
       const transformedQuote = {
         ...quote,
         authorProfile: {
-          ...quote.authorProfile,
-          image: quote.authorProfile.images[0]?.url || null
+          id: quote.authorProfile.id,    // Include the id
+          name: quote.authorProfile.name,
+          slug: quote.authorProfile.slug,
+          image: quote.authorProfile.images[0]?.url || null,
+          bio: quote.authorProfile.bio
         },
-        // Ensure gallery data is properly structured
         gallery: quote.gallery.map(g => ({
           gallery: g.gallery,
           isActive: g.isActive,
