@@ -17,8 +17,9 @@ import {
 } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
-import { QuoteCard } from "@/app/(general)/quotes/components/quote-card";
+// import { QuoteCard } from "@/app/(general)/quotes/components/quote-card";
 import { cn } from "@/lib/utils";
+import { AuthorQuoteItem } from "@/components/authors/AuthorQuoteItem";
 
 interface AuthorQuotesListProps {
   authorId: string;
@@ -181,25 +182,11 @@ export function AuthorQuotesList({
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-col space-y-4">
               {quotes.map(quote => (
-                <QuoteCard 
+                <AuthorQuoteItem 
                   key={quote.id}
-                  quote={{
-                    id: quote.id,
-                    slug: quote.slug,
-                    content: quote.content,
-                    backgroundImage: quote.backgroundImage,
-                    author: {
-                      name: quote.authorProfile.name,
-                      image: quote.authorProfile.image,
-                      slug: quote.authorProfile.slug,
-                    },
-                    category: {
-                      name: quote.category.name,
-                      slug: quote.category.slug,
-                    },
-                  }}
+                  quote={quote}
                 />
               ))}
             </div>
