@@ -60,7 +60,7 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
     // We can get the quote count from a direct database query or use _count from the author
     // Let's use the quotes count from the author profile directly
     
-    const isFollowed = session?.user 
+    const isFollowed = session?.user?.id 
       ? await authorFollowService.getFollowStatus(author.id, session.user.id) 
       : false;
     
