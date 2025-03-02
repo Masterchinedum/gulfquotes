@@ -4,20 +4,19 @@ import db from "@/lib/prisma";
 import { AppError } from "@/lib/api-error";
 import type { Quote, Gallery } from "@prisma/client";
 import html2canvas from 'html2canvas';
-// Add imports for services
 import { quoteBookmarkService } from "@/lib/services/bookmark";
-import { quoteLikeService } from "@/lib/services/like"; // Add this line
-import { authorFollowService } from "@/lib/services/follow"; // Add this import at the top of the file
+import { quoteLikeService } from "@/lib/services/like"; 
+import { authorFollowService } from "@/lib/services/follow";
 
 export interface QuoteDisplayData extends Quote {
   authorProfile: {
     name: string;
     slug: string;
     image?: string | null; 
-    bio?: string | null;  // Add bio field
-    quoteCount?: number; // Add quoteCount field
-    followers?: number;      // Add followers count
-    isFollowed?: boolean;    // Add follow status
+    bio?: string | null; 
+    quoteCount?: number; 
+    followers?: number;  
+    isFollowed?: boolean;
   };
   category: {
     name: string;
@@ -55,11 +54,11 @@ class QuoteDisplayService {
         include: {
           authorProfile: {
             select: {
-              id: true,  // Make sure to include id
+              id: true, 
               name: true,
               slug: true,
               bio: true,
-              followers: true,  // Add followers count
+              followers: true, 
               images: {
                 select: {
                   url: true
@@ -281,6 +280,128 @@ class QuoteDisplayService {
       });
     } catch {
       throw new AppError("Failed to update background", "INTERNAL_ERROR", 500);
+    }
+  }
+
+  /**
+   * Get quotes by author ID with pagination and sorting
+   */
+  async getQuotesByAuthorId(
+    authorId: string, 
+    options: {
+      page?: number;
+      limit?: number;
+      sortBy?: 'recent' | 'popular' | 'likes';
+      userId?: string;
+    } = {}
+  ): Promise<{
+    quotes: QuoteDisplayData[];
+    total: number;
+    hasMore: boolean;
+    page: number;
+    limit: number;
+  }> {
+    try {
+      const page = Math.max(1, options.page || 1);
+      const limit = Math.min(50, Math.max(1, options.limit || 10));
+      const skip = (page - 1) * limit;
+      const sortBy = options.sortBy || 'recent';
+      
+      // Define sort order based on sortBy parameter
+      let orderBy: any = { createdAt: 'desc' };
+      if (sortBy === 'popular') {
+        orderBy = { views: 'desc' };
+      } else if (sortBy === 'likes') {
+        orderBy = { likes: 'desc' };
+      }
+      
+      // Get quotes and total count
+      const [quotes, total] = await Promise.all([
+        db.quote.findMany({
+          where: { authorProfileId: authorId },
+          include: {
+            authorProfile: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                bio: true,
+                followers: true,
+                images: {
+                  select: { url: true },
+                  take: 1
+                },
+                _count: {
+                  select: { quotes: true }
+                }
+              }
+            },
+            category: {
+              select: {
+                name: true,
+                slug: true,
+              }
+            },
+            gallery: {
+              include: {
+                gallery: true,
+              },
+            },
+            tags: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              }
+            },
+          },
+          orderBy,
+          skip,
+          take: limit
+        }),
+        db.quote.count({
+          where: { authorProfileId: authorId }
+        })
+      ]);
+      
+      // Transform quotes and add user-specific data if userId is provided
+      let transformedQuotes = quotes.map(quote => ({
+        ...quote,
+        authorProfile: {
+          ...quote.authorProfile,
+          image: quote.authorProfile.images?.[0]?.url || null,
+          images: undefined,
+          quoteCount: quote.authorProfile._count.quotes
+        },
+        isLiked: false,
+        isBookmarked: false
+      })) as QuoteDisplayData[];
+      
+      // Add like/bookmark status if userId is provided
+      if (options.userId && transformedQuotes.length > 0) {
+        const quoteIds = transformedQuotes.map(q => q.id);
+        const [likeStatus, bookmarkStatus] = await Promise.all([
+          quoteLikeService.getUserLikes(options.userId, quoteIds),
+          quoteBookmarkService.getUserBookmarks(options.userId, quoteIds)
+        ]);
+        
+        transformedQuotes = transformedQuotes.map(quote => ({
+          ...quote,
+          isLiked: likeStatus[quote.id] || false,
+          isBookmarked: bookmarkStatus[quote.id] || false
+        }));
+      }
+      
+      return {
+        quotes: transformedQuotes,
+        total,
+        hasMore: total > skip + quotes.length,
+        page,
+        limit
+      };
+    } catch (error) {
+      console.error("[QUOTE_DISPLAY_SERVICE]", error);
+      throw new AppError("Failed to fetch author quotes", "INTERNAL_ERROR", 500);
     }
   }
 }
