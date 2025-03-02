@@ -91,5 +91,11 @@
     "prisma": "^6.4.1",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/daily-quote",
+      "schedule": "0 20 * * *"
+    }
+  ]
 }
