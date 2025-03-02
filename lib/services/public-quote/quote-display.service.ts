@@ -311,7 +311,7 @@ class QuoteDisplayService {
       // Define sort order based on sortBy parameter
       let orderBy: Prisma.QuoteOrderByWithRelationInput = { createdAt: 'desc' };
       if (sortBy === 'popular') {
-        orderBy = { downloadCount: 'desc' }; // Use downloadCount instead of views
+        orderBy = { downloadCount: 'desc' }; // Sort by downloads for popularity
       } else if (sortBy === 'likes') {
         orderBy = { likes: 'desc' };
       }

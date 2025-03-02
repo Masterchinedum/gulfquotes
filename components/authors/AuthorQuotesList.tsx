@@ -143,7 +143,7 @@ export function AuthorQuotesList({
               <SelectGroup>
                 <SelectLabel>Sort by</SelectLabel>
                 <SelectItem value="recent">Newest first</SelectItem>
-                <SelectItem value="popular">Most viewed</SelectItem>
+                <SelectItem value="popular">Most downloaded</SelectItem> {/* Changed from "Most viewed" to "Most downloaded" */}
                 <SelectItem value="likes">Most liked</SelectItem>
               </SelectGroup>
             </SelectContent>
