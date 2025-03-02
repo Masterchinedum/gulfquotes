@@ -7,7 +7,7 @@ import { LoginButton } from "@/components/auth/login-button";
 import { Button } from "@/components/ui/button";
 import { UserButton } from "@/components/auth/user-button";
 import { SearchField } from "@/components/search/SearchField";
-import { Bell, BookOpen, Home, Users } from "lucide-react";
+import { Bell, BookOpen, Home, Users, BookMarked } from "lucide-react";
 
 export function Navbar() {
   const { status } = useSession();
@@ -43,6 +43,13 @@ export function Navbar() {
             <span>Home</span>
           </Link>
           <Link 
+            href="/categories"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <BookMarked size={18} />
+            <span>Categories</span>
+          </Link>
+          <Link 
             href="/quotes"
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
@@ -50,11 +57,11 @@ export function Navbar() {
             <span>My Quotes</span>
           </Link>
           <Link 
-            href="/browse"
+            href="/authors"
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <Users size={18} />
-            <span>Browse</span>
+            <span>Authors</span>
           </Link>
         </div>
       </div>

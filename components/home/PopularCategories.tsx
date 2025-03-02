@@ -1,26 +1,15 @@
 // components/home/PopularCategories.tsx
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { 
-  Lightbulb, 
-  Target, 
-  Trophy, 
-  Heart, 
-  Book, 
-  Sparkles,
-  ChevronRight
+  Lightbulb, Target, Trophy, Heart, Book, Sparkles, ChevronRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface Category {
-  name: string;
-  slug: string;
-  icon: keyof typeof categoryIcons;
-  count: number;
-}
+import type { CategoryWithQuoteCount } from "@/types/category";
 
 const categoryIcons = {
   Motivation: Lightbulb,
@@ -29,19 +18,33 @@ const categoryIcons = {
   Love: Heart,
   Wisdom: Book,
   Inspiration: Sparkles,
+  Default: Sparkles, // Fallback icon
 };
-
-const popularCategories: Category[] = [
-  { name: "Motivation", slug: "motivation", icon: "Motivation", count: 234 },
-  { name: "Success", slug: "success", icon: "Success", count: 189 },
-  { name: "Leadership", slug: "leadership", icon: "Leadership", count: 156 },
-  { name: "Love", slug: "love", icon: "Love", count: 145 },
-  { name: "Wisdom", slug: "wisdom", icon: "Wisdom", count: 134 },
-  { name: "Inspiration", slug: "inspiration", icon: "Inspiration", count: 123 },
-];
 
 export function PopularCategories() {
   const router = useRouter();
+  const [categories, setCategories] = useState<CategoryWithQuoteCount[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchPopularCategories() {
+      try {
+        const response = await fetch('/api/public/categories?sortBy=popular&limit=6');
+        const data = await response.json();
+        setCategories(data.data.items || []);
+      } catch (error) {
+        console.error('Failed to fetch popular categories:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchPopularCategories();
+  }, []);
+
+  if (isLoading) {
+    return <PopularCategoriesSkeleton />;
+  }
 
   return (
     <section className="space-y-6">
@@ -63,8 +66,10 @@ export function PopularCategories() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {popularCategories.map((category) => {
-          const Icon = categoryIcons[category.icon];
+        {categories.map((category) => {
+          // Get icon or fallback to default
+          const Icon = categoryIcons[category.name as keyof typeof categoryIcons] || categoryIcons.Default;
+          
           return (
             <Card
               key={category.slug}
@@ -83,13 +88,41 @@ export function PopularCategories() {
                 <div className="text-center space-y-1">
                   <h3 className="font-medium">{category.name}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {category.count} quotes
+                    {category._count.quotes} quotes
                   </p>
                 </div>
               </CardContent>
             </Card>
           );
         })}
+      </div>
+    </section>
+  );
+}
+
+function PopularCategoriesSkeleton() {
+  return (
+    <section className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <div className="h-8 w-48 bg-muted rounded animate-pulse" />
+          <div className="h-4 w-64 bg-muted rounded animate-pulse" />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Card key={i} className="overflow-hidden">
+            <CardContent className="p-4 space-y-2">
+              <div className="flex justify-center">
+                <div className="h-10 w-10 bg-muted rounded-full animate-pulse" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-20 mx-auto bg-muted rounded animate-pulse" />
+                <div className="h-3 w-16 mx-auto bg-muted rounded animate-pulse" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </section>
   );
