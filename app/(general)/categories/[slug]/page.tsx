@@ -8,6 +8,7 @@ import { CategoryPagination } from "@/components/categories/CategoryPagination";
 import { categoryService } from "@/lib/services/category/category.service";
 import { quoteCategoryService } from "@/lib/services/public-quote/quote-category.service";
 import { auth } from "@/auth";
+import { CategorySort } from "@/components/categories/CategorySort";
 
 // Define search params interface first
 interface CategorySearchParams {
@@ -93,32 +94,11 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
           <CategoryHeader category={category} />
           
           {/* Filter & Sort Controls */}
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              Showing {quotesData.quotes.length} of {quotesData.total} quotes
-            </p>
-            
-            {/* Sort Dropdown */}
-            <div className="flex items-center gap-2">
-              <label htmlFor="quote-sort" className="sr-only">Sort quotes by</label>
-              <select 
-                id="quote-sort"
-                className="text-sm border rounded-md px-2 py-1"
-                value={sort}
-                aria-label="Sort quotes by"
-                onChange={(e) => {
-                  const params = new URLSearchParams(window.location.search);
-                  params.set("sort", e.target.value);
-                  params.delete("page"); // Reset to page 1 when sorting
-                  window.location.search = params.toString();
-                }}
-              >
-                <option value="recent">Most Recent</option>
-                <option value="popular">Most Popular</option>
-                <option value="alphabetical">Alphabetical</option>
-              </select>
-            </div>
-          </div>
+          <CategorySort 
+            sort={sort}
+            total={quotesData.total}
+            count={quotesData.quotes.length}
+          />
           
           {/* Quotes List */}
           <CategoryQuotesList 
