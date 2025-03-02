@@ -7,6 +7,7 @@ import html2canvas from 'html2canvas';
 import { quoteBookmarkService } from "@/lib/services/bookmark";
 import { quoteLikeService } from "@/lib/services/like"; 
 import { authorFollowService } from "@/lib/services/follow";
+import { Prisma } from '@prisma/client';
 
 export interface QuoteDisplayData extends Quote {
   authorProfile: {
@@ -308,9 +309,9 @@ class QuoteDisplayService {
       const sortBy = options.sortBy || 'recent';
       
       // Define sort order based on sortBy parameter
-      let orderBy: any = { createdAt: 'desc' };
+      let orderBy: Prisma.QuoteOrderByWithRelationInput = { createdAt: 'desc' };
       if (sortBy === 'popular') {
-        orderBy = { views: 'desc' };
+        orderBy = { downloadCount: 'desc' }; // Use downloadCount instead of views
       } else if (sortBy === 'likes') {
         orderBy = { likes: 'desc' };
       }
