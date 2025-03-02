@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { authorProfileService } from "@/lib/services/author-profile.service";
 import { authorFollowService } from "@/lib/services/follow";
 import { AuthorPageHeader } from "@/components/authors/AuthorPageHeader";
+import { AuthorGallery } from "@/components/authors/AuthorGallery";
 import { AuthorBioSection } from "@/components/authors/AuthorBioSection";
 import type { Metadata } from "next";
 // Remove the unused import
@@ -93,6 +94,13 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
           <AuthorBioSection 
             bio={author.bio} 
             influences={author.influences}
+          />
+        </Suspense>
+        
+        <Suspense fallback={<div>Loading author gallery...</div>}>
+          <AuthorGallery 
+            images={author.images.map(img => ({ id: img.id || String(Math.random()), url: img.url }))} 
+            authorName={author.name} 
           />
         </Suspense>
         
