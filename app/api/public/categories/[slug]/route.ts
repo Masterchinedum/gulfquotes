@@ -4,12 +4,10 @@ import { categoryService } from "@/lib/services/category/category.service";
 import { AppError } from "@/lib/api-error";
 import type { CategoryApiResponse } from "@/types/category";
 
-export async function GET(
-  req: Request,
-  { params }: { params: { slug: string } }
-): Promise<NextResponse<CategoryApiResponse>> {
+export async function GET(req: Request): Promise<NextResponse<CategoryApiResponse>> {
   try {
-    const { slug } = params;
+    // Extract slug from URL
+    const slug = req.url.split('/categories/')[1]?.split('/')[0];
     
     if (!slug) {
       return NextResponse.json(

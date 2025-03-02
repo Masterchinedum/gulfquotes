@@ -4,12 +4,10 @@ import { quoteCategoryService } from "@/lib/services/public-quote/quote-category
 import { AppError } from "@/lib/api-error";
 import { auth } from "@/auth";
 
-export async function GET(
-  req: Request,
-  { params }: { params: { slug: string } }
-) {
+export async function GET(req: Request): Promise<NextResponse> {
   try {
-    const { slug } = params;
+    // Extract slug from URL
+    const slug = req.url.split('/categories/')[1]?.split('/')[0];
     const url = new URL(req.url);
     const session = await auth();
     
