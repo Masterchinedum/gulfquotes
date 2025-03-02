@@ -7,6 +7,8 @@ export interface Author {
   quoteCount: number
   born?: string | null
   died?: string | null
+  followers: number       // Add follower count
+  isFollowed?: boolean    // Add follow status (optional)
 }
 
 // API Response types
@@ -31,4 +33,5 @@ export interface AuthorListParams {
   limit?: number
   search?: string
   letter?: string
+  userId?: string  // Add optional userId for follow status checking
 }

@@ -2,6 +2,7 @@
 
 import { Author } from "@/types/author"
 import { AuthorCard } from "./AuthorCard"
+import { AuthorCardWithFollow } from "./AuthorCardWithFollow"
 
 interface AuthorGridProps {
   authors: Author[]
@@ -30,7 +31,7 @@ export function AuthorGrid({ authors, isLoading }: AuthorGridProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {authors.map((author) => (
-        <AuthorCard key={author.id} author={author} />
+        <AuthorCardWithFollow key={author.id} author={author} />
       ))}
     </div>
   )

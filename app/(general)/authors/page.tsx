@@ -8,6 +8,7 @@ import { ErrorBoundary } from "@/components/shared/error-boundary"
 import { AuthorSkeleton } from "./loading"
 import { fetchAuthors } from "@/lib/authors"
 import type { AuthorsResponse } from "@/types/author"
+import { auth } from "@/auth"
 
 interface SearchParams {
   page?: string
@@ -29,6 +30,7 @@ export default async function AuthorsPage({
   searchParams = Promise.resolve({}) 
 }: PageProps) {
   const params = await searchParams
+  const session = await auth()
   
   const page = Math.max(1, Number(params.page) || 1)
   const limit = Math.min(50, Math.max(1, Number(params.limit) || 10))
@@ -41,6 +43,7 @@ export default async function AuthorsPage({
       limit,
       search,
       letter,
+      userId: session?.user?.id, // Pass the user ID if logged in
     })
 
     if (result.error) {

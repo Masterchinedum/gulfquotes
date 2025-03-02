@@ -16,6 +16,7 @@ interface AuthorFollowButtonProps {
   showCount?: boolean;
   size?: "default" | "sm" | "lg" | "icon";
   variant?: "default" | "secondary" | "outline" | "ghost";
+  onFollowChange?: (followed: boolean, followers: number) => void;
 }
 
 export function AuthorFollowButton({
@@ -25,7 +26,8 @@ export function AuthorFollowButton({
   className,
   showCount = false,
   size = "default",
-  variant = "outline"
+  variant = "outline",
+  onFollowChange
 }: AuthorFollowButtonProps) {
   // Authentication state
   const { status } = useSession();
@@ -100,6 +102,10 @@ export function AuthorFollowButton({
       if (data.data) {
         setIsFollowed(data.data.followed);
         setFollowers(data.data.followers);
+        // Call the callback if provided
+        if (onFollowChange) {
+          onFollowChange(data.data.followed, data.data.followers);
+        }
       }
     } catch (error) {
       console.error("Error toggling follow:", error);

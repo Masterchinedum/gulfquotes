@@ -2,10 +2,12 @@ import { type Author } from "@/types/author"
 import { Prisma } from "@prisma/client"
 import db from "@/lib/prisma"
 import { PaginationParams } from "@/lib/pagination"
+import { authorFollowService } from "@/lib/services/follow" // Import follow service
 
 interface FetchAuthorsParams extends PaginationParams {
   search?: string
   letter?: string
+  userId?: string // Add userId parameter for follow status
 }
 
 type AuthorWithCounts = {
@@ -15,6 +17,7 @@ type AuthorWithCounts = {
   bio: string | null
   born: string | null
   died: string | null
+  followers: number // Add followers field
   images: {
     url: string
   }[]
@@ -56,7 +59,8 @@ export async function fetchAuthors({
   page = 1,
   limit = 10,
   search,
-  letter
+  letter,
+  userId // Add userId parameter
 }: FetchAuthorsParams) {
   const skip = (page - 1) * limit
   const whereConditions = buildWhereConditions(search, letter)
@@ -66,9 +70,26 @@ export async function fetchAuthors({
     countAuthors(whereConditions)
   ])
 
+  // Check if we need to fetch follow status
+  let authorItems = formatAuthors(items);
+  
+  if (userId) {
+    // Get all author IDs to check follow status
+    const authorIds = items.map(item => item.id);
+    
+    // Fetch follow status for all authors in one batch operation
+    const followStatus = await authorFollowService.getUserFollows(userId, authorIds);
+    
+    // Add follow status to the formatted authors
+    authorItems = authorItems.map(author => ({
+      ...author,
+      isFollowed: followStatus[author.id] || false
+    }));
+  }
+
   return {
     data: {
-      items: formatAuthors(items),
+      items: authorItems,
       total,
       hasMore: total > skip + items.length,
       page,
@@ -92,6 +113,7 @@ async function fetchAuthorItems(
       bio: true,
       born: true,
       died: true,
+      followers: true, // Add this to select the followers field
       images: {
         select: {
           url: true
@@ -125,6 +147,7 @@ function formatAuthors(items: AuthorWithCounts[]): Author[] {
     image: author.images[0]?.url || null,
     quoteCount: author._count.quotes,
     born: author.born,
-    died: author.died
+    died: author.died,
+    followers: author.followers || 0 // Include followers count, default to 0
   }))
 }
