@@ -24,6 +24,7 @@ import {
 } from "./image-operations";
 import { quoteLikeService } from "@/lib/services/like";
 import { quoteBookmarkService } from "@/lib/services/bookmark";
+import { notificationService } from "@/lib/services/notification/notification.service";
 
 class QuoteServiceImpl implements QuoteService {
   async create(data: CreateQuoteInput & { authorId: string }): Promise<Quote> {
@@ -38,7 +39,8 @@ class QuoteServiceImpl implements QuoteService {
     const slug = data.slug?.trim() || slugify(sanitizedContent.substring(0, 50));
     await validateSlug(slug);
 
-    return await db.$transaction(async (tx) => {
+    // Create the quote in a transaction
+    const quote = await db.$transaction(async (tx) => {
       const quote = await tx.quote.create({
         data: {
           content: sanitizedContent,
@@ -46,7 +48,7 @@ class QuoteServiceImpl implements QuoteService {
           authorId: data.authorId,
           categoryId: data.categoryId,
           authorProfileId: data.authorProfileId,
-          backgroundImage: null // Will be set later through setAsBackground
+          backgroundImage: null
         },
         include: {
           category: true,
@@ -61,6 +63,29 @@ class QuoteServiceImpl implements QuoteService {
 
       return quote;
     });
+    
+    // After successful quote creation, send notifications to followers
+    try {
+      // Fetch author name for the notification
+      const authorProfile = await db.authorProfile.findUnique({
+        where: { id: quote.authorProfileId },
+        select: { name: true }
+      });
+      
+      if (authorProfile) {
+        await notificationService.createQuoteNotificationsForFollowers(
+          quote.authorProfileId,
+          quote.id,
+          quote.authorId,
+          authorProfile.name
+        );
+      }
+    } catch (error) {
+      // Log error but don't fail the quote creation if notifications fail
+      console.error("Failed to create follower notifications:", error);
+    }
+    
+    return quote;
   }
 
   async getById(id: string, userId?: string): Promise<Quote | EnhancedQuote | null> {
