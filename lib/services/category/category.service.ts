@@ -1,6 +1,7 @@
 import db from "@/lib/prisma";
 import { AppError } from "@/lib/api-error";
 import { CategoryWithQuoteCount, ListCategoriesParams } from "@/types/category";
+import { Prisma } from "@prisma/client"; // Add this import
 
 export class CategoryService {
   /**
@@ -20,8 +21,8 @@ export class CategoryService {
     // Build where clause for search
     const where = search ? {
       OR: [
-        { name: { contains: search, mode: "insensitive" } },
-        { slug: { contains: search, mode: "insensitive" } }
+        { name: { contains: search, mode: Prisma.QueryMode.insensitive } },
+        { slug: { contains: search, mode: Prisma.QueryMode.insensitive } }
       ]
     } : {};
 
