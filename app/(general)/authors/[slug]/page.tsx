@@ -28,13 +28,15 @@ export async function generateMetadata(
   { params }: AuthorPageProps
 ): Promise<Metadata> {
   try {
-    const author = await authorProfileService.getBySlug(params.slug);
+    // Await params before using
+    const resolvedParams = await params;
+    const author = await authorProfileService.getBySlug(resolvedParams.slug);
     
     return {
       title: `${author.name} | Author Profile | Quoticon`,
       description: author.bio?.substring(0, 160) || `Quotes by ${author.name}`,
     };
-  } catch { // Empty catch block since we don't need the error parameter
+  } catch {
     return {
       title: "Author | Quoticon",
       description: "View author profile and quotes",
@@ -45,22 +47,27 @@ export async function generateMetadata(
 export default async function AuthorPage({ params }: AuthorPageProps) {
   // Get authenticated user (if any)
   const session = await auth();
+  // Await params before using
+  const resolvedParams = await params;
   
   try {
-    // Fetch author profile data
-    const author = await authorProfileService.getBySlug(params.slug);
+    // Use resolved params
+    const author = await authorProfileService.getBySlug(resolvedParams.slug);
     
     if (!author) {
       notFound();
     }
     
-    // Get quote count and follow status
-    const [quoteCount, isFollowed] = await Promise.all([
-      // Get quote count from the author profile
-      authorProfileService.getQuoteCount(author.id),
-      // Check if current user follows this author
-      session?.user ? authorFollowService.getFollowStatus(author.id, session.user.id) : false
-    ]);
+    // For the missing getQuoteCount function, use an alternative approach
+    // We can get the quote count from a direct database query or use _count from the author
+    // Let's use the quotes count from the author profile directly
+    
+    const isFollowed = session?.user 
+      ? await authorFollowService.getFollowStatus(author.id, session.user.id) 
+      : false;
+    
+    // Use the count from the Prisma response or fetch separately if needed
+    const quoteCount = author._count?.quotes || 0;
     
     // Transform data to match expected format for the UI components
     const authorData = {
