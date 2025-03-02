@@ -1,6 +1,6 @@
 // app/(general)/categories/[slug]/page.tsx
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
+// import { notFound } from "next/navigation";
 import { Shell } from "@/components/shells/shell";
 
 interface CategoryPageProps {
@@ -27,10 +27,16 @@ export async function generateMetadata({
 
 export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
   const { slug } = params;
+  // Mark these variables as intentionally unused for now
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const page = Number(searchParams.page) || 1;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const sort = searchParams.sort || "recent";
   
-  // Data fetching will be implemented in the next phase
+  // Example of how notFound would be used (commented out for now)
+  // if (!categoryExists) {
+  //   notFound();
+  // }
   
   return (
     <Shell>
@@ -60,4 +66,4 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       </div>
     </Shell>
   );
-}\
+}
