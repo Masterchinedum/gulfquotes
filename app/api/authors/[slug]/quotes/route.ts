@@ -22,8 +22,7 @@ interface AuthorQuotesResponse {
 }
 
 export async function GET(
-  req: NextRequest,
-//   { params }: { params: { slug: string } }
+  req: NextRequest,//     { params }: { params: { slug: string } }
 ): Promise<NextResponse<AuthorQuotesResponse>> {
   try {
     // Get query parameters
