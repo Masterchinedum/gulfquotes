@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Added useEffect
 import { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
 import { QuoteCard } from "@/components/quotes/QuoteCard";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,15 @@ export function DailyQuoteDisplay({
   const [timeRemaining, setTimeRemaining] = useState<string>(
     formatDistanceToNow(new Date(expiration), { addSuffix: true })
   );
+  
+  // Update the time remaining every minute
+  useEffect(() => {
+    const updateInterval = setInterval(() => {
+      setTimeRemaining(formatDistanceToNow(new Date(expiration), { addSuffix: true }));
+    }, 60000); // Update every minute
+    
+    return () => clearInterval(updateInterval);
+  }, [expiration]);
   
   // In compact mode, we render a simpler version for the sidebar
   if (isCompact) {

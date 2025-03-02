@@ -4,6 +4,7 @@ import { FeaturedQuotes } from "@/components/home/FeaturedQuotes";
 import { PopularCategories } from "@/components/home/PopularCategories";
 import { TrendingQuotes } from "@/components/home/TrendingQuotes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DailyQuoteSidebar } from "@/components/home/DailyQuoteSidebar";
 
 export default function Home() {
   return (
@@ -15,18 +16,8 @@ export default function Home() {
         <HomeLayout
           sidebar={
             <div className="space-y-6">
-              {/* Daily Quote */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Daily Quote</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <blockquote className="italic text-muted-foreground">
-                    &quot;The best way to predict the future is to create it.&quot;
-                  </blockquote>
-                  <p className="text-sm mt-2">- Peter Drucker</p>
-                </CardContent>
-              </Card>
+              {/* Daily Quote - Updated to use the new component */}
+              <DailyQuoteSidebar />
 
               {/* Reading Challenge */}
               <Card>
