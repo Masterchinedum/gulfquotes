@@ -1,40 +1,56 @@
 // app/(general)/categories/[slug]/page.tsx
 import { Metadata } from "next";
-// import { notFound } from "next/navigation";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { notFound } from "next/navigation";
 import { Shell } from "@/components/shells/shell";
 
+// Define search params interface first
+interface CategorySearchParams {
+  page?: string;
+  sort?: string;
+}
+
+// Update the interface to match the pattern used in authors page
 interface CategoryPageProps {
-  params: {
-    slug: string;
-  };
-  searchParams: {
-    page?: string;
-    sort?: string;
-  };
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<CategorySearchParams>; // Changed to Promise
 }
 
 export async function generateMetadata({ 
   params 
-}: { 
-  params: { slug: string } 
-}): Promise<Metadata> {
-  // We'll implement this properly in a later phase
+}: CategoryPageProps): Promise<Metadata> {
+  // Await the params before using them
+  const resolvedParams = await params;
+  
   return {
-    title: `${params.slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} Quotes | Quoticon`,
-    description: `Browse our collection of ${params.slug.replace(/-/g, ' ')} quotes`,
+    title: `${resolvedParams.slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} Quotes | Quoticon`,
+    description: `Browse our collection of ${resolvedParams.slug.replace(/-/g, ' ')} quotes`,
   };
 }
 
 export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
-  const { slug } = params;
-  // Mark these variables as intentionally unused for now
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const page = Number(searchParams.page) || 1;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const sort = searchParams.sort || "recent";
+  // Await the params before using them
+  const resolvedParams = await params;
+  const { slug } = resolvedParams;
   
-  // Example of how notFound would be used (commented out for now)
-  // if (!categoryExists) {
+  // Await searchParams before using them
+  const resolvedSearchParams = await searchParams || {};
+  
+  // These variables will be used when implementing data fetching
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const page = Number(resolvedSearchParams?.page) || 1;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const sort = resolvedSearchParams?.sort || "recent";
+  
+  // Example of how notFound would be used (uncomment when implementing data fetching)
+  // try {
+  //   const category = await categoryService.getCategoryBySlug(slug);
+  //   if (!category) {
+  //     notFound();
+  //   }
+  //   // rest of your code
+  // } catch (error) {
+  //   console.error("[CATEGORY_PAGE]", error);
   //   notFound();
   // }
   
