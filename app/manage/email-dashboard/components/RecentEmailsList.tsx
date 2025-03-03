@@ -55,7 +55,7 @@ export function RecentEmailsList({
   };
   
   // Get badge color based on event type
-  const getBadgeVariant = (type: string) => {
+  const getBadgeVariant = (type: string): "default" | "secondary" | "destructive" | "success" | "outline" => {
     switch (type) {
       case EmailEventType.SENT:
         return "default";
@@ -70,7 +70,7 @@ export function RecentEmailsList({
       case EmailEventType.COMPLAINED:
         return "destructive";
       case EmailEventType.DELIVERY_DELAYED:
-        return "warning";
+        return "secondary"; 
       default:
         return "secondary";
     }
@@ -193,10 +193,14 @@ export function RecentEmailsList({
                             </div>
                           )}
                           
-                          {event.data.error && (
+                          {!!event.data.error && (
                             <div className="grid grid-cols-3 items-center gap-4">
                               <span className="font-medium">Error:</span>
-                              <span className="col-span-2 text-red-500">{event.data.error}</span>
+                              <span className="col-span-2 text-red-500">
+                                {typeof event.data.error === 'string' 
+                                  ? event.data.error 
+                                  : JSON.stringify(event.data.error)}
+                              </span>
                             </div>
                           )}
                           

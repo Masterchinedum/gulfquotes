@@ -98,6 +98,16 @@ export class EmailTrackingService {
     try {
       console.log(`✉️ Email sent to ${email}: ${subject}`);
       
+      // Convert the tags to the EmailTag format
+      const formattedTags = tags?.map(tag => {
+        // Extract the first key-value pair from each tag object
+        const key = Object.keys(tag)[0];
+        return {
+          name: key,
+          value: tag[key]
+        } as EmailTag;
+      });
+      
       this.events.push({
         id: this.generateEventId(),
         type: EmailEventType.SENT,
@@ -106,7 +116,7 @@ export class EmailTrackingService {
           email,
           userId,
           subject,
-          tags
+          tags: formattedTags // Use the converted tags
         }
       });
       
@@ -114,7 +124,11 @@ export class EmailTrackingService {
       
       // Optional: Log to database
       if (process.env.NODE_ENV === 'production') {
-        await this.logToDatabase(EmailEventType.SENT, email, { userId, subject });
+        await this.logToDatabase(EmailEventType.SENT, email, { 
+          userId, 
+          subject,
+          tags: formattedTags 
+        });
       }
     } catch (error) {
       console.error("Error tracking email send:", error);
