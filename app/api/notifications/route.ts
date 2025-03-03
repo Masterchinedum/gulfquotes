@@ -46,6 +46,14 @@ export async function GET(
       );
     }
 
+    // Add explicit check for user ID
+    if (!session.user.id) {
+      return NextResponse.json(
+        { error: { code: "UNAUTHORIZED", message: "User ID is missing" } },
+        { status: 401 }
+      );
+    }
+
     // Extract query parameters
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, Number(searchParams.get("page")) || 1);
@@ -84,6 +92,14 @@ export async function PATCH(): Promise<NextResponse<MarkAllReadResponse>> {
     if (!session?.user) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
+        { status: 401 }
+      );
+    }
+    
+    // Add explicit check for user ID
+    if (!session.user.id) {
+      return NextResponse.json(
+        { error: { code: "UNAUTHORIZED", message: "User ID is missing" } },
         { status: 401 }
       );
     }

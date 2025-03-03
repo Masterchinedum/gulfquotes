@@ -39,6 +39,14 @@ export async function PATCH(
       );
     }
 
+    // Add explicit check for user ID
+    if (!session.user.id) {
+      return NextResponse.json(
+        { error: { code: "UNAUTHORIZED", message: "User ID is missing" } },
+        { status: 401 }
+      );
+    }
+
     // Extract notification ID from URL
     const id = req.url.split('/notifications/')[1];
     if (!id) {
@@ -79,6 +87,14 @@ export async function DELETE(
     if (!session?.user) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
+        { status: 401 }
+      );
+    }
+
+    // Add explicit check for user ID
+    if (!session.user.id) {
+      return NextResponse.json(
+        { error: { code: "UNAUTHORIZED", message: "User ID is missing" } },
         { status: 401 }
       );
     }
