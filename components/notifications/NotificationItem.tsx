@@ -56,6 +56,7 @@ export function NotificationItem({
       try {
         onRead(notification.id);
       } catch (error) {
+        console.error("Error marking notification as read:", error);
         toast.error("Failed to mark notification as read");
       }
     }
@@ -70,6 +71,7 @@ export function NotificationItem({
         onDelete(notification.id);
         toast.success("Notification deleted");
       } catch (error) {
+        console.error("Error deleting notification:", error);
         toast.error("Failed to delete notification");
       }
     }
