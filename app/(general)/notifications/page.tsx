@@ -34,7 +34,8 @@ export default async function NotificationsPage({
 
   return (
     <Shell>
-      <div className="container py-10">
+      {/* Added max-w classes and mx-auto to center the content */}
+      <div className="container py-10 max-w-4xl mx-auto px-4">
         <div className="mb-6">
           <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
           <p className="mt-2 text-muted-foreground">
