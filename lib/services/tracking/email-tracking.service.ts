@@ -224,14 +224,24 @@ export class EmailTrackingService {
   ): Promise<void> {
     console.error(`❌ Email delivery error for ${email}:`, error);
     
-    // Store error event
+    // Convert the tags to the EmailTag format, just like in trackEmailSend
+    const formattedTags = tags?.map(tag => {
+      // Extract the first key-value pair from each tag object
+      const key = Object.keys(tag)[0];
+      return {
+        name: key,
+        value: tag[key]
+      } as EmailTag;
+    });
+    
+    // Store error event with the formatted tags
     this.events.push({
       id: this.generateEventId(),
       type: EmailEventType.BOUNCED, // Use bounced as a catch-all for errors
       createdAt: new Date(),
       data: {
         email,
-        tags,
+        tags: formattedTags, // Use the converted tags
         subject: 'Delivery error'
       }
     });
@@ -243,7 +253,10 @@ export class EmailTrackingService {
       await this.logToDatabase(
         EmailEventType.BOUNCED, 
         email, 
-        { error: error instanceof Error ? error.message : JSON.stringify(error) }
+        { 
+          error: error instanceof Error ? error.message : JSON.stringify(error),
+          tags: formattedTags // Pass the formatted tags here too
+        }
       );
     }
   }
