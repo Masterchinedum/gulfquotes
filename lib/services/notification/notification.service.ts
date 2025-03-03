@@ -66,9 +66,6 @@ class NotificationServiceImpl {
       // Find users who follow this author
       const followers = await db.authorFollow.findMany({
         where: { authorProfileId },
-        select: { 
-          userId: true 
-        },
         include: {
           user: {
             select: {

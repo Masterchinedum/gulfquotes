@@ -13,6 +13,7 @@ import {
   Text,
 } from '@react-email/components';
 import * as React from 'react';
+import { CSSProperties } from 'react';
 
 interface NewQuoteEmailProps {
   // Basic email info
@@ -71,16 +72,12 @@ export default function NewQuoteEmail({
           {/* CTA Buttons */}
           <Section style={buttonContainer}>
             <Button
-              pX={20}
-              pY={12}
               style={primaryButton}
               href={quoteUrl}
             >
               View Quote
             </Button>
             <Button
-              pX={20}
-              pY={12}
               style={secondaryButton}
               href={authorProfileUrl}
             >
@@ -168,18 +165,19 @@ const buttonContainer = {
   textAlign: 'center' as const,
 };
 
-const primaryButton = {
+const primaryButton: CSSProperties = {
   backgroundColor: '#6366f1',
   borderRadius: '4px',
   color: '#ffffff',
   fontSize: '16px',
   fontWeight: 'bold',
   textDecoration: 'none',
-  textTransform: 'none',
+  textTransform: 'none' as React.CSSProperties['textTransform'],
   margin: '0 10px',
+  padding: '12px 20px', // Added padding here instead of using pX and pY
 };
 
-const secondaryButton = {
+const secondaryButton: CSSProperties = {
   backgroundColor: 'transparent',
   border: '1px solid #6366f1',
   borderRadius: '4px',
@@ -187,8 +185,9 @@ const secondaryButton = {
   fontSize: '16px',
   fontWeight: 'bold',
   textDecoration: 'none',
-  textTransform: 'none',
+  textTransform: 'none' as React.CSSProperties['textTransform'],
   margin: '0 10px',
+  padding: '12px 20px', // Added padding here instead of using pX and pY
 };
 
 const hr = {

@@ -62,8 +62,8 @@ export async function sendNewQuoteEmail(
   const unsubscribeUrl = `${domain}/users/settings/notifications`;
   const preferencesUrl = `${domain}/users/settings/notifications`;
 
-  // Render the React Email template to HTML
-  const html = render(
+  // Render the React Email template to HTML and await the result
+  const html = await render(
     <NewQuoteEmail 
       recipientName={recipientName}
       quoteContent={quoteContent}
@@ -77,17 +77,16 @@ export async function sendNewQuoteEmail(
 
   // Send the email
   await resend.emails.send({
-    from: 'notifications@quoticon.app', // Consider using a dedicated sender for notifications
+    from: 'notifications@quoticon.app',
     to: email,
     subject: `New Quote from ${authorName} on Quoticon`,
-    html,
-    // Add headers for better email deliverability
+    html, // Now this is a string, not a Promise<string>
     headers: {
       'List-Unsubscribe': `<${unsubscribeUrl}>`
     },
     tags: [
       { name: 'notification_type', value: 'new_quote' },
-      { name: 'author', value: authorName }
+      { name: 'author', value: 'new_quote' }
     ]
   });
 }
