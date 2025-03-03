@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 import { render } from '@react-email/render'
 import NewQuoteEmail from '../emails/NewQuoteEmail'
+import EmailTrackingService from "./services/tracking/email-tracking.service";
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const domain = process.env.NEXT_PUBLIC_APP_URL
@@ -62,31 +63,52 @@ export async function sendNewQuoteEmail(
   const unsubscribeUrl = `${domain}/users/settings/notifications`;
   const preferencesUrl = `${domain}/users/settings/notifications`;
 
-  // Render the React Email template to HTML and await the result
-  const html = await render(
-    <NewQuoteEmail 
-      recipientName={recipientName}
-      quoteContent={quoteContent}
-      quoteUrl={quoteUrl}
-      authorName={authorName}
-      authorProfileUrl={authorProfileUrl}
-      unsubscribeUrl={unsubscribeUrl}
-      preferencesUrl={preferencesUrl}
-    />
-  );
+  const subject = `New Quote from ${authorName} on Quoticon`;
+  const tags = [
+    { name: 'notification_type', value: 'new_quote' },
+    { name: 'author', value: authorName }
+  ];
 
-  // Send the email
-  await resend.emails.send({
-    from: 'Quoticon <onboarding@resend.dev>', // Using display name with Resend domain
-    to: email,
-    subject: `New Quote from ${authorName} on Quoticon`,
-    html, // Now this is a string, not a Promise<string>
-    headers: {
-      'List-Unsubscribe': `<${unsubscribeUrl}>`
-    },
-    tags: [
-      { name: 'notification_type', value: 'new_quote' },
-      { name: 'author', value: 'new_quote' }
-    ]
-  });
+  try {
+    // Render the React Email template to HTML
+    const html = await render(
+      <NewQuoteEmail 
+        recipientName={recipientName}
+        quoteContent={quoteContent}
+        quoteUrl={quoteUrl}
+        authorName={authorName}
+        authorProfileUrl={authorProfileUrl}
+        unsubscribeUrl={unsubscribeUrl}
+        preferencesUrl={preferencesUrl}
+      />
+    );
+
+    // Send the email
+    await resend.emails.send({
+      from: 'Quoticon <onboarding@resend.dev>',
+      to: email,
+      subject,
+      html,
+      headers: {
+        'List-Unsubscribe': `<${unsubscribeUrl}>`
+      },
+      tags
+    });
+
+    // Track the successful send
+    await EmailTrackingService.trackEmailSend(
+      email, 
+      undefined, // userId could be added here if available
+      subject,
+      tags
+    );
+  } catch (error) {
+    // Track the error
+    await EmailTrackingService.trackDeliveryError(
+      email,
+      error,
+      tags
+    );
+    throw error; // Re-throw so the caller can handle it
+  }
 }

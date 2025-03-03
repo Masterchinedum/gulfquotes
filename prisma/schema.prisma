@@ -400,3 +400,16 @@ model Notification {
   @@index([read])
   @@map("notifications")
 }
+
+// Add this new model for email logs
+model EmailLog {
+  id         String   @id @default(cuid())
+  type       String
+  email      String
+  data       Json
+  createdAt  DateTime @default(now())
+
+  @@index([email])
+  @@index([type])
+  @@map("email_logs")
+}
