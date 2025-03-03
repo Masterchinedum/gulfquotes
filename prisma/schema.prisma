@@ -30,6 +30,11 @@ model User {
   image                 String?
   password              String?
   isTwoFactorEnabled    Boolean                @default(false)
+  
+  // Add these new fields for email preferences
+  emailNotifications    Boolean                @default(false) @map("email_notifications")
+  emailNotificationTypes NotificationType[]    @default([]) @map("email_notification_types")
+  
   role                  UserRole               @default(USER)
   accounts              Account[]
   TwoFactorConfirmation TwoFactorConfirmation?
@@ -41,9 +46,8 @@ model User {
   commentLikes          CommentLike[]
   replyLikes            ReplyLike[]
   quoteBookmarks        QuoteBookmark[]
-  followedAuthors       AuthorFollow[]  // Add this line
+  followedAuthors       AuthorFollow[]
 
-  // Add these new relations
   notifications         Notification[]
   actorNotifications    Notification[]         @relation("NotificationActor")
 
