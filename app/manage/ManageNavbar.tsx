@@ -11,8 +11,13 @@ import {
   PlusCircle,
   LayoutDashboard,
   Image,
-  Mail // Add this import
+  Mail
 } from "lucide-react";
+
+// Define props interface for type safety
+interface ManageNavbarProps {
+  isAdmin: boolean;
+}
 
 const navItems = [
   {
@@ -49,7 +54,7 @@ const navItems = [
     title: "Email Dashboard",
     href: "/manage/email-dashboard",
     icon: Mail,
-    // admin: true // Only show to admin
+    admin: true // Only show to admin
   },
   {
     title: "Settings",
@@ -58,23 +63,9 @@ const navItems = [
   }
 ];
 
-export function ManageNavbar() {
+export function ManageNavbar({ isAdmin }: ManageNavbarProps) {
   const pathname = usePathname();
   
-  // Get user role from localStorage (client-side only)
-  let isAdmin = false;
-  if (typeof window !== "undefined") {
-    try {
-      const sessionData = localStorage.getItem("sessionData");
-      if (sessionData) {
-        const { user } = JSON.parse(sessionData);
-        isAdmin = user?.role === "ADMIN";
-      }
-    } catch (error) {
-      console.error("Error checking admin status:", error);
-    }
-  }
-
   return (
     <div className="w-64 min-h-screen bg-muted/30 border-r px-3 py-4 space-y-4">
       <div className="px-3 py-2">

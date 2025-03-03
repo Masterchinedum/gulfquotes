@@ -19,10 +19,13 @@ export default async function ManageLayout({
     redirect("/unauthorized");
   }
 
+  // Check if user is admin
+  const isAdmin = session.user.role === "ADMIN";
+
   return (
     <div className="min-h-screen flex">
-      {/* Sidebar Navigation */}
-      <ManageNavbar />
+      {/* Sidebar Navigation - Pass isAdmin prop from server */}
+      <ManageNavbar isAdmin={isAdmin} />
       
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
