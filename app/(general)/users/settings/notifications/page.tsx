@@ -27,7 +27,7 @@ export default async function NotificationSettingsPage() {
           </p>
         </div>
         
-        <NotificationSettingsForm userId={session.user.id} />
+        <NotificationSettingsForm />
       </div>
     </Shell>
   );

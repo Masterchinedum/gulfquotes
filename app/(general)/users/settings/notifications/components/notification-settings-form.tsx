@@ -18,8 +18,6 @@ interface NotificationPreferences {
   emailNotificationTypes: NotificationType[];
 }
 
-
-
 export function NotificationSettingsForm() {
   const router = useRouter();
   const [preferences, setPreferences] = useState<NotificationPreferences>({
@@ -203,22 +201,7 @@ export function NotificationSettingsForm() {
               </div>
             </div>
             
-            <div className="flex items-start space-x-3">
-              <Checkbox 
-                id="notification-follow" 
-                checked={preferences.emailNotificationTypes.includes(NotificationType.FOLLOW)}
-                onCheckedChange={(checked) => 
-                  handleTypeToggle(NotificationType.FOLLOW, checked as boolean)
-                }
-                disabled={!preferences.emailNotifications || isLoading}
-              />
-              <div className="grid gap-1.5">
-                <Label htmlFor="notification-follow">Follows</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receive notifications when someone follows you
-                </p>
-              </div>
-            </div>
+            {/* Follow notification option removed */}
             
             <div className="flex items-start space-x-3">
               <Checkbox 
