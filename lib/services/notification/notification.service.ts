@@ -2,6 +2,7 @@
 import db from "@/lib/prisma";
 import { AppError } from "@/lib/api-error";
 import { Notification, NotificationType, Prisma } from "@prisma/client";
+import { sendNewQuoteEmail } from "@/lib/mail";
 
 // Define input types for creating notifications
 export interface CreateNotificationInput {
@@ -64,12 +65,25 @@ class NotificationServiceImpl {
       // Find users who follow this author
       const followers = await db.authorFollow.findMany({
         where: { authorProfileId },
-        select: { userId: true }
+        select: { 
+          userId: true 
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              emailNotifications: true,
+              emailNotificationTypes: true
+            }
+          }
+        }
       });
       
       if (followers.length === 0) return;
       
-      // Create notifications for each follower
+      // Create in-app notifications for each follower
       const notifications = followers.map(follower => ({
         type: NotificationType.NEW_QUOTE,
         title: "New Quote Posted",
@@ -81,9 +95,55 @@ class NotificationServiceImpl {
         read: false
       }));
       
+      // Save in-app notifications
       await db.notification.createMany({
         data: notifications
       });
+      
+      // Get the quote content for the email
+      const quote = await db.quote.findUnique({
+        where: { id: quoteId },
+        select: { 
+          content: true,
+          slug: true
+        }
+      });
+      
+      if (!quote) return;
+      
+      // Get author slug
+      const author = await db.authorProfile.findUnique({
+        where: { id: authorProfileId },
+        select: { slug: true }
+      });
+      
+      if (!author) return;
+
+      // Process email notifications
+      for (const follower of followers) {
+        // Check if user wants email notifications for new quotes
+        if (
+          follower.user?.email &&
+          follower.user.emailNotifications &&
+          follower.user.emailNotificationTypes.includes(NotificationType.NEW_QUOTE)
+        ) {
+          try {
+            await sendNewQuoteEmail(
+              follower.user.email,
+              follower.user.name || 'Reader',
+              quote.content,
+              quote.slug,
+              authorName,
+              author.slug
+            );
+            
+            console.log(`Email notification sent to ${follower.user.email} for new quote by ${authorName}`);
+          } catch (emailError) {
+            // Log error but continue processing other notifications
+            console.error(`Failed to send email notification to ${follower.user.email}:`, emailError);
+          }
+        }
+      }
     } catch (error) {
       console.error("Error creating follower notifications:", error);
       throw new AppError("Failed to create follower notifications", "INTERNAL_ERROR", 500);
