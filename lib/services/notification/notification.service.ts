@@ -2,7 +2,8 @@
 import db from "@/lib/prisma";
 import { AppError } from "@/lib/api-error";
 import { Notification, NotificationType, Prisma } from "@prisma/client";
-import { sendNewQuoteEmail } from "@/lib/mail";
+// Remove this line since it's not used directly in this file:
+import EmailNotificationService from './email-notification.service';
 
 // Define input types for creating notifications
 export interface CreateNotificationInput {
@@ -100,18 +101,7 @@ class NotificationServiceImpl {
         data: notifications
       });
       
-      // Get the quote content for the email
-      const quote = await db.quote.findUnique({
-        where: { id: quoteId },
-        select: { 
-          content: true,
-          slug: true
-        }
-      });
-      
-      if (!quote) return;
-      
-      // Get author slug
+      // Get author slug for emails
       const author = await db.authorProfile.findUnique({
         where: { id: authorProfileId },
         select: { slug: true }
@@ -119,30 +109,20 @@ class NotificationServiceImpl {
       
       if (!author) return;
 
-      // Process email notifications
-      for (const follower of followers) {
-        // Check if user wants email notifications for new quotes
-        if (
-          follower.user?.email &&
-          follower.user.emailNotifications &&
-          follower.user.emailNotificationTypes.includes(NotificationType.NEW_QUOTE)
-        ) {
-          try {
-            await sendNewQuoteEmail(
-              follower.user.email,
-              follower.user.name || 'Reader',
-              quote.content,
-              quote.slug,
-              authorName,
-              author.slug
-            );
-            
-            console.log(`Email notification sent to ${follower.user.email} for new quote by ${authorName}`);
-          } catch (emailError) {
-            // Log error but continue processing other notifications
-            console.error(`Failed to send email notification to ${follower.user.email}:`, emailError);
-          }
-        }
+      // Use the EmailNotificationService to handle email sending with rate limiting
+      try {
+        const { sent, skipped } = await EmailNotificationService.processBatchEmails(
+          followers,
+          quoteId,
+          authorProfileId,
+          authorName,
+          author.slug
+        );
+        
+        console.log(`Email notifications: ${sent} sent, ${skipped} skipped`);
+      } catch (emailError) {
+        // Log error but don't let it affect the in-app notifications
+        console.error("Error processing email notifications:", emailError);
       }
     } catch (error) {
       console.error("Error creating follower notifications:", error);
