@@ -58,8 +58,8 @@ interface NotificationContextType {
   totalCount: number;
   isLoading: boolean;
   error: string | null;
-  fetchNotifications: () => Promise<void>;
-  fetchRecentNotifications: () => Promise<void>; // Add this line
+  fetchNotifications: (page?: number, limit?: number) => Promise<void>; // Updated to accept parameters
+  fetchRecentNotifications: () => Promise<void>;
   markAsRead: (id: string) => Promise<boolean>;
   markAllAsRead: () => Promise<boolean>;
   deleteNotification: (id: string) => Promise<boolean>;
