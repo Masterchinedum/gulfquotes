@@ -61,7 +61,7 @@ export function useNotifications({
   limit = 10,
   includeRead = true,
   onlyRead = false,
-  pollInterval = 30000, // Default polling every 30 seconds
+  pollInterval = 120000, // 2 minutes
   autoRefetch = true
 }: UseNotificationsOptions = {}) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
