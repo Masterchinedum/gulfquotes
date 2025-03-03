@@ -9,7 +9,8 @@ import {
   Users,
   Settings,
   PlusCircle,
-  LayoutDashboard
+  LayoutDashboard,
+  Image
 } from "lucide-react";
 
 const navItems = [
@@ -37,6 +38,11 @@ const navItems = [
     title: "Manage Authors",
     href: "/manage/author-profiles",
     icon: Users
+  },
+  {
+    title: "Media Gallery",
+    href: "/manage/gallery",
+    icon: Image
   },
   {
     title: "Settings",
