@@ -59,11 +59,12 @@ export async function GET(
     const page = Math.max(1, Number(searchParams.get("page")) || 1);
     const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit")) || 10));
     const includeRead = searchParams.get("includeRead") !== "false";
+    const onlyRead = searchParams.get("onlyRead") === "true";
 
-    // Fetch notifications
+    // Fetch notifications with both filter parameters
     const notifications = await notificationService.getUserNotifications(
       session.user.id,
-      { page, limit, includeRead }
+      { page, limit, includeRead, onlyRead }
     );
 
     return NextResponse.json({ data: notifications });

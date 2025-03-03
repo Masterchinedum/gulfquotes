@@ -95,15 +95,21 @@ class NotificationServiceImpl {
    */
   async getUserNotifications(
     userId: string, 
-    { page = 1, limit = 10, includeRead = true }
+    { page = 1, limit = 10, includeRead = true, onlyRead = false }
   ): Promise<NotificationListResult> {
     try {
       const skip = (page - 1) * limit;
       
       // Build where condition
       const whereCondition: Prisma.NotificationWhereInput = { userId };
+      
+      // Apply read filters
       if (!includeRead) {
+        // Only show unread
         whereCondition.read = false;
+      } else if (onlyRead) {
+        // Only show read
+        whereCondition.read = true;
       }
       
       // Get notifications and counts

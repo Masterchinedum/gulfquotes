@@ -51,8 +51,11 @@ export function NotificationList({
   
   // Fetch notifications when params change
   useEffect(() => {
-    // We need to pass the parameters to fetchNotifications
-    fetchNotifications(page, limit);
+    const onlyRead = readFilter === "read";
+    const includeRead = readFilter !== "unread";
+    
+    // Pass the filter parameters to fetchNotifications
+    fetchNotifications(page, limit, includeRead, onlyRead);
   }, [page, limit, readFilter, fetchNotifications]);
 
   // Update URL when filters change

@@ -58,7 +58,7 @@ interface NotificationContextType {
   totalCount: number;
   isLoading: boolean;
   error: string | null;
-  fetchNotifications: (page?: number, limit?: number) => Promise<void>; // Updated to accept parameters
+  fetchNotifications: (page?: number, limit?: number, includeRead?: boolean, onlyRead?: boolean) => Promise<void>; // Updated to accept parameters
   fetchRecentNotifications: () => Promise<void>;
   markAsRead: (id: string) => Promise<boolean>;
   markAllAsRead: () => Promise<boolean>;
@@ -82,7 +82,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [lastFetched, setLastFetched] = useState(0);
 
   // Fetch all notifications (paginated)
-  const fetchNotifications = useCallback(async (page = 1, limit = 20) => {
+  const fetchNotifications = useCallback(async (
+    page = 1, 
+    limit = 20,
+    includeRead = true,
+    onlyRead = false
+  ) => {
     // Don't fetch if not authenticated
     if (status !== 'authenticated' || !session?.user) {
       return;
@@ -101,8 +106,14 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: limit.toString()
+        limit: limit.toString(),
+        includeRead: includeRead.toString()
       });
+      
+      // Add onlyRead parameter if true
+      if (onlyRead) {
+        params.set('onlyRead', 'true');
+      }
       
       const response = await fetch(`/api/notifications?${params}`);
       
