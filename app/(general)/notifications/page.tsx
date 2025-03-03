@@ -11,11 +11,11 @@ export const metadata: Metadata = {
 };
 
 interface NotificationsPageProps {
-  searchParams: {
+  searchParams: Promise<{
     page?: string;
     limit?: string;
     read?: string;
-  };
+  }>;
 }
 
 export default async function NotificationsPage({
@@ -27,14 +27,16 @@ export default async function NotificationsPage({
     redirect("/auth/login");
   }
 
+  // Await the searchParams promise before using it
+  const params = await searchParams;
+  
   // Parse search parameters
-  const page = Math.max(1, Number(searchParams.page) || 1);
-  const limit = Math.min(50, Math.max(1, Number(searchParams.limit) || 10));
-  const readFilter = searchParams.read;
+  const page = Math.max(1, Number(params.page) || 1);
+  const limit = Math.min(50, Math.max(1, Number(params.limit) || 10));
+  const readFilter = params.read;
 
   return (
     <Shell>
-      {/* Added max-w classes and mx-auto to center the content */}
       <div className="container py-10 max-w-4xl mx-auto px-4">
         <div className="mb-6">
           <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
