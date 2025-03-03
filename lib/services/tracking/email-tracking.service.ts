@@ -25,6 +25,11 @@ interface EmailLogData {
   [key: string]: unknown;
 }
 
+export interface EmailTag {
+  name: string;
+  value: string;
+}
+
 /**
  * Event types from Resend webhooks
  * @see https://resend.com/docs/dashboard/webhooks/introduction
@@ -45,11 +50,13 @@ export interface EmailEvent {
   createdAt: Date;
   data: {
     email: string;
-    tags?: { [key: string]: string }[];
+    tags?: EmailTag[]; // Use the EmailTag interface
     subject?: string;
     userId?: string;
     quoteId?: string;
     authorId?: string;
+    // Add any other properties
+    [key: string]: unknown;
   };
 }
 
