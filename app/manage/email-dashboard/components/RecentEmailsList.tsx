@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowUpDown, Info } from "lucide-react";
-import { EmailEventType } from "@/lib/services/tracking/email-tracking.service";
+import { EmailEventType, EmailEvent, EmailTag } from "@/lib/services/tracking/email-tracking.service";
 import { 
   Dialog,
   DialogContent,
@@ -22,28 +22,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
-// Define proper types for email events
-interface EmailTag {
-  name: string;
-  value: string;
-}
-
-interface EmailEventData {
-  email: string;
-  subject?: string;
-  userId?: string;
-  error?: string;
-  tags?: EmailTag[];
-  [key: string]: unknown;
-}
-
-interface EmailEvent {
-  id: string;
-  type: string;
-  createdAt: string | Date;
-  data: EmailEventData;
-}
 
 interface RecentEmailsListProps {
   events: EmailEvent[];
