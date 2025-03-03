@@ -7,7 +7,8 @@ import { LoginButton } from "@/components/auth/login-button";
 import { Button } from "@/components/ui/button";
 import { UserButton } from "@/components/auth/user-button";
 import { SearchField } from "@/components/search/SearchField";
-import { Bell, BookOpen, Home, Users, BookMarked } from "lucide-react";
+import { BookOpen, Home, Users, BookMarked } from "lucide-react";
+import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 
 export function Navbar() {
   const { status } = useSession();
@@ -77,15 +78,8 @@ export function Navbar() {
           <div className="h-9 w-24 animate-pulse rounded bg-muted" />
         ) : status === "authenticated" ? (
           <>
-            {/* Notifications */}
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-              <Bell size={20} />
-            </Button>
-            
-            {/* Messages */}
-            {/* <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-              <MessageSquare size={20} />
-            </Button> */}
+            {/* NotificationDropdown component instead of plain Bell button */}
+            <NotificationDropdown />
             
             {/* User Menu */}
             <UserButton />
