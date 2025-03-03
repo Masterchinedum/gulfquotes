@@ -12,7 +12,7 @@ export async function sendVerificationEmail(
   const confirmLink = `${domain}/auth/new-verification?token=${token}`
 
   await resend.emails.send({
-    from: 'onboarding@resend.dev',
+    from: 'Quoticon <onboarding@resend.dev>',
     to: email,
     subject: 'Confirm your email',
     html: `<p>Click <a href="${confirmLink}">here</a> to confirm email.</p>`
@@ -26,7 +26,7 @@ export async function sendPasswordResetEmail(
   const resetLink = `${domain}/auth/new-password?token=${token}`
 
   await resend.emails.send({
-    from: 'onboarding@resend.dev',
+    from: 'Quoticon <onboarding@resend.dev>',
     to: email,
     subject: 'Reset your password',
     html: `<p>Click <a href="${resetLink}">here</a> to reset your password.</p>`
@@ -38,7 +38,7 @@ export async function sendTwoFactorTokenEmail(
   token: string,
 ) {
   await resend.emails.send({
-    from: 'onboarding@resend.dev',
+    from: 'Quoticon <onboarding@resend.dev>',
     to: email,
     subject: '2FA Code',
     html: `<p>Your 2FA Code: ${token}</p>`
@@ -77,7 +77,7 @@ export async function sendNewQuoteEmail(
 
   // Send the email
   await resend.emails.send({
-    from: 'notifications@quoticon.app',
+    from: 'Quoticon <onboarding@resend.dev>', // Using display name with Resend domain
     to: email,
     subject: `New Quote from ${authorName} on Quoticon`,
     html, // Now this is a string, not a Promise<string>
