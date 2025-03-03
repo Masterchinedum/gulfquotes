@@ -1,10 +1,10 @@
 // hooks/useNotifications.ts
-import { useState, useEffect, useCallback } from 'react';
-import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { NotificationType } from '@prisma/client';
+import { useNotificationContext } from '@/contexts/notification-context';
 
-interface Notification {
+// Export the interface for use elsewhere
+export interface NotificationData {
   id: string;
   type: NotificationType;
   title?: string | null;
@@ -41,200 +41,48 @@ interface UseNotificationsOptions {
   autoRefetch?: boolean; // Whether to auto-refetch on mount
 }
 
-interface NotificationsResponse {
-  data?: {
-    items: Notification[];
-    total: number;
-    unreadCount: number;
-    hasMore: boolean;
-    page: number;
-    limit: number;
-  };
-  error?: {
-    code: string;
-    message: string;
-  };
-}
-
-export function useNotifications({
-  page = 1,
-  limit = 10,
-  includeRead = true,
-  onlyRead = false,
-  pollInterval = 120000, // 2 minutes
-  autoRefetch = true
-}: UseNotificationsOptions = {}) {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [total, setTotal] = useState(0);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-
-  // Construct the query parameters
-  const getQueryParams = useCallback(() => {
-    const params = new URLSearchParams();
-    params.set('page', page.toString());
-    params.set('limit', limit.toString());
-    
-    if (onlyRead) {
-      params.set('includeRead', 'true');
-      params.set('onlyRead', 'true');
-    } else if (!includeRead) {
-      params.set('includeRead', 'false');
-    }
-    
-    return params.toString();
-  }, [page, limit, includeRead, onlyRead]);
-
-  // Fetch notifications
-  const fetchNotifications = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const queryParams = getQueryParams();
-      const response = await fetch(`/api/notifications?${queryParams}`);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to fetch notifications');
-      }
-      
-      const data: NotificationsResponse = await response.json();
-      
-      if (data.error) {
-        throw new Error(data.error.message);
-      }
-      
-      if (data.data) {
-        setNotifications(data.data.items);
-        setTotal(data.data.total);
-        setUnreadCount(data.data.unreadCount);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      console.error('Error fetching notifications:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [getQueryParams]);
-
-  // Mark a notification as read
-  const markAsRead = async (id: string) => {
-    try {
-      const response = await fetch(`/api/notifications/${id}`, {
-        method: 'PATCH',
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to mark notification as read');
-      }
-      
-      // Update local state
-      setNotifications(prev => 
-        prev.map(item => 
-          item.id === id ? { ...item, read: true } : item
-        )
-      );
-      
-      setUnreadCount(prev => Math.max(0, prev - 1));
-      router.refresh();
-      return true;
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
-      toast.error(error instanceof Error ? error.message : 'Failed to mark notification as read');
-      return false;
-    }
-  };
-
-  // Mark all notifications as read
-  const markAllAsRead = async () => {
-    try {
-      const response = await fetch('/api/notifications', {
-        method: 'PATCH',
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to mark all notifications as read');
-      }
-      
-      // Update local state
-      setNotifications(prev => 
-        prev.map(item => ({ ...item, read: true }))
-      );
-      
-      setUnreadCount(0);
-      toast.success("All notifications marked as read");
-      router.refresh();
-      return true;
-    } catch (error) {
-      console.error("Error marking all notifications as read:", error);
-      toast.error(error instanceof Error ? error.message : 'Failed to mark all notifications as read');
-      return false;
-    }
-  };
-
-  // Delete a notification
-  const deleteNotification = async (id: string) => {
-    try {
-      const response = await fetch(`/api/notifications/${id}`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to delete notification');
-      }
-      
-      // Update local state
-      const deleted = notifications.find(n => n.id === id);
-      setNotifications(prev => prev.filter(item => item.id !== id));
-      
-      if (deleted && !deleted.read) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
-      }
-      
-      setTotal(prev => Math.max(0, prev - 1));
-      toast.success("Notification deleted");
-      router.refresh();
-      return true;
-    } catch (error) {
-      console.error("Error deleting notification:", error);
-      toast.error(error instanceof Error ? error.message : 'Failed to delete notification');
-      return false;
-    }
-  };
-
+/**
+ * @deprecated Use useNotificationContext from @/contexts/notification-context directly.
+ * This hook is maintained for backward compatibility.
+ */
+export function useNotifications(options: UseNotificationsOptions = {}) {
+  // Extract only the properties we actually use
+  const {
+    page = 1,
+    limit = 10,
+    pollInterval = 120000, // 2 minutes
+    autoRefetch = true
+  } = options;
+  
+  const context = useNotificationContext();
+  
   // Initial fetch
   useEffect(() => {
     if (autoRefetch) {
-      fetchNotifications();
+      context.fetchNotifications(page, limit);
     }
-  }, [fetchNotifications, autoRefetch]);
+  }, [context, page, limit, autoRefetch]);
 
   // Setup polling for real-time updates if enabled
   useEffect(() => {
     if (pollInterval <= 0) return;
     
     const intervalId = setInterval(() => {
-      fetchNotifications();
+      context.fetchNotifications(page, limit);
     }, pollInterval);
     
     return () => clearInterval(intervalId);
-  }, [fetchNotifications, pollInterval]);
+  }, [context, page, limit, pollInterval]);
 
   return {
-    notifications,
-    isLoading,
-    error,
-    total,
-    unreadCount,
-    refetch: fetchNotifications,
-    markAsRead,
-    markAllAsRead,
-    deleteNotification
+    notifications: context.notifications,
+    isLoading: context.isLoading,
+    error: context.error,
+    total: context.totalCount,
+    unreadCount: context.unreadCount,
+    refetch: () => context.fetchNotifications(page, limit),
+    markAsRead: context.markAsRead,
+    markAllAsRead: context.markAllAsRead,
+    deleteNotification: context.deleteNotification
   };
 }

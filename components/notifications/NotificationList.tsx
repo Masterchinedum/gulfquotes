@@ -15,7 +15,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, Check } from "lucide-react";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useNotificationContext } from "@/contexts/notification-context";
 import { Pagination } from "@/components/ui/pagination";
 import { Card } from "@/components/ui/card";
 
@@ -31,7 +31,6 @@ export function NotificationList({
   initialReadFilter
 }: NotificationListProps) {
   const router = useRouter();
-  // Removed unused searchParams
   const tabValue = initialReadFilter === "unread" ? "unread" : 
                  initialReadFilter === "read" ? "read" : "all";
   
@@ -42,18 +41,19 @@ export function NotificationList({
   const { 
     notifications, 
     isLoading, 
-    total, 
+    totalCount: total,
     unreadCount,
     markAsRead, 
     markAllAsRead,
     deleteNotification,
-    // Removed unused refetch
-  } = useNotifications({
-    page,
-    limit,
-    includeRead: readFilter !== "unread",
-    onlyRead: readFilter === "read"
-  });
+    fetchNotifications
+  } = useNotificationContext();
+  
+  // Fetch notifications when params change
+  useEffect(() => {
+    // We need to pass the parameters to fetchNotifications
+    fetchNotifications(page, limit);
+  }, [page, limit, readFilter, fetchNotifications]);
 
   // Update URL when filters change
   useEffect(() => {
@@ -91,6 +91,7 @@ export function NotificationList({
 
   return (
     <div className="space-y-6">
+      {/* Rest of the component remains the same */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <Tabs defaultValue={tabValue} onValueChange={handleTabChange}>
           <TabsList>
