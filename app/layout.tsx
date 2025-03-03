@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
 import { Providers } from './providers';
-
+import { NotificationProvider } from '@/contexts/notification-context';
 
 export const metadata = {
   title: "Quoticon - Inspiring Quotes for Every Moment",
@@ -35,12 +35,14 @@ export default async function RootLayout({
       <body className="h-full">
         <Providers>
           <SessionProvider session={session}>
-            <div className="min-h-screen flex flex-col"> 
-              <main className="flex-1">
-                {children}
-              </main>
-              <Toaster richColors closeButton />
-            </div>
+            <NotificationProvider>
+              <div className="min-h-screen flex flex-col"> 
+                <main className="flex-1">
+                  {children}
+                </main>
+                <Toaster richColors closeButton />
+              </div>
+            </NotificationProvider>
           </SessionProvider>
         </Providers>
       </body>
