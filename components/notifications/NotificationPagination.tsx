@@ -9,6 +9,7 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
+  PaginationEllipsis  // Add this import
 } from "@/components/ui/pagination";
 
 interface NotificationPaginationProps {
@@ -65,7 +66,7 @@ export function NotificationPagination({
           {/* Middle pages */}
           {totalPages > 5 && currentPage > 3 && (
             <PaginationItem>
-              <PaginationLink disabled>...</PaginationLink>
+              <PaginationEllipsis />
             </PaginationItem>
           )}
           
@@ -95,7 +96,7 @@ export function NotificationPagination({
           {/* Ellipsis before last page */}
           {totalPages > 5 && currentPage < totalPages - 2 && (
             <PaginationItem>
-              <PaginationLink disabled>...</PaginationLink>
+              <PaginationEllipsis />
             </PaginationItem>
           )}
           
