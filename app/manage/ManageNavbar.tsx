@@ -46,10 +46,10 @@ const navItems = [
     icon: Image
   },
   {
-    title: "Email Dashboard", // Add this new item
+    title: "Email Dashboard",
     href: "/manage/email-dashboard",
     icon: Mail,
-    admin: true // Only show to admin
+    // admin: true // Only show to admin
   },
   {
     title: "Settings",
