@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
-import { Icons } from "@/components/icons";
+import { Icons } from "@/components/ui/icons";
 import { NotificationType } from "@prisma/client";
 
 interface NotificationPreferences {
