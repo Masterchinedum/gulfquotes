@@ -16,8 +16,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, Check } from "lucide-react";
 import { useNotificationContext } from "@/contexts/notification-context";
-import { Pagination } from "@/components/ui/pagination";
 import { Card } from "@/components/ui/card";
+import { NotificationPagination } from "./NotificationPagination"; // Add this import
 
 interface NotificationListProps {
   initialPage?: number;
@@ -171,10 +171,9 @@ export function NotificationList({
       
       {total > 0 && (
         <div className="flex justify-center mt-6">
-          <Pagination
+          <NotificationPagination
             currentPage={page}
-            pageSize={limit}
-            totalItems={total}
+            totalPages={Math.ceil(total / limit)}
             onPageChange={handlePageChange}
           />
         </div>
