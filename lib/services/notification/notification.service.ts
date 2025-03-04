@@ -34,8 +34,8 @@ interface FollowerWithEmailPreferences {
     id: string;
     name?: string | null;
     email?: string | null;
-    emailNotifications?: boolean;
-    emailNotificationTypes?: NotificationType[];
+    emailNotifications: boolean;
+    emailNotificationTypes: NotificationType[];
   } | null;
 }
 
