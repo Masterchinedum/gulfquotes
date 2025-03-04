@@ -111,7 +111,7 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
       (async () => {
         try {
           await notificationService.createQuoteNotificationsForFollowers(
-            session.user.id,
+            session.user.id as string,  // Add type assertion here
             quote.id,
             quote.authorId,
             session.user.name ?? "Unknown User"
