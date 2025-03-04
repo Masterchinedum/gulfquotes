@@ -106,25 +106,28 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
         );
       }
 
-      // CHANGE: Process notifications asynchronously (fire and forget)
-      // This runs in the background without blocking the response
-      (async () => {
-        try {
-          await notificationService.createQuoteNotificationsForFollowers(
-            session.user.id as string,  // Add type assertion here
+      // Create response object first
+      const response = NextResponse.json({ data: finalQuote });
+
+      // Use setTimeout to completely decouple the background process from the request lifecycle
+      setTimeout(() => {
+        notificationService
+          .createQuoteNotificationsForFollowers(
+            session.user.id as string,
             quote.id,
             quote.authorId,
             session.user.name ?? "Unknown User"
-          );
-          console.log(`Background notifications processed for quote ${quote.id}`);
-        } catch (notificationError) {
-          console.error("Failed to send background notifications:", notificationError);
-          // Error is handled here, won't affect the user experience
-        }
-      })().catch(err => console.error("Background notification process failed:", err));
-      
-      // Return response immediately without waiting for notifications
-      return NextResponse.json({ data: finalQuote });
+          )
+          .then(() => {
+            console.log(`Background notifications processed for quote ${quote.id}`);
+          })
+          .catch(err => {
+            console.error("Background notification process failed:", err);
+          });
+      }, 10);
+
+      // Return response immediately
+      return response;
 
     } catch (error) {
       if (error instanceof AppError) {
