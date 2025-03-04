@@ -106,10 +106,10 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
         );
       }
 
-      // Create response object first
+      // Create response object and set up the setTimeout
       const response = NextResponse.json({ data: finalQuote });
-
-      // Use setTimeout to completely decouple the background process from the request lifecycle
+      
+      // Use setTimeout with proper isolation
       setTimeout(() => {
         notificationService
           .createQuoteNotificationsForFollowers(
@@ -125,7 +125,7 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
             console.error("Background notification process failed:", err);
           });
       }, 10);
-
+      
       // Return response immediately
       return response;
 
@@ -141,7 +141,17 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
           { status: error.statusCode }
         );
       }
-      throw error;
+      
+      // Handle non-AppError errors here instead of re-throwing
+      console.error("[QUOTES_POST_INTERNAL]", error);
+      return NextResponse.json(
+        { error: { 
+            code: "INTERNAL_ERROR" as QuoteErrorCode, 
+            message: error instanceof Error ? error.message : "An unexpected error occurred" 
+          } 
+        },
+        { status: 500 }
+      );
     }
   } catch (error) {
     console.error("[QUOTES_POST]", error);
