@@ -8,6 +8,7 @@ import { formatZodError, AppError } from "@/lib/api-error";
 import { quoteService } from "@/lib/services/quote/quote.service";
 import db from "@/lib/prisma"; // Add this import
 import type { GalleryItem } from "@/types/gallery"; // Add this import if not already present
+import { notificationService } from "@/lib/services/notification/notification.service"; // Add this import
 
 export async function POST(req: Request): Promise<NextResponse<CreateQuoteResponse>> {
   try {
@@ -103,6 +104,19 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
           "NOT_FOUND",
           404
         );
+      }
+
+      // Send notifications but catch errors
+      try {
+        await notificationService.createQuoteNotificationsForFollowers(
+          session.user.id,
+          quote.id,
+          quote.authorId,
+          session.user.name ?? "Unknown User" // Add fallback for null/undefined
+        );
+      } catch (notificationError) {
+        console.error("Failed to send notifications:", notificationError);
+        // Continue with quote creation even if notifications fail
       }
 
       return NextResponse.json({ data: finalQuote });

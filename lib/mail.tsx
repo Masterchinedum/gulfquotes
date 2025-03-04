@@ -64,12 +64,19 @@ export async function sendNewQuoteEmail(
   const preferencesUrl = `${domain}/users/settings/notifications`;
 
   const subject = `New Quote from ${authorName} on Quoticon`;
+  
+  // Sanitize the author name for tags - replace non-alphanumeric chars with underscores
+  const sanitizedAuthorName = authorName.replace(/[^a-zA-Z0-9_-]/g, '_');
+  
   const tags = [
     { name: 'notification_type', value: 'new_quote' },
-    { name: 'author', value: authorName }
+    { name: 'author', value: sanitizedAuthorName }
   ];
 
   try {
+    // Log before rendering
+    console.log("Rendering email template for", email);
+    
     // Render the React Email template to HTML
     const html = await render(
       <NewQuoteEmail 
@@ -82,9 +89,11 @@ export async function sendNewQuoteEmail(
         preferencesUrl={preferencesUrl}
       />
     );
-
+    
+    console.log("Template rendered successfully, sending email...");
+    
     // Send the email
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from: 'Quoticon <onboarding@resend.dev>',
       to: email,
       subject,
@@ -94,15 +103,26 @@ export async function sendNewQuoteEmail(
       },
       tags
     });
-
+    
+    console.log("Email API response:", result);
+    
     // Track the successful send
     await EmailTrackingService.trackEmailSend(
       email, 
-      undefined, // userId could be added here if available
+      undefined,
       subject,
       tags
     );
+    
+    return result;
   } catch (error) {
+    // Detailed error logging
+    console.error("EMAIL SENDING ERROR:", error);
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Stack trace:", error.stack);
+    }
+    
     // Track the error
     await EmailTrackingService.trackDeliveryError(
       email,
