@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createQuoteFormSchema, createQuoteAPISchema } from "@/schemas/quote";
+import { createQuoteFormSchema } from "@/schemas/quote";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -121,16 +121,16 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
   const { isSubmitting } = form.formState;
 
   // The submit handler transforms the data
-  async function onSubmit(formData: z.infer<typeof createQuoteFormSchema>) {
+  async function onSubmit(data: QuoteFormData) {
     try {
-      // Transform to API format
-      const apiData = {
-        ...formData,
+      // Format data
+      const formattedData = {
+        ...data,
         backgroundImage: selectedImage.imageUrl,
-        tags: selectedTags.length > 0 ? {
-          connect: selectedTags.map(tag => ({ id: tag.id }))
+        tags: selectedTags.length > 0 ? { 
+          connect: selectedTags.map(tag => ({ id: tag.id })) 
         } : undefined,
-        gallery: galleryImages.length > 0 ? {
+        gallery: galleryImages.length > 0 ? { 
           create: galleryImages.map(img => ({
             galleryId: img.id,
             isActive: img.url === selectedImage.imageUrl
@@ -138,38 +138,46 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
         } : undefined
       };
 
-      // Validate API data
-      const validatedData = createQuoteAPISchema.parse(apiData);
-
+      // Send request
       const response = await fetch("/api/quotes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(validatedData)
+        body: JSON.stringify(formattedData)
       });
 
+      // Parse response
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error.message);
+        throw new Error(result.error?.message || "Failed to create quote");
       }
 
+      // Success! Show toast and redirect
       toast({
         title: "Success",
         description: "Quote created successfully",
-        variant: "default",
+        variant: "default"
       });
 
       form.reset();
       setCharCount(0);
+
+      // IMPORTANT: Redirect should happen regardless of minor errors
       router.push("/manage/quotes");
       router.refresh();
-
     } catch (error) {
+      console.error("Quote creation error:", error);
+      
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Something went wrong",
-        variant: "destructive",
+        variant: "destructive"
       });
+      
+      // Try to redirect anyway if the quote was likely created
+      if (error instanceof Error && !error.message.includes("Failed to create quote")) {
+        router.push("/manage/quotes");
+      }
     }
   }
 

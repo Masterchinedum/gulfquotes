@@ -119,6 +119,9 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
         // Continue with quote creation even if notifications fail
       }
 
+      // Add a short delay to ensure all async operations complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       return NextResponse.json({ data: finalQuote });
 
     } catch (error) {

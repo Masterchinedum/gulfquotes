@@ -108,11 +108,15 @@ class NotificationServiceImpl {
 
       // Use the EmailNotificationService to handle email sending with rate limiting
       try {
+        // Sanitize author name for email tags
+        const sanitizedAuthorName = authorName.replace(/[^a-zA-Z0-9_-]/g, '_');
+        
+        // Use sanitized name in email tags
         const { sent, skipped } = await EmailNotificationService.processBatchEmails(
           followers,
           quoteId,
           authorProfileId,
-          authorName,
+          sanitizedAuthorName, // Use sanitized name here instead of authorName
           author.slug
         );
         
