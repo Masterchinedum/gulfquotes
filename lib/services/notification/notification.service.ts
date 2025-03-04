@@ -2,7 +2,6 @@
 import db from "@/lib/prisma";
 import { AppError } from "@/lib/api-error";
 import { Notification, NotificationType, Prisma } from "@prisma/client";
-// Remove this line since it's not used directly in this file:
 import EmailNotificationService from './email-notification.service';
 
 // Define input types for creating notifications
@@ -24,6 +23,20 @@ export interface NotificationListResult {
   hasMore: boolean;
   page: number;
   limit: number;
+}
+
+interface FollowerWithEmailPreferences {
+  id: string;
+  userId: string;
+  authorProfileId: string;
+  createdAt: Date;
+  user?: {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    emailNotifications?: boolean;
+    emailNotificationTypes?: NotificationType[];
+  } | null;
 }
 
 /**
@@ -55,6 +68,8 @@ class NotificationServiceImpl {
 
   /**
    * Create notifications for followers when an author posts a quote
+   * The in-app notifications are created synchronously
+   * Email notifications are processed asynchronously
    */
   async createQuoteNotificationsForFollowers(
     authorProfileId: string, 
@@ -81,7 +96,7 @@ class NotificationServiceImpl {
       
       if (followers.length === 0) return;
       
-      // Create in-app notifications for each follower
+      // Create in-app notifications for each follower - this remains synchronous
       const notifications = followers.map(follower => ({
         type: NotificationType.NEW_QUOTE,
         title: "New Quote Posted",
@@ -93,11 +108,32 @@ class NotificationServiceImpl {
         read: false
       }));
       
-      // Save in-app notifications
+      // Save in-app notifications (keep this synchronous as it's fast)
       await db.notification.createMany({
         data: notifications
       });
       
+      // Process email notifications asynchronously (fire and forget)
+      // This is where the async magic happens - we don't await this!
+      this.processEmailNotificationsAsync(followers, quoteId, authorProfileId, authorName);
+      
+    } catch (error) {
+      console.error("Error creating follower notifications:", error);
+      throw new AppError("Failed to create follower notifications", "INTERNAL_ERROR", 500);
+    }
+  }
+
+  /**
+   * Process email notifications asynchronously
+   * This method is called but not awaited, allowing it to run in the background
+   */
+  private async processEmailNotificationsAsync(
+    followers: FollowerWithEmailPreferences[], 
+    quoteId: string, 
+    authorProfileId: string, 
+    authorName: string
+  ): Promise<void> {
+    try {
       // Get author slug for emails
       const author = await db.authorProfile.findUnique({
         where: { id: authorProfileId },
@@ -106,28 +142,22 @@ class NotificationServiceImpl {
       
       if (!author) return;
 
-      // Use the EmailNotificationService to handle email sending with rate limiting
-      try {
-        // Sanitize author name for email tags
-        const sanitizedAuthorName = authorName.replace(/[^a-zA-Z0-9_-]/g, '_');
-        
-        // Use sanitized name in email tags
-        const { sent, skipped } = await EmailNotificationService.processBatchEmails(
-          followers,
-          quoteId,
-          authorProfileId,
-          sanitizedAuthorName, // Use sanitized name here instead of authorName
-          author.slug
-        );
-        
-        console.log(`Email notifications: ${sent} sent, ${skipped} skipped`);
-      } catch (emailError) {
-        // Log error but don't let it affect the in-app notifications
-        console.error("Error processing email notifications:", emailError);
-      }
+      // Sanitize author name for email tags
+      const sanitizedAuthorName = authorName.replace(/[^a-zA-Z0-9_-]/g, '_');
+      
+      // Process email notifications
+      const { sent, skipped } = await EmailNotificationService.processBatchEmails(
+        followers,
+        quoteId,
+        authorProfileId,
+        sanitizedAuthorName,
+        author.slug
+      );
+      
+      console.log(`[Background] Email notifications: ${sent} sent, ${skipped} skipped`);
     } catch (error) {
-      console.error("Error creating follower notifications:", error);
-      throw new AppError("Failed to create follower notifications", "INTERNAL_ERROR", 500);
+      // Since this runs asynchronously, we just log errors rather than throwing them
+      console.error("[Background] Error processing email notifications:", error);
     }
   }
 

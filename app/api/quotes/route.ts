@@ -106,22 +106,24 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
         );
       }
 
-      // Send notifications but catch errors
-      try {
-        await notificationService.createQuoteNotificationsForFollowers(
-          session.user.id,
-          quote.id,
-          quote.authorId,
-          session.user.name ?? "Unknown User" // Add fallback for null/undefined
-        );
-      } catch (notificationError) {
-        console.error("Failed to send notifications:", notificationError);
-        // Continue with quote creation even if notifications fail
-      }
-
-      // Add a short delay to ensure all async operations complete
-      await new Promise(resolve => setTimeout(resolve, 100));
-
+      // CHANGE: Process notifications asynchronously (fire and forget)
+      // This runs in the background without blocking the response
+      (async () => {
+        try {
+          await notificationService.createQuoteNotificationsForFollowers(
+            session.user.id,
+            quote.id,
+            quote.authorId,
+            session.user.name ?? "Unknown User"
+          );
+          console.log(`Background notifications processed for quote ${quote.id}`);
+        } catch (notificationError) {
+          console.error("Failed to send background notifications:", notificationError);
+          // Error is handled here, won't affect the user experience
+        }
+      })().catch(err => console.error("Background notification process failed:", err));
+      
+      // Return response immediately without waiting for notifications
       return NextResponse.json({ data: finalQuote });
 
     } catch (error) {

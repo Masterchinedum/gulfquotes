@@ -152,17 +152,17 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
         throw new Error(result.error?.message || "Failed to create quote");
       }
 
-      // Success! Show toast and redirect
+      // Success! Show toast with enhanced message about background processes
       toast({
         title: "Success",
-        description: "Quote created successfully",
+        description: "Quote created successfully. Notifications will be sent in the background.",
         variant: "default"
       });
 
       form.reset();
       setCharCount(0);
 
-      // IMPORTANT: Redirect should happen regardless of minor errors
+      // Immediate redirect without waiting for notifications
       router.push("/manage/quotes");
       router.refresh();
     } catch (error) {
