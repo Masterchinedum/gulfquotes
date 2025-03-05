@@ -7,6 +7,13 @@ import { QuoteDisplayData } from "./public-quote/quote-display.service";
 import { quoteDisplayService } from "./public-quote/quote-display.service";
 import { randomUUID } from "crypto";
 
+// Cache interface
+interface TrendingQuoteCache {
+  data: QuoteDisplayData[];
+  timestamp: number;
+  batchId: string;
+}
+
 /**
  * Interface for trending quote service
  */
@@ -62,75 +69,148 @@ type QuoteWithCount = Quote & {
  * Service for managing trending quotes functionality
  */
 class TrendingQuoteServiceImpl implements TrendingQuoteService {
+  private cache: TrendingQuoteCache | null = null;
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
+
+  /**
+   * Helper method to transform database quote to display data
+   */
+  private async transformQuoteToDisplayData(quote: QuoteWithCount): Promise<QuoteDisplayData> {
+    const fullQuote = await quoteDisplayService.getQuoteBySlug(quote.slug);
+    
+    if (!fullQuote) {
+      throw new AppError(`Quote with slug ${quote.slug} not found`, "NOT_FOUND", 404);
+    }
+
+    return {
+      ...fullQuote,
+      metrics: {
+        views: fullQuote.metrics?.views || 0,
+        likes: fullQuote.metrics?.likes || quote.likes || 0,
+        shares: fullQuote.metrics?.shares || 0,
+        bookmarks: fullQuote.metrics?.bookmarks || quote.bookmarks || 0,
+        recentLikes: quote._count.userLikes
+      }
+    } as QuoteDisplayData;
+  }
+
+  /**
+   * Check if cache is valid
+   */
+  private isCacheValid(): boolean {
+    if (!this.cache) return false;
+    const now = Date.now();
+    return (now - this.cache.timestamp) < this.CACHE_TTL;
+  }
+
+  /**
+   * Get quotes from cache if valid
+   */
+  private getCachedQuotes(limit: number): QuoteDisplayData[] | null {
+    if (!this.isCacheValid()) return null;
+    return this.cache?.data.slice(0, limit) || null;
+  }
+
+  /**
+   * Set quotes in cache
+   */
+  private setCacheQuotes(quotes: QuoteDisplayData[], batchId: string): void {
+    this.cache = {
+      data: quotes,
+      timestamp: Date.now(),
+      batchId
+    };
+  }
+
+  /**
+   * Clear the cache
+   */
+  public invalidateCache(): void {
+    this.cache = null;
+  }
+
+  /**
+   * Helper method to fetch quotes with recent likes
+   */
+  private async fetchQuotesWithRecentLikes(oneDayAgo: Date, limit: number): Promise<QuoteWithCount[]> {
+    return await db.quote.findMany({
+      where: {
+        userLikes: {
+          some: {
+            createdAt: {
+              gte: oneDayAgo
+            }
+          }
+        }
+      },
+      include: {
+        authorProfile: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            bio: true,
+            followers: true,
+            images: {
+              select: { url: true },
+              take: 1
+            },
+            _count: {
+              select: { quotes: true }
+            }
+          }
+        },
+        category: {
+          select: {
+            name: true,
+            slug: true
+          }
+        },
+        _count: {
+          select: {
+            userLikes: {
+              where: {
+                createdAt: {
+                  gte: oneDayAgo
+                }
+              }
+            },
+            comments: true
+          }
+        }
+      },
+      orderBy: [
+        {
+          userLikes: {
+            _count: 'desc'
+          }
+        },
+        {
+          likes: 'desc'
+        }
+      ],
+      take: limit
+    }) as unknown as QuoteWithCount[];
+  }
+
   /**
    * Calculate trending quotes based on likes in the past 24 hours
    * @param limit Maximum number of quotes to return (default: 6)
    */
   async calculateTrendingQuotes(limit = 6): Promise<QuoteDisplayData[]> {
     try {
+      // Check cache first
+      const cached = this.getCachedQuotes(limit);
+      if (cached) {
+        console.log("Returning trending quotes from cache");
+        return cached;
+      }
+
       // Calculate the timestamp for 24 hours ago
       const oneDayAgo = new Date();
       oneDayAgo.setDate(oneDayAgo.getDate() - 1);
       
-      // Use the Quote type from Prisma here
-      const quotesWithRecentLikes = await db.quote.findMany({
-        where: {
-          userLikes: {
-            some: {
-              createdAt: {
-                gte: oneDayAgo
-              }
-            }
-          }
-        },
-        include: {
-          authorProfile: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              bio: true,
-              followers: true,
-              images: {
-                select: { url: true },
-                take: 1
-              },
-              _count: {
-                select: { quotes: true }
-              }
-            }
-          },
-          category: {
-            select: {
-              name: true,
-              slug: true
-            }
-          },
-          _count: {
-            select: {
-              userLikes: {
-                where: {
-                  createdAt: {
-                    gte: oneDayAgo
-                  }
-                }
-              },
-              comments: true
-            }
-          }
-        },
-        orderBy: [
-          {
-            userLikes: {
-              _count: 'desc'
-            }
-          },
-          {
-            likes: 'desc'
-          }
-        ],
-        take: limit
-      }) as unknown as QuoteWithCount[]; // Add type assertion here
+      const quotesWithRecentLikes = await this.fetchQuotesWithRecentLikes(oneDayAgo, limit);
       
       // If no quotes have received likes in the past 24 hours, fall back to previous trending
       if (quotesWithRecentLikes.length === 0) {
@@ -162,6 +242,9 @@ class TrendingQuoteServiceImpl implements TrendingQuoteService {
       
       // Store the new trending quotes
       await this.storeTrendingQuotes(trendingQuotes);
+      
+      // Cache the results
+      this.setCacheQuotes(trendingQuotes, randomUUID());
       
       return trendingQuotes;
     } catch (error) {
