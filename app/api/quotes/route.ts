@@ -8,7 +8,7 @@ import { formatZodError, AppError } from "@/lib/api-error";
 import { quoteService } from "@/lib/services/quote/quote.service";
 import db from "@/lib/prisma"; // Add this import
 import type { GalleryItem } from "@/types/gallery"; // Add this import if not already present
-import { notificationService } from "@/lib/services/notification/notification.service"; // Add this import
+// import { notificationService } from "@/lib/services/notification/notification.service";
 
 export async function POST(req: Request): Promise<NextResponse<CreateQuoteResponse>> {
   try {
@@ -105,12 +105,6 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
           404
         );
       }
-
-      // Get the author profile name
-      const authorProfile = await db.authorProfile.findUnique({
-        where: { id: finalQuote.authorProfileId },
-        select: { name: true }
-      });
 
       // Create response object
       const response = NextResponse.json({ data: finalQuote });
