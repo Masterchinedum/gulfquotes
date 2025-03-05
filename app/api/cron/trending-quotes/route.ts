@@ -6,12 +6,8 @@ import { revalidatePath } from "next/cache";
 // This header is required to prevent CSRF attacks
 export const dynamic = "force-dynamic";
 
-// Configure the cron job to run daily at 00:00 UTC+4
-// UTC+4 midnight is 8:00 PM UTC (20:00 UTC)
+// Set maximum duration for the API route
 export const maxDuration = 300; // 5 minutes max execution time
-
-// Define the cron schedule: run every day at 8:00 PM UTC
-export const schedule = "0 20 * * *";
 
 export async function GET(request: Request) {
   // Validate the cron request

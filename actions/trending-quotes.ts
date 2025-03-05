@@ -109,7 +109,8 @@ export async function refreshTrendingCache(): Promise<TrendingQuotesActionResult
     // Check authentication and authorization
     const session = await auth();
     
-    if (!session?.user?.role === 'ADMIN') {
+    // Fix: Remove the ! operator
+    if (session?.user?.role !== 'ADMIN') {
       return {
         error: {
           code: 'FORBIDDEN',
