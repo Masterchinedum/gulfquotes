@@ -136,7 +136,7 @@ export function TrendingQuotes() {
               >
                 <Avatar className="h-8 w-8">
                   <AvatarImage 
-                    src={quote.authorProfile.images?.[0]?.url} 
+                    src={quote.authorProfile.image || ""} 
                     alt={quote.authorProfile.name}
                   />
                   <AvatarFallback>
