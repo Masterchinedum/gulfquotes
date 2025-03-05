@@ -1,5 +1,5 @@
 // app/api/quotes/trending/route.ts
-import { NextResponse } from "next/server";
+import { NextResponse } from "next/server"; // Remove NextRequest since we don't need it
 import { trendingQuoteService } from "@/lib/services/trending-quote.service";
 import { QuoteDisplayData } from "@/lib/services/public-quote/quote-display.service";
 import { AppError } from "@/lib/api-error";
@@ -19,14 +19,13 @@ interface TrendingQuotesResponse {
 // Enable revalidation every hour
 export const revalidate = 3600;
 
-export async function GET(
-  request: Request
-): Promise<NextResponse<TrendingQuotesResponse>> {
-  try {
-    const url = new URL(request.url);
-    const limit = parseInt(url.searchParams.get("limit") || "6", 10);
+// Add force-dynamic directive to tell Next.js this is a dynamic route
+export const dynamic = 'force-dynamic';
 
-    const trendingQuotes = await trendingQuoteService.getTrendingQuotes(limit);
+export async function GET(): Promise<NextResponse<TrendingQuotesResponse>> {
+  try {
+    // Use fixed limit of 6
+    const trendingQuotes = await trendingQuoteService.getTrendingQuotes(6);
 
     return NextResponse.json({
       data: {
