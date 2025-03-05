@@ -13,10 +13,29 @@ export async function GET(
     const page = parseInt(url.searchParams.get("page") || "1", 10);
     const limit = parseInt(url.searchParams.get("limit") || "20", 10);
     const search = url.searchParams.get("search") || undefined;
-    const sortBy = url.searchParams.get("sortBy") as "name" | "popular" | "recent" || "name";
+    const sortBy = url.searchParams.get("sortBy") as "name" | "popular" | "recent" | "likes" | "downloads" || "name";
     const order = url.searchParams.get("order") as "asc" | "desc" || "asc";
     
-    // Get categories using our service (no auth check)
+    // Check if specifically requesting popular categories by a metric
+    if (url.searchParams.get("popular") === "true") {
+      const metric = url.searchParams.get("metric") as "quotes" | "likes" | "downloads" || "likes";
+      const popularLimit = parseInt(url.searchParams.get("limit") || "6", 10);
+      
+      // Use specialized method for popular categories
+      const popularCategories = await categoryService.getPopularCategoriesByMetric(metric, popularLimit);
+      
+      return NextResponse.json({
+        data: {
+          items: popularCategories,
+          total: popularCategories.length,
+          hasMore: false,
+          page: 1,
+          limit: popularLimit
+        }
+      });
+    }
+    
+    // Use standard category listing with sorting options
     const categories = await categoryService.getAllCategories({
       page,
       limit,

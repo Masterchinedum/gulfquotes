@@ -10,7 +10,17 @@ interface CategoryMetricResult {
   totalDownloads: bigint | null;
 }
 
+// Define cache structure
+interface MetricsCache {
+  timestamp: number;
+  data: Map<string, { totalLikes: number, totalDownloads: number }>;
+}
+
 export class CategoryService {
+  // Cache for metrics with a 5-minute expiration
+  private metricsCache: MetricsCache | null = null;
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+  
   /**
    * Aggregates likes and downloads metrics for categories
    * @param categoryIds Array of category IDs to aggregate metrics for
@@ -20,7 +30,13 @@ export class CategoryService {
     // If no categories, return empty map
     if (!categoryIds.length) return new Map();
 
-    // Use Prisma's raw query to efficiently aggregate metrics
+    // Check if we have all requested categories in cache
+    const cachedMetrics = this.getCachedMetrics(categoryIds);
+    if (cachedMetrics) {
+      return cachedMetrics;
+    }
+
+    // Cache miss or expired, use Prisma's raw query to efficiently aggregate metrics
     const results = await db.$queryRaw<CategoryMetricResult[]>`
       SELECT 
         "categoryId", 
@@ -40,7 +56,68 @@ export class CategoryService {
       });
     }
     
+    // Set the metrics in cache
+    this.updateMetricsCache(metricsMap);
+    
     return metricsMap;
+  }
+
+  /**
+   * Retrieves metrics from cache if still valid
+   * @param categoryIds Array of category IDs to look up in cache
+   * @returns Map of metrics or null if cache miss or expired
+   */
+  private getCachedMetrics(categoryIds: string[]): Map<string, { totalLikes: number, totalDownloads: number }> | null {
+    // If no cache or cache is expired, return null
+    if (!this.metricsCache || Date.now() - this.metricsCache.timestamp > this.CACHE_TTL) {
+      return null;
+    }
+
+    // Check if all requested category IDs are in the cache
+    const cachedData = this.metricsCache.data;
+    const allCategoriesInCache = categoryIds.every(id => cachedData.has(id));
+    
+    if (!allCategoriesInCache) {
+      return null;
+    }
+
+    // Return a subset of the cache containing only the requested categories
+    const result = new Map();
+    for (const id of categoryIds) {
+      result.set(id, cachedData.get(id)!);
+    }
+
+    return result;
+  }
+
+  /**
+   * Updates the metrics cache with new data
+   * @param newMetrics Map of new metrics to add to the cache
+   */
+  private updateMetricsCache(newMetrics: Map<string, { totalLikes: number, totalDownloads: number }>): void {
+    if (!this.metricsCache) {
+      // Initialize cache if it doesn't exist
+      this.metricsCache = {
+        timestamp: Date.now(),
+        data: new Map(newMetrics)
+      };
+    } else {
+      // Update existing cache
+      this.metricsCache.timestamp = Date.now();
+      
+      // Merge new metrics into existing cache
+      for (const [key, value] of newMetrics.entries()) {
+        this.metricsCache.data.set(key, value);
+      }
+    }
+  }
+
+  /**
+   * Invalidates the metrics cache
+   * This should be called when quotes are created, updated, or deleted
+   */
+  public invalidateMetricsCache(): void {
+    this.metricsCache = null;
   }
 
   /**

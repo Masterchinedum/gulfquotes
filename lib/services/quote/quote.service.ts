@@ -25,6 +25,7 @@ import {
 import { quoteLikeService } from "@/lib/services/like";
 import { quoteBookmarkService } from "@/lib/services/bookmark";
 import { notificationService } from "@/lib/services/notification/notification.service";
+import { categoryService } from "@/lib/services/category/category.service";
 
 class QuoteServiceImpl implements QuoteService {
   async create(data: CreateQuoteInput & { authorId: string }): Promise<Quote> {
@@ -86,6 +87,9 @@ class QuoteServiceImpl implements QuoteService {
       console.error("Failed to create follower notifications:", error);
     }
     
+    // Invalidate the metrics cache since we've added a new quote
+    categoryService.invalidateMetricsCache();
+
     return quote;
   }
 
@@ -231,6 +235,10 @@ class QuoteServiceImpl implements QuoteService {
           }
         });
         console.log("[QUOTE_SERVICE] Update successful");
+
+        // Invalidate the metrics cache since we've updated a quote
+        categoryService.invalidateMetricsCache();
+
         return result;
       } catch (error) {
         console.error("[QUOTE_SERVICE] Update failed:", error);
@@ -251,13 +259,18 @@ class QuoteServiceImpl implements QuoteService {
     await validateAccess(id, session.user.id);
 
     try {
-      return await db.quote.delete({
+      const result = await db.quote.delete({
         where: { id },
         include: {
           category: true,
           authorProfile: true,
         }
       });
+
+      // Invalidate the metrics cache since we've deleted a quote
+      categoryService.invalidateMetricsCache();
+
+      return result;
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
