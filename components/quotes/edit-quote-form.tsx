@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { updateQuoteSchema } from "@/schemas/quote";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,7 @@ import { QuoteGalleryModal } from "@/components/quotes/quote-gallery-modal";
 import { ImagePlus } from "lucide-react";
 // import { QuoteImageUpload } from "@/components/quotes/quote-image-upload";
 import { QuoteImageGallery } from "@/components/quotes/quote-image-gallery";
+import { Switch } from "../ui/switch";
 
 interface SelectedImageState {
   imageUrl: string | null;
@@ -77,6 +78,7 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
       slug: quote.slug,
       categoryId: quote.categoryId,
       authorProfileId: quote.authorProfileId,
+      featured: quote.featured || false, // Add this line
     },
   });
 
@@ -392,6 +394,29 @@ export function EditQuoteForm({ quote, categories, authorProfiles }: EditQuoteFo
                 </SelectContent>
               </Select>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Featured Quote Toggle */}
+        <FormField
+          control={form.control}
+          name="featured"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">Featured Quote</FormLabel>
+                <FormDescription>
+                  Mark this quote to appear on the homepage and featured sections
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  disabled={isSubmitting}
+                />
+              </FormControl>
             </FormItem>
           )}
         />

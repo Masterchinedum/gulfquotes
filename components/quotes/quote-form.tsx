@@ -116,6 +116,7 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
       slug: initialData?.slug || "",
       categoryId: initialData?.categoryId || "",
       authorProfileId: initialData?.authorProfileId || "",
+      
     },
   });
 

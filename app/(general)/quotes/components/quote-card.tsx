@@ -15,6 +15,7 @@ interface QuoteCardProps {
     slug: string;
     content: string;
     backgroundImage: string | null;
+    featured?: boolean; // Add this line
     author: {
       name: string;
       image?: string | null;
@@ -48,6 +49,14 @@ export function QuoteCard({ quote }: QuoteCardProps) {
           "hover:ring-2 hover:ring-primary/50 hover:shadow-xl",
           "bg-gradient-to-br from-card to-muted/80"
         )}>
+          {/* Featured indicator */}
+          {quote.featured && (
+            <div className="absolute top-2 right-2 z-10">
+              <Badge className="bg-primary text-primary-foreground px-2 py-0.5 text-xs font-medium">
+                Featured
+              </Badge>
+            </div>
+          )}
           {/* Background Image with Fade Effect */}
           {optimizedBgImage ? (
             <div className="absolute inset-0">
