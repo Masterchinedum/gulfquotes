@@ -119,7 +119,8 @@ model Quote {
   content          String         @db.Text
   slug             String         @unique
   backgroundImage  String? 
-  downloadCount    Int            @default(0)  // New field to track downloads
+  featured         Boolean        @default(false)  // Add this new field
+  downloadCount    Int            @default(0)  
   author           User           @relation("QuoteAuthor", fields: [authorId], references: [id])
   authorId         String
   category         Category       @relation(fields: [categoryId], references: [id])
