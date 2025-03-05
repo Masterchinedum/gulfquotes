@@ -36,6 +36,28 @@ export interface TrendingQuoteService {
   getPreviousTrendingQuotes(limit?: number): Promise<QuoteDisplayData[]>;
 }
 
+type QuoteWithCount = Quote & {
+  _count: {
+    userLikes: number;
+    comments: number;
+  };
+  authorProfile: {
+    id: string;
+    name: string;
+    slug: string;
+    bio: string | null;
+    followers: number;
+    images: { url: string }[];
+    _count: {
+      quotes: number;
+    };
+  };
+  category: {
+    name: string;
+    slug: string;
+  };
+};
+
 /**
  * Service for managing trending quotes functionality
  */
@@ -108,7 +130,7 @@ class TrendingQuoteServiceImpl implements TrendingQuoteService {
           }
         ],
         take: limit
-      });
+      }) as unknown as QuoteWithCount[]; // Add type assertion here
       
       // If no quotes have received likes in the past 24 hours, fall back to previous trending
       if (quotesWithRecentLikes.length === 0) {
@@ -117,7 +139,7 @@ class TrendingQuoteServiceImpl implements TrendingQuoteService {
       }
       
       // Transform quotes with proper metrics initialization
-      const trendingQuotes = await Promise.all(quotesWithRecentLikes.map(async (quote: Quote) => {
+      const trendingQuotes = await Promise.all(quotesWithRecentLikes.map(async (quote: QuoteWithCount) => { // Update type here
         // Get full quote details using the display service
         const fullQuote = await quoteDisplayService.getQuoteBySlug(quote.slug);
         
