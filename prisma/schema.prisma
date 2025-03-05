@@ -135,11 +135,11 @@ model Quote {
   userBookmarks    QuoteBookmark[] // Add this line
   bookmarks        Int            @default(0)  // Add this line
   dailyQuoteHistory DailyQuote[]
+  TrendingQuote    TrendingQuote[]
+  notifications    Notification[]
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
-  // Add this relation
-  notifications         Notification[]
 
   @@map("quotes")
 }
@@ -413,4 +413,23 @@ model EmailLog {
   @@index([email])
   @@index([type])
   @@map("email_logs")
+}
+
+// Model for tracking trending quotes (most liked quotes in the past 24 hours)
+model TrendingQuote {
+  id            String   @id @default(cuid())
+  quote         Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quoteId       String
+  rank          Int      // Position in trending (1-6)
+  likeCount     Int      // Likes received in the trending window
+  batchId       String   // Unique ID for each trending calculation batch
+  batchDate     DateTime @default(now()) // When this trending batch was calculated
+  isActive      Boolean  @default(true)  // Whether this is the current active trending set
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([quoteId])
+  @@index([isActive])
+  @@index([batchId])
+  @@map("trending_quotes")
 }

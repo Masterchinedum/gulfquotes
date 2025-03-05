@@ -313,7 +313,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     
     const intervalId = setInterval(() => {
       fetchUnreadCount();
-    }, 120000); // 2 minutes
+    }, 300000); // 5 minutes
     
     return () => clearInterval(intervalId);
   }, [fetchUnreadCount, session, status]);
