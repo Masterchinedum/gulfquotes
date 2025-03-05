@@ -1,7 +1,6 @@
 // app/api/cron/trending-quotes/route.ts
 import { NextResponse } from "next/server";
-import { trendingQuoteService } from "@/lib/services/trending-quote.service";
-import { revalidatePath } from "next/cache";
+import { updateTrendingQuotes } from "@/lib/tasks/trending-quotes-scheduler";
 
 // This header is required to prevent CSRF attacks
 export const dynamic = "force-dynamic";
@@ -25,18 +24,24 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Calculate new trending quotes
-    const trendingQuotes = await trendingQuoteService.calculateTrendingQuotes();
+    // Run the trending quotes update
+    const result = await updateTrendingQuotes();
     
-    // Revalidate the paths that display trending quotes
-    revalidatePath("/");
-    revalidatePath("/api/quotes/trending");
+    if (!result.success) {
+      return NextResponse.json(
+        { 
+          error: result.message, 
+          details: result.error 
+        },
+        { status: result.error?.statusCode || 500 }
+      );
+    }
     
     return NextResponse.json({
       success: true,
-      message: "Trending quotes updated successfully",
-      timestamp: new Date().toISOString(),
-      quotesCount: trendingQuotes.length
+      message: result.message,
+      quotesCount: result.quotesCount,
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
     console.error("[TRENDING_QUOTES_CRON]", error);
