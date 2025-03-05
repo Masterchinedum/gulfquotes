@@ -22,7 +22,7 @@ export function PopularCategories() {
       try {
         setIsLoading(true);
         // Explicitly request categories sorted by likes with the limit of 4
-        const response = await fetch('/api/public/categories?sortBy=likes&limit=4');
+        const response = await fetch('/api/public/categories?sortBy=likes&order=desc&limit=4');
         
         if (!response.ok) {
           throw new Error('Failed to fetch categories');
