@@ -41,8 +41,8 @@ export class CategoryService {
       SELECT 
         "categoryId", 
         SUM("likes") as "totalLikes", 
-        SUM("downloads") as "totalDownloads"
-      FROM "quote"
+        0 as "totalDownloads"
+      FROM "quotes"
       WHERE "categoryId" IN (${Prisma.join(categoryIds)})
       GROUP BY "categoryId"
     `;
