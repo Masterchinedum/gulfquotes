@@ -6,7 +6,7 @@ import { QuoteListSkeleton } from "../quotes/components/quote-list-skeleton";
 import { QuoteEmpty } from "../quotes/components/quote-empty";
 import { QuoteError } from "../quotes/components/quote-error";
 import { QuotePaginationWrapper } from "../quotes/components/quote-pagination-wrapper";
-import { db } from "@/lib/prisma";
+import db from "@/lib/prisma";
 import { Metadata } from "next";
 
 // Custom search params interface
