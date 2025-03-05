@@ -1,9 +1,66 @@
 import db from "@/lib/prisma";
 import { AppError } from "@/lib/api-error";
-import { CategoryWithQuoteCount, ListCategoriesParams } from "@/types/category";
-import { Prisma } from "@prisma/client"; // Add this import
+import { CategoryWithQuoteCount, CategoryWithMetrics, ListCategoriesParams } from "@/types/category";
+import { Prisma } from "@prisma/client";
+
+// Define an interface for the raw query result
+interface CategoryMetricResult {
+  categoryId: string;
+  totalLikes: bigint | null;  // SUM returns bigint in Prisma raw queries
+  totalDownloads: bigint | null;
+}
 
 export class CategoryService {
+  /**
+   * Aggregates likes and downloads metrics for categories
+   * @param categoryIds Array of category IDs to aggregate metrics for
+   * @returns Map of category ID to metrics
+   */
+  private async aggregateCategoryMetrics(categoryIds: string[]): Promise<Map<string, { totalLikes: number, totalDownloads: number }>> {
+    // If no categories, return empty map
+    if (!categoryIds.length) return new Map();
+
+    // Use Prisma's raw query to efficiently aggregate metrics
+    const results = await db.$queryRaw<CategoryMetricResult[]>`
+      SELECT 
+        "categoryId", 
+        SUM("likes") as "totalLikes", 
+        SUM("downloads") as "totalDownloads"
+      FROM "Quote"
+      WHERE "categoryId" IN (${Prisma.join(categoryIds)})
+      GROUP BY "categoryId"
+    `;
+
+    // Create a map for quick lookup
+    const metricsMap = new Map();
+    for (const row of results) {
+      metricsMap.set(row.categoryId, {
+        totalLikes: Number(row.totalLikes) || 0, 
+        totalDownloads: Number(row.totalDownloads) || 0
+      });
+    }
+    
+    return metricsMap;
+  }
+
+  /**
+   * Enriches categories with metrics
+   * @param categories List of categories to enrich with metrics
+   * @returns Categories with metrics added
+   */
+  private async addMetricsToCategories(categories: CategoryWithQuoteCount[]): Promise<CategoryWithMetrics[]> {
+    if (!categories.length) return [];
+    
+    const categoryIds = categories.map(cat => cat.id);
+    const metricsMap = await this.aggregateCategoryMetrics(categoryIds);
+    
+    return categories.map(category => ({
+      ...category,
+      totalLikes: metricsMap.get(category.id)?.totalLikes || 0,
+      totalDownloads: metricsMap.get(category.id)?.totalDownloads || 0
+    }));
+  }
+
   /**
    * Get all categories with optional filtering, sorting, and pagination
    */
@@ -13,7 +70,13 @@ export class CategoryService {
     search,
     sortBy = "name",
     order = "asc"
-  }: ListCategoriesParams = {}) {
+  }: ListCategoriesParams = {}): Promise<{
+    items: CategoryWithMetrics[];
+    total: number;
+    hasMore: boolean;
+    page: number;
+    limit: number;
+  }> {
     // Calculate pagination
     const skip = (page - 1) * limit;
     const take = Math.min(50, Math.max(1, limit)); // Limit between 1-50
@@ -32,10 +95,8 @@ export class CategoryService {
       orderBy = { name: order };
     } else if (sortBy === "recent") {
       orderBy = { createdAt: order };
-    } else if (sortBy === "popular") {
-      // For popular, we'll need to sort by quote count
-      // This is handled separately
     }
+    // For metrics-based sorting, we'll handle manually after fetching
 
     // Execute query to get total count
     const total = await db.category.count({ where });
@@ -43,8 +104,8 @@ export class CategoryService {
     // Get categories with quote count
     let categories: CategoryWithQuoteCount[];
     
-    if (sortBy === "popular") {
-      // For popular sorting, we need to fetch all and sort manually by quote count
+    // For metrics-based or quote-count-based sorting, fetch all and sort manually
+    if (["popular", "likes", "downloads"].includes(sortBy)) {
       categories = await db.category.findMany({
         where,
         include: {
@@ -54,15 +115,28 @@ export class CategoryService {
         }
       });
       
-      // Sort by quote count
-      categories.sort((a, b) => {
-        const countA = a._count.quotes;
-        const countB = b._count.quotes;
-        return order === "asc" ? countA - countB : countB - countA;
-      });
+      // Enrich categories with metrics data
+      const enrichedCategories = await this.addMetricsToCategories(categories);
+      
+      // Sort based on the specified metric
+      if (sortBy === "popular") {
+        enrichedCategories.sort((a, b) => {
+          const countA = a._count.quotes;
+          const countB = b._count.quotes;
+          return order === "asc" ? countA - countB : countB - countA;
+        });
+      } else if (sortBy === "likes") {
+        enrichedCategories.sort((a, b) => {
+          return order === "asc" ? a.totalLikes - b.totalLikes : b.totalLikes - a.totalLikes;
+        });
+      } else if (sortBy === "downloads") {
+        enrichedCategories.sort((a, b) => {
+          return order === "asc" ? a.totalDownloads - b.totalDownloads : b.totalDownloads - a.totalDownloads;
+        });
+      }
       
       // Apply pagination manually
-      categories = categories.slice(skip, skip + take);
+      categories = enrichedCategories.slice(skip, skip + take);
     } else {
       // For other sorting methods, we can use Prisma's built-in ordering
       categories = await db.category.findMany({
@@ -76,13 +150,16 @@ export class CategoryService {
         skip,
         take
       });
+      
+      // Enrich with metrics for consistency in return type
+      categories = await this.addMetricsToCategories(categories);
     }
 
     // Calculate if there are more pages
     const hasMore = total > skip + take;
 
     return {
-      items: categories,
+      items: categories as CategoryWithMetrics[],
       total,
       hasMore,
       page,
@@ -91,9 +168,51 @@ export class CategoryService {
   }
 
   /**
-   * Get a category by slug with quote count
+   * Get popular categories with highest quote metrics
+   * @param metric - Which metric to use for popularity (quotes, likes, downloads)
+   * @param limit - Maximum number of categories to return
    */
+  async getPopularCategoriesByMetric(
+    metric: 'quotes' | 'likes' | 'downloads' = 'likes',
+    limit = 6
+  ): Promise<CategoryWithMetrics[]> {
+    // First, get categories with quote counts
+    const categories = await db.category.findMany({
+      include: {
+        _count: {
+          select: { quotes: true }
+        }
+      }
+    });
+    
+    // For metrics other than quote count, we need to add and sort by the metric
+    if (metric !== 'quotes') {
+      const enrichedCategories = await this.addMetricsToCategories(categories);
+      
+      // Sort by the specified metric
+      if (metric === 'likes') {
+        enrichedCategories.sort((a, b) => b.totalLikes - a.totalLikes);
+      } else if (metric === 'downloads') {
+        enrichedCategories.sort((a, b) => b.totalDownloads - a.totalDownloads);
+      }
+      
+      return enrichedCategories.slice(0, limit);
+    } else {
+      // Sort by quote count and add empty metrics
+      categories.sort((a, b) => b._count.quotes - a._count.quotes);
+      
+      // Add zero metrics
+      return categories.slice(0, limit).map(cat => ({
+        ...cat,
+        totalLikes: 0,
+        totalDownloads: 0
+      }));
+    }
+  }
+
+  // Keep existing methods unchanged
   async getCategoryBySlug(slug: string): Promise<CategoryWithQuoteCount> {
+    // Existing implementation
     const category = await db.category.findUnique({
       where: { slug },
       include: {
@@ -110,29 +229,8 @@ export class CategoryService {
     return category;
   }
 
-  /**
-   * Get popular categories with highest quote counts
-   */
-  async getPopularCategories(limit = 6): Promise<CategoryWithQuoteCount[]> {
-    return await db.category.findMany({
-      include: {
-        _count: {
-          select: { quotes: true }
-        }
-      },
-      orderBy: {
-        quotes: {
-          _count: "desc"
-        }
-      },
-      take: limit
-    });
-  }
-
-  /**
-   * Get quote count for a specific category
-   */
   async getQuoteCountByCategory(categoryId: string): Promise<number> {
+    // Existing implementation
     const result = await db.quote.count({
       where: { categoryId }
     });
@@ -140,10 +238,8 @@ export class CategoryService {
     return result;
   }
   
-  /**
-   * Get total number of categories
-   */
   async getTotalCategoriesCount(): Promise<number> {
+    // Existing implementation
     return await db.category.count();
   }
 }

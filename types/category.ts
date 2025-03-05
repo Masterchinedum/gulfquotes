@@ -9,6 +9,12 @@ export interface CategoryWithQuoteCount extends Category {
   };
 }
 
+// New interface to include popularity metrics
+export interface CategoryWithMetrics extends CategoryWithQuoteCount {
+  totalLikes: number;
+  totalDownloads: number;
+}
+
 export interface CategoryApiResponse {
   data?: Category;
   error?: {
@@ -22,7 +28,7 @@ export interface CategoryApiResponse {
  */
 export interface CategoriesApiResponse {
   data?: {
-    items: CategoryWithQuoteCount[];
+    items: CategoryWithMetrics[]; // Updated to include metrics
     total: number;
     hasMore: boolean;
     page: number;
@@ -41,7 +47,7 @@ export interface ListCategoriesParams {
   page?: number;
   limit?: number;
   search?: string;
-  sortBy?: "name" | "popular" | "recent";
+  sortBy?: "name" | "popular" | "recent" | "likes" | "downloads"; // Added new sort options
   order?: "asc" | "desc";
 }
 
