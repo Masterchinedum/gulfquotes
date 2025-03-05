@@ -29,6 +29,7 @@ export const createQuoteFormSchema = z.object({
   authorProfileId: z.string().min(1),
   slug: z.string().optional(),
   backgroundImage: z.string().nullable().optional(),
+  featured: z.boolean().default(false).optional(), // Add this line
   // No tags here - we'll handle them separately
 });
 
@@ -60,6 +61,7 @@ export const updateQuoteSchema = z.object({
   authorProfileId: z.string()
     .min(1, "Author profile is required")
     .optional(),
+  featured: z.boolean().optional(), // Add this line
   backgroundImage: z.string().url().nullable().optional(),
   galleryImages: z.array(z.object({
     id: z.string(),

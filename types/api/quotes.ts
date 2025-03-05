@@ -184,6 +184,7 @@ export interface UpdateQuoteInput {
   slug?: string;
   categoryId?: string;
   authorProfileId?: string;
+  featured?: boolean; // Add this line
   backgroundImage?: string | null;
   galleryImages?: Array<{
     id: string;
