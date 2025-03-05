@@ -1,7 +1,8 @@
 // lib/services/trending-quote.service.ts
+
+import { Prisma, Quote } from "@prisma/client";
 import db from "@/lib/prisma";
 import { AppError } from "@/lib/api-error";
-// import { Prisma, TrendingQuote, Quote } from "@prisma/client";
 import { QuoteDisplayData } from "./public-quote/quote-display.service";
 import { quoteDisplayService } from "./public-quote/quote-display.service";
 import { randomUUID } from "crypto";
@@ -49,7 +50,7 @@ class TrendingQuoteServiceImpl implements TrendingQuoteService {
       const oneDayAgo = new Date();
       oneDayAgo.setDate(oneDayAgo.getDate() - 1);
       
-      // Find quotes with likes in the past 24 hours
+      // Use the Quote type from Prisma here
       const quotesWithRecentLikes = await db.quote.findMany({
         where: {
           userLikes: {
@@ -115,8 +116,8 @@ class TrendingQuoteServiceImpl implements TrendingQuoteService {
         return this.getPreviousTrendingQuotes(limit);
       }
       
-      // Transform quotes to match QuoteDisplayData format
-      const trendingQuotes = await Promise.all(quotesWithRecentLikes.map(async (quote) => {
+      // Transform quotes with proper metrics initialization
+      const trendingQuotes = await Promise.all(quotesWithRecentLikes.map(async (quote: Quote) => {
         // Get full quote details using the display service
         const fullQuote = await quoteDisplayService.getQuoteBySlug(quote.slug);
         
@@ -124,13 +125,17 @@ class TrendingQuoteServiceImpl implements TrendingQuoteService {
           throw new AppError(`Quote with slug ${quote.slug} not found`, "NOT_FOUND", 404);
         }
         
+        // Ensure all required metrics are present with default values
         return {
           ...fullQuote,
           metrics: {
-            ...(fullQuote.metrics || {}),
-            recentLikes: quote._count.userLikes, // Add count of likes in the last 24h
+            views: fullQuote.metrics?.views || 0,
+            likes: fullQuote.metrics?.likes || quote.likes || 0,
+            shares: fullQuote.metrics?.shares || 0,
+            bookmarks: fullQuote.metrics?.bookmarks || quote.bookmarks || 0,
+            recentLikes: quote._count.userLikes
           }
-        };
+        } as QuoteDisplayData;
       }));
       
       // Store the new trending quotes
@@ -210,27 +215,25 @@ class TrendingQuoteServiceImpl implements TrendingQuoteService {
       const batchId = randomUUID();
       const now = new Date();
       
-      // Deactivate all previous trending quotes
-      await db.trendingQuote.updateMany({
-        where: { isActive: true },
-        data: { isActive: false }
-      });
-      
-      // Create new trending quote entries in transaction
-      await db.$transaction(
-        quotes.map((quote, index) => 
-          db.trendingQuote.create({
-            data: {
-              quoteId: quote.id,
-              rank: index + 1,
-              likeCount: quote.metrics?.likes || quote.likes || 0,
-              batchId,
-              batchDate: now,
-              isActive: true
-            }
-          })
+      // Use the TrendingQuote type from Prisma here
+      const trendingQuoteData: Prisma.TrendingQuoteCreateInput[] = quotes.map((quote, index) => ({
+        quote: { connect: { id: quote.id } },
+        rank: index + 1,
+        likeCount: quote.metrics?.likes || quote.likes || 0,
+        batchId,
+        batchDate: now,
+        isActive: true
+      }));
+
+      await db.$transaction([
+        db.trendingQuote.updateMany({
+          where: { isActive: true },
+          data: { isActive: false }
+        }),
+        ...trendingQuoteData.map(data => 
+          db.trendingQuote.create({ data })
         )
-      );
+      ]);
     } catch (error) {
       console.error("Error storing trending quotes:", error);
       if (error instanceof AppError) throw error;
