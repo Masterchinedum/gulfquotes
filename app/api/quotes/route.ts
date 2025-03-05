@@ -106,20 +106,14 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
         );
       }
 
+      // Get the author profile name
+      const authorProfile = await db.authorProfile.findUnique({
+        where: { id: finalQuote.authorProfileId },
+        select: { name: true }
+      });
+
       // Create response object
       const response = NextResponse.json({ data: finalQuote });
-
-      // Fire and forget - no setTimeout needed
-      notificationService
-        .createQuoteNotificationsForFollowers(
-          finalQuote.authorProfileId, // Use the correct author profile ID
-          quote.id,
-          quote.authorId,
-          session.user.name ?? "Unknown User"
-        )
-        .catch(err => {
-          console.error("Background notification process failed:", err);
-        });
 
       // Return response immediately
       return response;

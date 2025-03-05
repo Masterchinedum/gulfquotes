@@ -287,38 +287,38 @@ class QuoteServiceImpl implements QuoteService {
   // Gallery Integration Methods
   async addGalleryImages(quoteId: string, images: GalleryItem[]): Promise<Quote> {
     try {
-      return await db.$transaction(async (tx) => {
-        const quote = await tx.quote.findUnique({
-          where: { id: quoteId }
-        });
+      // Check if the quote exists first
+      const quote = await db.quote.findUnique({
+        where: { id: quoteId }
+      });
 
-        if (!quote) {
-          throw new AppError("Quote not found", "NOT_FOUND", 404);
-        }
+      if (!quote) {
+        throw new AppError("Quote not found", "NOT_FOUND", 404);
+      }
 
-        // Create associations for each image
-        for (const image of images) {
-          await tx.quoteToGallery.create({
-            data: {
-              quoteId,
-              galleryId: image.id,
-              isActive: false
-            }
-          });
-        }
-
-        return tx.quote.findUniqueOrThrow({
-          where: { id: quoteId },
-          include: {
-            category: true,
-            authorProfile: true,
-            gallery: {
-              include: {
-                gallery: true
-              }
-            }
+      // Create associations for each image without using a transaction
+      for (const image of images) {
+        await db.quoteToGallery.create({
+          data: {
+            quoteId,
+            galleryId: image.id,
+            isActive: image.isActive || false
           }
         });
+      }
+
+      // Fetch the updated quote with gallery images
+      return db.quote.findUniqueOrThrow({
+        where: { id: quoteId },
+        include: {
+          category: true,
+          authorProfile: true,
+          gallery: {
+            include: {
+              gallery: true
+            }
+          }
+        }
       });
     } catch (error) {
       if (error instanceof AppError) throw error;
