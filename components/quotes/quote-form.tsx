@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createQuoteFormSchema } from "@/schemas/quote";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,7 @@ import { ImagePlus } from "lucide-react";
 import { QuoteImageGallery } from "@/components/quotes/quote-image-gallery";
 import type { QuoteFormData } from "@/schemas/quote";
 import { z } from "zod";
+import { Switch } from "../ui/switch";
 
 
 // Add new interface for image state
@@ -483,6 +484,29 @@ export function QuoteForm({ categories, authorProfiles, initialData }: QuoteForm
             </p>
           </div>
         </FormItem>
+
+        {/* Featured Quote Toggle */}
+        <FormField
+          control={form.control}
+          name="featured"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">Featured Quote</FormLabel>
+                <FormDescription>
+                  Mark this quote to appear on the homepage and featured sections
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  disabled={isSubmitting}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
 
         {/* Gallery Section */}
         <div className="space-y-6 rounded-lg border bg-card">
