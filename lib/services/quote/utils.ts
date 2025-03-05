@@ -15,7 +15,7 @@ export function prepareUpdateData(
   return {
     content: data.content,
     slug: data.slug,
-    // Use connect/disconnect pattern for relations
+    featured: data.featured,
     category: data.categoryId ? {
       connect: { id: data.categoryId }
     } : undefined,

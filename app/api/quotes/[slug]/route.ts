@@ -77,7 +77,7 @@ export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteRespo
       }, { status: 400 });
     }
 
-    const updateData: UpdateQuoteInput = validatedData.data;
+    const updateData: UpdateQuoteInput = validatedData.data; 
 
     try {
       const finalQuote = await db.$transaction(async (tx) => {
@@ -89,6 +89,7 @@ export async function PATCH(req: Request): Promise<NextResponse<UpdateQuoteRespo
             categoryId: updateData.categoryId,
             authorProfileId: updateData.authorProfileId,
             backgroundImage: updateData.backgroundImage,
+            featured: updateData.featured,
             tags: updateData.tags ? {
               connect: updateData.tags.connect,
               disconnect: updateData.tags.disconnect

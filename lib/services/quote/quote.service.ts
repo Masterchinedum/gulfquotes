@@ -48,7 +48,8 @@ class QuoteServiceImpl implements QuoteService {
           authorId: data.authorId,
           categoryId: data.categoryId,
           authorProfileId: data.authorProfileId,
-          backgroundImage: null
+          backgroundImage: null,
+          featured: data.featured || false // Add this line
         },
         include: {
           category: true,

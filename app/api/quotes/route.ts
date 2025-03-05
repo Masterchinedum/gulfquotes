@@ -46,7 +46,7 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
     try {
       // Step 1: Create the quote first
       const quote = await quoteService.create({
-        ...validatedData.data,
+        ...validatedData.data, // This already includes the featured field from our schema update
         authorId: session.user.id
       });
 
