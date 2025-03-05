@@ -49,11 +49,18 @@ export default async function FeaturedQuotesPage({ searchParams = Promise.resolv
           ...(authorProfileId && { authorProfileId }),
         },
         include: {
-          authorProfile: true,
+          authorProfile: {
+            include: {
+              // Include author images relationship
+              images: {
+                take: 1 // Just take the first image
+              }
+            }
+          },
           category: true,
           _count: {
             select: {
-              quoteLikes: true,
+              userLikes: true, // Change from "likes" to "userLikes" to match the schema
               comments: true,
             },
           },
@@ -96,7 +103,8 @@ export default async function FeaturedQuotesPage({ searchParams = Promise.resolv
                   featured: quote.featured,
                   author: {
                     name: quote.authorProfile.name,
-                    image: quote.authorProfile.image,
+                    // Access the first image's URL or return null if no images
+                    image: quote.authorProfile.images?.[0]?.url || null,
                     slug: quote.authorProfile.slug,
                   },
                   category: {
@@ -104,7 +112,7 @@ export default async function FeaturedQuotesPage({ searchParams = Promise.resolv
                     slug: quote.category.slug,
                   },
                   metrics: {
-                    likes: quote._count.quoteLikes,
+                    likes: quote._count.userLikes,
                     comments: quote._count.comments,
                   },
                 }))}

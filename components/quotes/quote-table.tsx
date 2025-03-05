@@ -11,9 +11,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  plus,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Icons } from "@/components/ui/icons";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { Star } from "lucide-react";
+import { 
+  Star, 
+  Filter, 
+  ChevronDown, 
+  Eye,           // For view
+  Pencil,        // For edit
+  Trash,         // For delete
+  Loader,        // For spinner
+  MoreHorizontal // For more options
+} from "lucide-react";
 
 interface QuoteTableProps {
   initialQuotes: Array<Quote & {
@@ -212,7 +221,7 @@ export function QuoteTable({ initialQuotes }: QuoteTableProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="px-3">
-                <Icons.filter className="h-4 w-4" />
+                <Filter className="h-4 w-4" />
                 <span className="sr-only">Filter</span>
               </Button>
             </DropdownMenuTrigger>
@@ -244,7 +253,7 @@ export function QuoteTable({ initialQuotes }: QuoteTableProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
                 Bulk Actions
-                <Icons.chevronDown className="ml-2 h-4 w-4" />
+                <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -260,7 +269,7 @@ export function QuoteTable({ initialQuotes }: QuoteTableProps) {
           </DropdownMenu>
           
           <Button onClick={() => router.push("/manage/quotes/create")}>
-            <Icons.plus className="mr-2 h-4 w-4" />
+            <Plus className="mr-2 h-4 w-4" />
             Add Quote
           </Button>
         </div>
@@ -318,7 +327,7 @@ export function QuoteTable({ initialQuotes }: QuoteTableProps) {
                           variant="ghost"
                           className="h-8 w-8 p-0"
                         >
-                          <Icons.more className="h-4 w-4" />
+                          <MoreHorizontal className="h-4 w-4" />
                           <span className="sr-only">Open menu</span>
                         </Button>
                       </DropdownMenuTrigger>
@@ -326,13 +335,13 @@ export function QuoteTable({ initialQuotes }: QuoteTableProps) {
                         <DropdownMenuItem
                           onClick={() => router.push(`/quotes/${quote.slug}`)}
                         >
-                          <Icons.view className="mr-2 h-4 w-4" />
+                          <Eye className="mr-2 h-4 w-4" />
                           View
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => router.push(`/manage/quotes/${quote.slug}`)}
                         >
-                          <Icons.pencil className="mr-2 h-4 w-4" />
+                          <Pencil className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -350,9 +359,9 @@ export function QuoteTable({ initialQuotes }: QuoteTableProps) {
                           className="text-destructive"
                         >
                           {isDeleting === quote.id ? (
-                            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                            <Loader className="mr-2 h-4 w-4 animate-spin" />
                           ) : (
-                            <Icons.trash className="mr-2 h-4 w-4" />
+                            <Trash className="mr-2 h-4 w-4" />
                           )}
                           Delete
                         </DropdownMenuItem>
