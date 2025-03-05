@@ -106,26 +106,21 @@ export async function POST(req: Request): Promise<NextResponse<CreateQuoteRespon
         );
       }
 
-      // Create response object and set up the setTimeout
+      // Create response object
       const response = NextResponse.json({ data: finalQuote });
-      
-      // Use setTimeout with proper isolation
-      setTimeout(() => {
-        notificationService
-          .createQuoteNotificationsForFollowers(
-            session.user.id as string,
-            quote.id,
-            quote.authorId,
-            session.user.name ?? "Unknown User"
-          )
-          .then(() => {
-            console.log(`Background notifications processed for quote ${quote.id}`);
-          })
-          .catch(err => {
-            console.error("Background notification process failed:", err);
-          });
-      }, 10);
-      
+
+      // Fire and forget - no setTimeout needed
+      notificationService
+        .createQuoteNotificationsForFollowers(
+          finalQuote.authorProfileId, // Use the correct author profile ID
+          quote.id,
+          quote.authorId,
+          session.user.name ?? "Unknown User"
+        )
+        .catch(err => {
+          console.error("Background notification process failed:", err);
+        });
+
       // Return response immediately
       return response;
 
