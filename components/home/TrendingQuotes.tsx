@@ -9,60 +9,82 @@ import {
   MessageSquare, 
   Share2, 
   ChevronLeft, 
-  ChevronRight 
+  ChevronRight,
+  Loader2 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import Link from "next/link";
-
-interface TrendingQuote {
-  id: string;
-  content: string;
-  author: {
-    name: string;
-    image?: string;
-    slug: string;
-  };
-  metrics: {
-    likes: number;
-    comments: number;
-    shares: number;
-  };
-}
-
-// Placeholder data - Replace with real data later
-const trendingQuotes: TrendingQuote[] = [
-  {
-    id: "1",
-    content: "Success is not final, failure is not fatal: it is the courage to continue that counts.",
-    author: {
-      name: "Winston Churchill",
-      slug: "winston-churchill",
-      image: "/placeholders/churchill.jpg"
-    },
-    metrics: {
-      likes: 1234,
-      comments: 89,
-      shares: 45
-    }
-  },
-  // Add more quotes...
-];
+import { useTrendingQuotes } from "@/hooks/use-trending-quotes";
+import { format } from "date-fns";
 
 export function TrendingQuotes() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const { quotes, isLoading, isError, error, updatedAt } = useTrendingQuotes();
 
   const next = () => {
     setCurrentIndex((current) => 
-      current + 3 >= trendingQuotes.length ? 0 : current + 3
+      current + 3 >= quotes.length ? 0 : current + 3
     );
   };
 
   const previous = () => {
     setCurrentIndex((current) => 
-      current - 3 < 0 ? trendingQuotes.length - 3 : current - 3
+      current - 3 < 0 ? Math.max(quotes.length - 3, 0) : current - 3
     );
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <section className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h2 className="text-2xl font-bold tracking-tight">Trending Now</h2>
+          </div>
+        </div>
+        <div className="flex items-center justify-center h-[300px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </section>
+    );
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <section className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h2 className="text-2xl font-bold tracking-tight">Trending Now</h2>
+          </div>
+        </div>
+        <Card className="p-6">
+          <div className="text-center text-muted-foreground">
+            {error || "Failed to load trending quotes"}
+          </div>
+        </Card>
+      </section>
+    );
+  }
+
+  // Empty state
+  if (quotes.length === 0) {
+    return (
+      <section className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h2 className="text-2xl font-bold tracking-tight">Trending Now</h2>
+          </div>
+        </div>
+        <Card className="p-6">
+          <div className="text-center text-muted-foreground">
+            No trending quotes yet
+          </div>
+        </Card>
+      </section>
+    );
+  }
 
   return (
     <section className="space-y-6">
@@ -70,7 +92,12 @@ export function TrendingQuotes() {
         <div className="space-y-1">
           <h2 className="text-2xl font-bold tracking-tight">Trending Now</h2>
           <p className="text-sm text-muted-foreground">
-            Most popular quotes this week
+            Most liked quotes in the last 24 hours
+            {updatedAt && (
+              <span className="ml-1 text-xs">
+                (Updated {format(new Date(updatedAt), 'PP')})
+              </span>
+            )}
           </p>
         </div>
         <div className="flex gap-2">
@@ -78,6 +105,7 @@ export function TrendingQuotes() {
             variant="outline" 
             size="icon"
             onClick={previous}
+            disabled={quotes.length <= 3}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -85,6 +113,7 @@ export function TrendingQuotes() {
             variant="outline" 
             size="icon"
             onClick={next}
+            disabled={quotes.length <= 3}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -92,7 +121,7 @@ export function TrendingQuotes() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {trendingQuotes.slice(currentIndex, currentIndex + 3).map((quote) => (
+        {quotes.slice(currentIndex, currentIndex + 3).map((quote) => (
           <Card 
             key={quote.id}
             className={cn(
@@ -102,23 +131,28 @@ export function TrendingQuotes() {
           >
             <CardContent className="p-6 space-y-4">
               <Link 
-                href={`/authors/${quote.author.slug}`}
+                href={`/authors/${quote.authorProfile.slug}`}
                 className="flex items-center gap-2 group"
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={quote.author.image} />
+                  <AvatarImage 
+                    src={quote.authorProfile.images?.[0]?.url} 
+                    alt={quote.authorProfile.name}
+                  />
                   <AvatarFallback>
-                    {quote.author.name.split(' ').map(n => n[0]).join('')}
+                    {quote.authorProfile.name.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
                 <span className="text-sm font-medium group-hover:text-primary">
-                  {quote.author.name}
+                  {quote.authorProfile.name}
                 </span>
               </Link>
               
-              <blockquote className="italic text-muted-foreground">
-                &quot;{quote.content}&quot;
-              </blockquote>
+              <Link href={`/quotes/${quote.slug}`}>
+                <blockquote className="italic text-muted-foreground hover:text-foreground transition-colors">
+                  &quot;{quote.content}&quot;
+                </blockquote>
+              </Link>
             </CardContent>
 
             <CardFooter className="border-t p-4">
@@ -130,11 +164,11 @@ export function TrendingQuotes() {
                     className="hover:text-red-500"
                   >
                     <Heart className="h-4 w-4 mr-2" />
-                    {quote.metrics.likes}
+                    {quote.metrics?.likes || 0}
                   </Button>
                   <Button variant="ghost" size="sm">
                     <MessageSquare className="h-4 w-4 mr-2" />
-                    {quote.metrics.comments}
+                    {quote.metrics?.comments || 0}
                   </Button>
                 </div>
                 <Button variant="ghost" size="sm">
