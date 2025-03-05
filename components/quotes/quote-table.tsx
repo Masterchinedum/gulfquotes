@@ -11,7 +11,6 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  plus,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,11 +31,12 @@ import {
   Star, 
   Filter, 
   ChevronDown, 
-  Eye,           // For view
-  Pencil,        // For edit
-  Trash,         // For delete
-  Loader,        // For spinner
-  MoreHorizontal // For more options
+  Eye,
+  Pencil,
+  Trash,
+  Loader,
+  MoreHorizontal,
+  Plus
 } from "lucide-react";
 
 interface QuoteTableProps {
