@@ -17,8 +17,9 @@ interface CustomSearchParams {
   authorProfileId?: string;
 }
 
+// Update the PageProps interface to use Promise
 interface PageProps {
-  searchParams?: CustomSearchParams;
+  searchParams?: Promise<CustomSearchParams>;
 }
 
 // Add metadata
@@ -27,12 +28,16 @@ export const metadata: Metadata = {
   description: "Discover our collection of handpicked featured quotes",
 };
 
-export default async function FeaturedQuotesPage({ searchParams = {} }: PageProps) {
+// Update the function to await the searchParams Promise
+export default async function FeaturedQuotesPage({ searchParams = Promise.resolve({}) }: PageProps) {
+  // Await the searchParams promise
+  const params = await searchParams;
+  
   // Parse search params with defaults
-  const page = Number(searchParams.page) || 1;
-  const limit = Number(searchParams.limit) || 12;
-  const categoryId = searchParams.categoryId;
-  const authorProfileId = searchParams.authorProfileId;
+  const page = Number(params.page) || 1;
+  const limit = Number(params.limit) || 12;
+  const categoryId = params.categoryId;
+  const authorProfileId = params.authorProfileId;
 
   try {
     // Fetch featured quotes
