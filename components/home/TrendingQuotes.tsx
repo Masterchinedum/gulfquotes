@@ -168,7 +168,7 @@ export function TrendingQuotes() {
                   </Button>
                   <Button variant="ghost" size="sm">
                     <MessageSquare className="h-4 w-4 mr-2" />
-                    {quote.metrics?.comments || 0}
+                    {quote._count?.comments || 0}
                   </Button>
                 </div>
                 <Button variant="ghost" size="sm">
