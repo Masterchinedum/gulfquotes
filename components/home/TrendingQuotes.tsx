@@ -168,7 +168,7 @@ export function TrendingQuotes() {
                   </Button>
                   <Button variant="ghost" size="sm">
                     <MessageSquare className="h-4 w-4 mr-2" />
-                    {0} {/* Default to 0 since comment counts aren't available */}
+                    {0}
                   </Button>
                 </div>
                 <Button variant="ghost" size="sm">
