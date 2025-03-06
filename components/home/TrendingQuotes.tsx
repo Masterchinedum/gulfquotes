@@ -5,9 +5,6 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
-  Heart, 
-  MessageSquare, 
-  Share2, 
   ChevronLeft, 
   ChevronRight,
   Loader2 
@@ -17,6 +14,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { useTrendingQuotes } from "@/hooks/use-trending-quotes";
 import { format } from "date-fns";
+// Import our new components
+import { QuoteLikeButton } from "@/components/shared/QuoteLikeButton";
+import { QuoteCommentButton } from "@/components/shared/QuoteCommentButton";
+import { QuoteShareButton } from "@/components/shared/QuoteShareButton";
 
 export function TrendingQuotes() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -158,22 +159,26 @@ export function TrendingQuotes() {
             <CardFooter className="border-t p-4">
               <div className="flex items-center justify-between w-full">
                 <div className="flex gap-4">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
+                  {/* Step 1: Replace static Like Button with QuoteLikeButton */}
+                  <QuoteLikeButton
+                    initialLikes={quote.metrics?.likes || 0}
+                    quoteId={quote.slug}
                     className="hover:text-red-500"
-                  >
-                    <Heart className="h-4 w-4 mr-2" />
-                    {quote.metrics?.likes || 0}
-                  </Button>
-                  <Button variant="ghost" size="sm">
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    {0}
-                  </Button>
+                  />
+                  
+                  {/* Step 2: Replace static Comment Button with QuoteCommentButton */}
+                  <QuoteCommentButton
+                    quoteSlug={quote.slug}
+                    commentCount={quote.commentCount || 0}
+                  />
                 </div>
-                <Button variant="ghost" size="sm">
-                  <Share2 className="h-4 w-4" />
-                </Button>
+                
+                {/* Step 3: Replace static Share Button with QuoteShareButton */}
+                <QuoteShareButton
+                  quoteSlug={quote.slug}
+                  quoteContent={quote.content}
+                  authorName={quote.authorProfile.name}
+                />
               </div>
             </CardFooter>
           </Card>
