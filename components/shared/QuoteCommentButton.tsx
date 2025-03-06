@@ -6,6 +6,7 @@ import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface QuoteCommentButtonProps {
   quoteSlug: string;
@@ -33,7 +34,12 @@ export function QuoteCommentButton({
 
   // Navigate to quote detail page with focus on comments
   const handleClick = () => {
-    router.push(`/quotes/${quoteSlug}#comments`);
+    try {
+      router.push(`/quotes/${quoteSlug}#comments`);
+    } catch (error) {
+      console.error("Navigation error:", error);
+      toast.error("Could not navigate to comments section");
+    }
   };
 
   return (

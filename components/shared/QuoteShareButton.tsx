@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Share2, X, Twitter, Facebook, Linkedin, Copy, Check } from "lucide-react";
+import { Share2, X, Twitter, Facebook, Linkedin, Copy, Check, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -13,7 +13,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface QuoteShareButtonProps {
   quoteSlug: string;
@@ -38,6 +40,7 @@ export function QuoteShareButton({
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Available sharing platforms
   const platforms: SharePlatform[] = [
@@ -63,6 +66,7 @@ export function QuoteShareButton({
 
   // Handle social sharing
   const handleShare = async (platformId: string) => {
+    setError(null);
     try {
       setIsLoading(true);
       
@@ -91,19 +95,29 @@ export function QuoteShareButton({
       }
       
       // Open share URL in new window
-      window.open(shareUrl, '_blank');
+      const newWindow = window.open(shareUrl, '_blank');
+      if (!newWindow) {
+        throw new Error("Popup blocked. Please allow popups for this site.");
+      }
       
       // Track the share by calling API
-      await fetch(`/api/quotes/${quoteSlug}/share`, {
+      const response = await fetch(`/api/quotes/${quoteSlug}/share`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ platform: platformId })
       });
       
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.warn("Share tracking failed, but sharing window was opened", errorData);
+        // We don't throw here since the sharing window is already open
+      }
+      
       toast.success(`Shared on ${platforms.find(p => p.id === platformId)?.name}`);
     } catch (error) {
       console.error("Share error:", error);
-      toast.error("Failed to share quote");
+      setError(error instanceof Error ? error.message : "Failed to share quote");
+      toast.error(error instanceof Error ? error.message : "Failed to share quote");
     } finally {
       setIsLoading(false);
     }
@@ -111,6 +125,7 @@ export function QuoteShareButton({
 
   // Handle URL copy
   const handleCopyUrl = async () => {
+    setError(null);
     try {
       const url = `${window.location.origin}/quotes/${quoteSlug}`;
       await navigator.clipboard.writeText(url);
@@ -119,7 +134,8 @@ export function QuoteShareButton({
       setTimeout(() => setCopiedUrl(false), 2000);
     } catch (error) {
       console.error("Copy error:", error);
-      toast.error("Failed to copy URL");
+      setError("Failed to copy URL - clipboard access denied");
+      toast.error("Failed to copy URL to clipboard");
     }
   };
 
@@ -142,6 +158,13 @@ export function QuoteShareButton({
               Share this quote on your favorite platforms
             </DialogDescription>
           </DialogHeader>
+          
+          {error && (
+            <Alert variant="destructive" className="my-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
           
           <div className="p-4 border rounded-md bg-muted/20 my-2">
             <p className="italic text-sm">&quot;{quoteContent.length > 100 ? quoteContent.substring(0, 100) + '...' : quoteContent}&quot;</p>
@@ -168,7 +191,7 @@ export function QuoteShareButton({
             ))}
           </div>
           
-          <div className="flex justify-between items-center mt-4 pt-3 border-t">
+          <DialogFooter className="flex justify-between items-center mt-4 pt-3 border-t">
             <Button
               variant="outline"
               className="w-full"
@@ -194,7 +217,7 @@ export function QuoteShareButton({
                 <span className="sr-only">Close</span>
               </Button>
             </DialogClose>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

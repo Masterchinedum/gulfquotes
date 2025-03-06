@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
-import { LoginPrompt } from "@/app/(general)/quotes/[slug]/components/login-prompt";
+import { LoginPrompt } from "@/components/shared/LoginPrompt"; // Updated import
 
 interface QuoteLikeButtonProps {
   initialLikes: number;
@@ -30,24 +30,31 @@ export function QuoteLikeButton({
   const [isLiked, setIsLiked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch initial like status when authenticated
   useEffect(() => {
     const fetchLikeStatus = async () => {
       if (status !== "authenticated") return;
+      setError(null);
 
       try {
         const response = await fetch(`/api/quotes/${quoteId}/like`, {
           method: 'GET'
         });
         
-        if (!response.ok) throw new Error("Failed to fetch like status");
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || "Failed to fetch like status");
+        }
         
         const data = await response.json();
         setIsLiked(data.data.liked);
         setLikes(data.data.likes);
       } catch (error) {
         console.error("Error fetching like status:", error);
+        setError("Could not retrieve like status");
+        // Keep using the initial likes count as fallback
       }
     };
 
@@ -61,6 +68,9 @@ export function QuoteLikeButton({
       setShowLoginPrompt(true);
       return;
     }
+    
+    // Clear any previous errors
+    setError(null);
     
     // Prevent multiple clicks
     if (isLoading) return;
@@ -81,7 +91,10 @@ export function QuoteLikeButton({
         }
       });
       
-      if (!response.ok) throw new Error("Failed to toggle like");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || "Failed to toggle like");
+      }
       
       const result = await response.json();
       
@@ -95,8 +108,9 @@ export function QuoteLikeButton({
       setIsLiked((prev) => !prev);
       setLikes((prev) => (!isLiked ? prev - 1 : prev + 1));
       
-      // Show error toast
-      toast.error("Failed to update like status");
+      // Set error state and show error toast
+      setError(error instanceof Error ? error.message : "Failed to update like status");
+      toast.error(error instanceof Error ? error.message : "Failed to update like status");
     } finally {
       // Reset loading state
       setIsLoading(false);
@@ -140,8 +154,10 @@ export function QuoteLikeButton({
         className={cn(
           "hover:bg-transparent",
           isLiked && "text-red-500",
+          error && "opacity-80",
           className
         )}
+        title={error || undefined}
       >
         <Heart 
           className={cn(
