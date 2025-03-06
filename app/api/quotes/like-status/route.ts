@@ -28,7 +28,7 @@ export async function POST(req: Request): Promise<NextResponse<LikeStatusRespons
     // Authentication is required for this endpoint
     const session = await auth();
     
-    if (!session?.user) {
+    if (!session?.user?.id) { // Check specifically for user.id
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
         { status: 401 }
@@ -55,7 +55,7 @@ export async function POST(req: Request): Promise<NextResponse<LikeStatusRespons
     const { quoteIds } = validationResult.data;
     
     try {
-      // Use the existing service function to get like status for multiple quotes
+      // Now TypeScript knows session.user.id is definitely not undefined
       const likeStatusMap = await quoteLikeService.getUserLikes(session.user.id, quoteIds);
       
       return NextResponse.json({ data: likeStatusMap });
