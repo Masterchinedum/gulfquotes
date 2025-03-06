@@ -10,7 +10,7 @@ import {
   Loader2 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useTrendingQuotes } from "@/hooks/use-trending-quotes";
 import { format } from "date-fns";
@@ -21,7 +21,18 @@ import { QuoteShareButton } from "@/components/shared/QuoteShareButton";
 
 export function TrendingQuotes() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const { quotes, isLoading, isError, error, updatedAt } = useTrendingQuotes();
+  const { quotes, isLoading, isError, error, updatedAt, refresh } = useTrendingQuotes();
+  const [operationError, setOperationError] = useState<string | null>(null);
+
+  // Clear operation error when component refreshes
+  useEffect(() => {
+    if (operationError) {
+      const timer = setTimeout(() => {
+        setOperationError(null);
+      }, 5000); // Clear error after 5 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [operationError]);
 
   const next = () => {
     setCurrentIndex((current) => 
@@ -34,6 +45,17 @@ export function TrendingQuotes() {
       current - 3 < 0 ? Math.max(quotes.length - 3, 0) : current - 3
     );
   };
+
+  // Handle component-level errors
+  // const handleError = (message: string) => {
+  //   setOperationError(message);
+  //   toast.error(message);
+    
+  //   // Attempt to refresh data after an error
+  //   setTimeout(() => {
+  //     refresh();
+  //   }, 3000);
+  // };
 
   // Loading state
   if (isLoading) {
@@ -51,7 +73,7 @@ export function TrendingQuotes() {
     );
   }
 
-  // Error state
+  // Error state - enhanced with retry option
   if (isError) {
     return (
       <section className="space-y-6">
@@ -61,8 +83,13 @@ export function TrendingQuotes() {
           </div>
         </div>
         <Card className="p-6">
-          <div className="text-center text-muted-foreground">
-            {error || "Failed to load trending quotes"}
+          <div className="flex flex-col items-center justify-center text-center gap-4">
+            <div className="text-muted-foreground">
+              {error || "Failed to load trending quotes"}
+            </div>
+            <Button variant="outline" onClick={refresh}>
+              Try Again
+            </Button>
           </div>
         </Card>
       </section>
@@ -92,14 +119,21 @@ export function TrendingQuotes() {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold tracking-tight">Trending Now</h2>
-          <p className="text-sm text-muted-foreground">
-            Most liked quotes in the last 24 hours
-            {updatedAt && (
-              <span className="ml-1 text-xs">
-                (Updated {format(new Date(updatedAt), 'PP')})
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-muted-foreground">
+              Most liked quotes in the last 24 hours
+              {updatedAt && (
+                <span className="ml-1 text-xs">
+                  (Updated {format(new Date(updatedAt), 'PP')})
+                </span>
+              )}
+            </p>
+            {operationError && (
+              <span className="text-xs text-destructive">
+                {operationError}
               </span>
             )}
-          </p>
+          </div>
         </div>
         <div className="flex gap-2">
           <Button 
@@ -159,21 +193,18 @@ export function TrendingQuotes() {
             <CardFooter className="border-t p-4">
               <div className="flex items-center justify-between w-full">
                 <div className="flex gap-4">
-                  {/* Step 1: Replace static Like Button with QuoteLikeButton */}
                   <QuoteLikeButton
                     initialLikes={quote.metrics?.likes || 0}
                     quoteId={quote.slug}
                     className="hover:text-red-500"
                   />
                   
-                  {/* Step 2: Replace static Comment Button with QuoteCommentButton */}
                   <QuoteCommentButton
                     quoteSlug={quote.slug}
                     commentCount={quote.commentCount || 0}
                   />
                 </div>
                 
-                {/* Step 3: Replace static Share Button with QuoteShareButton */}
                 <QuoteShareButton
                   quoteSlug={quote.slug}
                   quoteContent={quote.content}
