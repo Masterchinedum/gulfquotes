@@ -4,13 +4,19 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SearchResponse, SearchApiResponse } from "@/types/search";
 import { SearchResults } from "@/components/search/SearchResults";
-import { SearchField }  from "@/components/search/SearchField";
+import { SearchField } from "@/components/search/SearchField";
+import { SearchTabs } from "@/components/search/SearchTabs";
+import { SearchFilters } from "@/components/search/SearchFilters";
+import { Button } from "@/components/ui/button";
+import { SlidersHorizontal } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
   const [results, setResults] = useState<SearchResponse>();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   useEffect(() => {
     async function performSearch() {
@@ -44,22 +50,71 @@ export default function SearchPage() {
     }
   }, [searchParams]);
 
+  // Count results by type
+  const totalsByType = results?.results.reduce((acc, result) => {
+    acc[result.type] += 1;
+    return acc;
+  }, { quotes: 0, authors: 0, users: 0, all: 0 } as Record<string, number>);
+
+  if (totalsByType) {
+    totalsByType.all = totalsByType.quotes + totalsByType.authors + totalsByType.users;
+  }
+
   return (
-    <div className="container space-y-6 py-8">
-      <div className="mx-auto max-w-2xl">
+    <div className="container py-8">
+      <div className="mx-auto max-w-2xl mb-8">
         <SearchField />
       </div>
       
       {searchParams.get("q") && (
-        <div className="mx-auto max-w-3xl">
-          <h1 className="text-2xl font-bold mb-8">
-            Search Results for &ldquo;{searchParams.get("q")}&quot;
-          </h1>
-          <SearchResults 
-            results={results}
-            isLoading={isLoading}
-            error={error}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">
+              Search Results for &ldquo;{searchParams.get("q")}&quot;
+            </h1>
+            
+            {/* Mobile Filter Button */}
+            <div className="lg:hidden">
+              <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <SlidersHorizontal className="h-4 w-4" />
+                    <span>Filters</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+                  <SearchFilters 
+                    facets={results?.facets} 
+                    onClose={() => setMobileFiltersOpen(false)}
+                    isMobile={true}
+                  />
+                </SheetContent>
+              </Sheet>
+            </div>
+          </div>
+
+          <SearchTabs 
+            totalResults={totalsByType} 
+            className="mb-6"
           />
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Desktop Filter Sidebar */}
+            <div className="hidden lg:block">
+              <div className="sticky top-6">
+                <SearchFilters facets={results?.facets} />
+              </div>
+            </div>
+            
+            {/* Search Results */}
+            <div className="lg:col-span-3">
+              <SearchResults 
+                results={results}
+                isLoading={isLoading}
+                error={error}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>
