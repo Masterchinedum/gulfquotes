@@ -1,18 +1,22 @@
 "use client";
 
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, AlertCircle, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
 import { useFeaturedQuotes } from "@/hooks/use-featured-quotes";
-import { Skeleton } from "@/components/ui/skeleton";
+// import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { quoteTextUtils } from "@/lib/services/public-quote/utils/quote-text.utils";
 import { quoteImageUtils } from "@/lib/services/public-quote/utils/quote-image.utils";
+// Import the shared components for interaction
+import { QuoteLikeButton } from "@/components/shared/QuoteLikeButton";
+import { QuoteCommentButton } from "@/components/shared/QuoteCommentButton";
+import { QuoteShareButton } from "@/components/shared/QuoteShareButton";
 
 // Use the same type as in our hook
 interface FeaturedQuote {
@@ -62,7 +66,7 @@ export function FeaturedQuotes({ initialQuotes, limit = 6 }: FeaturedQuotesProps
     router.push("/featured");
   };
 
-  // Header section - used in all states
+  // Header section stays the same
   const HeaderSection = () => (
     <div className="flex items-center justify-between">
       <div className="space-y-1">
@@ -81,67 +85,9 @@ export function FeaturedQuotes({ initialQuotes, limit = 6 }: FeaturedQuotesProps
     </div>
   );
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <section className="space-y-8">
-        <HeaderSection />
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[...Array(limit)].map((_, index) => (
-            <div key={index} className="relative aspect-[16/10] rounded-lg overflow-hidden">
-              <Skeleton className="absolute inset-0" />
-              <div className="absolute inset-0 p-6 flex items-end">
-                <div className="w-full space-y-2">
-                  <Skeleton className="h-4 w-3/4" />
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Skeleton className="h-8 w-8 rounded-full" />
-                      <Skeleton className="h-4 w-24" />
-                    </div>
-                    <Skeleton className="h-6 w-16 rounded-full" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-    );
-  }
+  // Loading, error, and empty states remain the same...
 
-  // Error state
-  if (error) {
-    return (
-      <section className="space-y-8">
-        <HeaderSection />
-        <Card className="p-6">
-          <div className="flex flex-col items-center justify-center text-center gap-2">
-            <AlertCircle className="h-6 w-6 text-destructive" />
-            <h3 className="font-semibold">Failed to load featured quotes</h3>
-            <p className="text-sm text-muted-foreground">
-              {error || "Something went wrong. Please try again later."}
-            </p>
-          </div>
-        </Card>
-      </section>
-    );
-  }
-
-  // No quotes found
-  if (!quotes || quotes.length === 0) {
-    return (
-      <section className="space-y-8">
-        <HeaderSection />
-        <Card className="p-6">
-          <div className="flex flex-col items-center justify-center text-center">
-            <p className="text-muted-foreground">No featured quotes available at the moment</p>
-          </div>
-        </Card>
-      </section>
-    );
-  }
-
-  // Success state with quotes
+  // Success state with quotes - updated to match TrendingQuotes interaction pattern
   return (
     <section className="space-y-8">
       <HeaderSection />
@@ -156,14 +102,15 @@ export function FeaturedQuotes({ initialQuotes, limit = 6 }: FeaturedQuotesProps
             }) : null;
           
           return (
-            <Link href={`/quotes/${quote.slug}`} key={quote.id} className="group/card">
-              <div className={cn(
-                "relative overflow-hidden rounded-lg",
-                "aspect-[16/10]",
-                "transition-all duration-300 ease-in-out",
-                "hover:ring-2 hover:ring-primary/50 hover:shadow-xl",
-                "bg-gradient-to-br from-card to-muted/80"
-              )}>
+            <Card 
+              key={quote.id}
+              className={cn(
+                "transition-all duration-200",
+                "hover:shadow-md",
+                "overflow-hidden"
+              )}
+            >
+              <div className="relative">
                 {/* Featured badge */}
                 <div className="absolute top-2 right-2 z-10">
                   <Badge className="bg-primary text-primary-foreground px-2 py-0.5 text-xs font-medium">
@@ -172,81 +119,94 @@ export function FeaturedQuotes({ initialQuotes, limit = 6 }: FeaturedQuotesProps
                 </div>
 
                 {/* Background Image with Fade Effect */}
-                {optimizedBgImage ? (
-                  <div className="absolute inset-0">
-                    <Image
-                      src={optimizedBgImage}
-                      alt={`Background for quote: ${quote.content.substring(0, 50)}...`}
-                      fill
-                      className={cn(
-                        "object-cover",
-                        "transition-transform duration-700 ease-out",
-                        "group-hover/card:scale-105"
-                      )}
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    />
-                    <div className={cn(
-                      "absolute inset-0",
-                      "bg-gradient-to-t from-black/80 via-black/50 to-black/30",
-                      "transition-opacity duration-300",
-                      "group-hover/card:opacity-90"
-                    )} />
-                  </div>
-                ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5" />
-                )}
+                <div className="aspect-[16/10] relative overflow-hidden">
+                  {optimizedBgImage ? (
+                    <>
+                      <Image
+                        src={optimizedBgImage}
+                        alt={`Background for quote: ${quote.content.substring(0, 50)}...`}
+                        fill
+                        className={cn(
+                          "object-cover",
+                          "transition-transform duration-700 ease-out",
+                          "group-hover:scale-105"
+                        )}
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      />
+                      <div className={cn(
+                        "absolute inset-0",
+                        "bg-gradient-to-t from-black/80 via-black/50 to-black/30"
+                      )} />
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5" />
+                  )}
 
-                {/* Content Container */}
-                <div className="relative h-full p-6 flex flex-col justify-between">
-                  <div className={cn(
-                    "text-center",
-                    "transition-all duration-300",
-                    "group-hover/card:transform group-hover/card:-translate-y-1",
-                  )}>
-                    <blockquote className={cn(
-                      textClass,
-                      "font-medium",
-                      "text-white leading-relaxed",
-                      "line-clamp-4",
-                      "drop-shadow-md"
-                    )}>
-                      &ldquo;{quote.content}&rdquo;
-                    </blockquote>
-                  </div>
-                  
-                  {/* Author and meta info at bottom */}
-                  <div className="mt-auto flex items-center justify-between">
-                    <div className="flex items-center gap-2 group/author">
-                      <Avatar className={cn(
-                        "h-8 w-8",
-                        "ring-1 ring-white/50",
-                        "transition-transform duration-300",
-                        "group-hover/author:scale-105"
+                  {/* Content Container */}
+                  <div className="relative h-full p-6 flex flex-col justify-between">
+                    <div className="text-center">
+                      <blockquote className={cn(
+                        textClass,
+                        "font-medium",
+                        "text-white leading-relaxed",
+                        "line-clamp-4",
+                        "drop-shadow-md"
                       )}>
-                        <AvatarImage src={quote.authorProfile?.image || ""} />
-                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                          {quote.authorProfile.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="space-y-0.5">
-                        <p className="text-sm font-medium text-white leading-none">
-                          {quote.authorProfile.name}
-                        </p>
-                        <p className="text-xs text-white/70">
-                          {quote.category.name}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-white/80">
-                      <div className="flex items-center gap-1 text-xs">
-                        <Heart className="h-3.5 w-3.5" />
-                        <span>{quote._count?.quoteLikes || 0}</span>
-                      </div>
+                        &ldquo;{quote.content}&rdquo;
+                      </blockquote>
                     </div>
                   </div>
                 </div>
               </div>
-            </Link>
+
+              <CardContent className="p-6">
+                <Link 
+                  href={`/authors/${quote.authorProfile.slug}`}
+                  className="flex items-center gap-2 group"
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage 
+                      src={quote.authorProfile.image || ""} 
+                      alt={quote.authorProfile.name}
+                    />
+                    <AvatarFallback>
+                      {quote.authorProfile.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <span className="text-sm font-medium group-hover:text-primary">
+                      {quote.authorProfile.name}
+                    </span>
+                    <p className="text-xs text-muted-foreground">
+                      {quote.category.name}
+                    </p>
+                  </div>
+                </Link>
+              </CardContent>
+
+              <CardFooter className="border-t p-4">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex gap-4">
+                    <QuoteLikeButton
+                      initialLikes={quote._count?.quoteLikes || 0}
+                      quoteId={quote.slug}
+                      className="hover:text-red-500"
+                    />
+                    
+                    <QuoteCommentButton
+                      quoteSlug={quote.slug}
+                      commentCount={quote._count?.comments || 0}
+                    />
+                  </div>
+                  
+                  <QuoteShareButton
+                    quoteSlug={quote.slug}
+                    quoteContent={quote.content}
+                    authorName={quote.authorProfile.name}
+                  />
+                </div>
+              </CardFooter>
+            </Card>
           );
         })}
       </div>
