@@ -64,6 +64,10 @@ body,
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
+
+  .search-snippet mark {
+    @apply bg-yellow-200 dark:bg-yellow-800/70 px-0.5 rounded-sm font-medium;
+  }
 }
 
 
