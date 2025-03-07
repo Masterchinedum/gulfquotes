@@ -107,7 +107,8 @@ export interface SearchResponse {
 export interface SearchError {
   code: 
     | "INVALID_QUERY"
-    | "INVALID_TYPE" 
+    | "INVALID_TYPE"
+    | "INVALID_PARAM" // Add this line
     | "RATE_LIMIT_EXCEEDED"
     | "INTERNAL_ERROR";
   message: string;
@@ -117,4 +118,10 @@ export interface SearchError {
 export interface SearchApiResponse {
   data?: SearchResponse;
   error?: SearchError;
+}
+
+// Add this to /types/search.ts
+export interface SearchSuggestion {
+  query: string;
+  score: number;
 }

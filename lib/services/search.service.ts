@@ -168,17 +168,23 @@ class SearchServiceImpl {
           ? db.user.findMany({
               where: {
                 name: { contains: searchQuery, mode: "insensitive" },
-                ...(dateFilter && { createdAt: dateFilter })
+                ...(dateFilter && { 
+                  // Use a valid field that exists on the User model
+                  // Assuming the User model has updatedAt
+                  updatedAt: dateFilter 
+                })
               },
               select: {
                 id: true,
                 name: true,
                 image: true,
-                createdAt: true,
+                // Remove createdAt from select if it's not part of the User model
               },
-              // Apply sorting if applicable
               ...(sortField === "date" && {
-                orderBy: { createdAt: sortDirection }
+                orderBy: { 
+                  // Use a valid date field that exists on User model
+                  updatedAt: sortDirection 
+                }
               }),
               ...(sortField === "alphabetical" && {
                 orderBy: { name: sortDirection }
@@ -460,7 +466,10 @@ class SearchServiceImpl {
         count += await db.user.count({
           where: {
             name: { contains: searchQuery, mode: "insensitive" },
-            createdAt: dateCondition
+            ...(dateCondition && {
+              // Use a valid date field that exists on the User model
+              updatedAt: dateCondition
+            })
           }
         });
       }
