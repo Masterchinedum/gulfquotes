@@ -97,9 +97,9 @@ class RandomQuoteServiceImpl implements RandomQuoteService {
           // instead of direct length property
           contains: " " // Ensure at least one word break
         },
-        // Ensure we're only getting quotes with valid relations
-        authorProfile: { isNot: null },
-        category: { isNot: null },
+        // Check that the IDs exist instead of using isNot
+        authorProfileId: { not: null },
+        categoryId: { not: null },
         // Prioritize quotes with background images for better display
         backgroundImage: { not: null }
       };
