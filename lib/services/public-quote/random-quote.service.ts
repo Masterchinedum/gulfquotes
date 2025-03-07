@@ -93,8 +93,9 @@ class RandomQuoteServiceImpl implements RandomQuoteService {
         // Only include quotes with meaningful content
         content: { 
           not: "",
-          // Minimum length for better quality quotes
-          length: { gt: 20 }
+          // Filter for content with sufficient length using string comparison
+          // instead of direct length property
+          contains: " " // Ensure at least one word break
         },
         // Ensure we're only getting quotes with valid relations
         authorProfile: { isNot: null },
@@ -154,6 +155,13 @@ class RandomQuoteServiceImpl implements RandomQuoteService {
           throw new AppError("Quote data not found", "NOT_FOUND", 404);
         }
         
+        if (quote && quote.content.length < 20) {
+          // If the quote is too short, try to get another one
+          console.log("Quote too short, fetching another one");
+          return this.refreshRandomQuote(categoryId);
+        }
+
+        // Cache the result
         this.setCacheQuote(quote, categoryId);
         return quote;
       }
@@ -180,6 +188,12 @@ class RandomQuoteServiceImpl implements RandomQuoteService {
         throw new AppError("Quote data not found", "NOT_FOUND", 404);
       }
       
+      if (quote && quote.content.length < 20) {
+        // If the quote is too short, try to get another one
+        console.log("Quote too short, fetching another one");
+        return this.refreshRandomQuote(categoryId);
+      }
+
       // Cache the result
       this.setCacheQuote(quote, categoryId);
       
