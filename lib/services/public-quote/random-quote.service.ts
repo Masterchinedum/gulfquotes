@@ -88,90 +88,84 @@ class RandomQuoteServiceImpl implements RandomQuoteService {
         return cached;
       }
 
-      // Build filter conditions for high-quality quotes
-      const whereCondition: Prisma.QuoteWhereInput = { 
-        // Only include quotes with meaningful content
-        content: { 
+      // Build base query conditions
+      const baseConditions: Prisma.QuoteWhereInput = {
+        content: {
           not: "",
-          // Filter for content with sufficient length using string comparison
-          // instead of direct length property
-          contains: " " // Ensure at least one word break
         },
-        // Check that the IDs exist instead of using isNot
-        authorProfileId: { not: null },
-        categoryId: { not: null },
-        // Prioritize quotes with background images for better display
-        backgroundImage: { not: null }
+        // We'll ensure these fields are not null by using the proper syntax
+        authorProfileId: { not: undefined },
+        categoryId: { not: undefined },
       };
-      
+
       // Add category filter if provided
       if (categoryId) {
-        whereCondition.categoryId = categoryId;
+        baseConditions.categoryId = categoryId;
       }
 
-      // Count eligible quotes
-      const count = await db.quote.count({ where: whereCondition });
-      
-      // If no quotes match the strict criteria, fall back to more lenient criteria
-      if (count === 0) {
-        delete whereCondition.backgroundImage;
-        const fallbackCount = await db.quote.count({ 
-          where: {
-            ...whereCondition,
-            content: { not: "" } // Just ensure content is not empty
-          } 
-        });
-        
-        if (fallbackCount === 0) {
-          throw new AppError(
-            categoryId 
-              ? "No quotes found in this category" 
-              : "No quotes available", 
-            "NOT_FOUND", 
-            404
-          );
+      // APPROACH 1: Try to find high-quality quotes with background images
+      const highQualityConditions: Prisma.QuoteWhereInput = {
+        ...baseConditions,
+        content: {
+          ...baseConditions.content,
+          // Content should have reasonable length (implemented by checking for spaces)
+          contains: " ",
+        },
+        // For background image, we can't use NOT null, so we use "not equals empty string"
+        backgroundImage: { 
+          not: "" 
         }
+      };
+
+      // Count high quality quotes
+      const highQualityCount = await db.quote.count({ where: highQualityConditions });
+
+      // If we have high quality quotes, use them
+      if (highQualityCount > 0) {
+        // Get a random index
+        const randomIndex = Math.floor(Math.random() * highQualityCount);
         
-        // Use the fallback count for random selection
-        const randomIndex = Math.floor(Math.random() * fallbackCount);
-        
-        // Fetch a random quote using the fallback criteria
+        // Fetch a random quote using the random index
         const randomQuote = await db.quote.findMany({
-          where: {
-            ...whereCondition,
-            content: { not: "" }
-          },
+          where: highQualityConditions,
           take: 1,
           skip: randomIndex,
           select: { slug: true }
         });
         
-        if (!randomQuote.length) {
-          throw new AppError("Failed to get random quote", "NOT_FOUND", 404);
+        if (randomQuote.length) {
+          const quote = await quoteDisplayService.getQuoteBySlug(randomQuote[0].slug);
+          
+          if (quote) {
+            // Check minimum content length
+            if (quote.content.length >= 20) {
+              // Cache and return the quote
+              this.setCacheQuote(quote, categoryId);
+              return quote;
+            }
+          }
         }
-        
-        const quote = await quoteDisplayService.getQuoteBySlug(randomQuote[0].slug);
-        if (!quote) {
-          throw new AppError("Quote data not found", "NOT_FOUND", 404);
-        }
-        
-        if (quote && quote.content.length < 20) {
-          // If the quote is too short, try to get another one
-          console.log("Quote too short, fetching another one");
-          return this.refreshRandomQuote(categoryId);
-        }
+      }
 
-        // Cache the result
-        this.setCacheQuote(quote, categoryId);
-        return quote;
+      // APPROACH 2: FALLBACK - Try any quotes without requiring a background image
+      const fallbackCount = await db.quote.count({ where: baseConditions });
+      
+      if (fallbackCount === 0) {
+        throw new AppError(
+          categoryId 
+            ? "No quotes found in this category" 
+            : "No quotes available", 
+          "NOT_FOUND", 
+          404
+        );
       }
       
-      // Get a random index using the original stricter criteria
-      const randomIndex = Math.floor(Math.random() * count);
+      // Get a random index for the fallback quotes
+      const randomIndex = Math.floor(Math.random() * fallbackCount);
       
       // Fetch a random quote using the random index
       const randomQuote = await db.quote.findMany({
-        where: whereCondition,
+        where: baseConditions,
         take: 1,
         skip: randomIndex,
         select: { slug: true }
@@ -181,19 +175,12 @@ class RandomQuoteServiceImpl implements RandomQuoteService {
         throw new AppError("Failed to get random quote", "NOT_FOUND", 404);
       }
       
-      // Get full quote details using the display service
       const quote = await quoteDisplayService.getQuoteBySlug(randomQuote[0].slug);
       
       if (!quote) {
         throw new AppError("Quote data not found", "NOT_FOUND", 404);
       }
       
-      if (quote && quote.content.length < 20) {
-        // If the quote is too short, try to get another one
-        console.log("Quote too short, fetching another one");
-        return this.refreshRandomQuote(categoryId);
-      }
-
       // Cache the result
       this.setCacheQuote(quote, categoryId);
       
