@@ -433,3 +433,61 @@ model TrendingQuote {
   @@index([batchId])
   @@map("trending_quotes")
 }
+
+// Add these models to your prisma/schema.prisma file
+
+// Track search events
+model SearchEvent {
+  id          String       @id @default(uuid())
+  query       String
+  type        String       @default("all") // SearchType
+  userId      String?
+  filters     Json?
+  resultCount Int
+  createdAt   DateTime     @default(now()) @map("created_at")
+  clicks      SearchClick[]
+
+  @@index([query])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+// Track result clicks
+model SearchClick {
+  id            String     @id @default(uuid())
+  searchEvent   SearchEvent @relation(fields: [searchEventId], references: [id], onDelete: Cascade)
+  searchEventId String     @map("search_event_id")
+  resultId      String     @map("result_id")
+  resultType    String     @map("result_type") // SearchType
+  position      Int
+  userId        String?    @map("user_id")
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  @@index([searchEventId])
+  @@index([resultId, resultType])
+  @@index([userId])
+}
+
+// Track popular searches
+model PopularSearch {
+  query        String    @id
+  count        Int
+  lastSearched DateTime  @map("last_searched")
+
+  @@index([count])
+  @@index([lastSearched])
+}
+
+// Store relevance scores for quotes
+model QuoteRelevance {
+  quoteId    String  @id @map("quote_id")
+  score      Float   @default(0)
+  clickCount Int     @default(0) @map("click_count")
+}
+
+// Store relevance scores for authors
+model AuthorRelevance {
+  authorId   String  @id @map("author_id")
+  score      Float   @default(0)
+  clickCount Int     @default(0) @map("click_count")
+}
