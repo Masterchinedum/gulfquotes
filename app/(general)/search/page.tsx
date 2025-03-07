@@ -11,6 +11,14 @@ import { Button } from "@/components/ui/button";
 import { SlidersHorizontal } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
+// First, define a type for the result counts
+type ResultCounts = {
+  quotes: number;
+  authors: number;
+  users: number;
+  all: number;
+};
+
 export default function SearchPage() {
   const searchParams = useSearchParams();
   const [results, setResults] = useState<SearchResponse>();
@@ -51,10 +59,12 @@ export default function SearchPage() {
   }, [searchParams]);
 
   // Count results by type
-  const totalsByType = results?.results.reduce((acc, result) => {
-    acc[result.type] += 1;
+  const totalsByType = results?.results.reduce<ResultCounts>((acc, result) => {
+    if (result.type === 'quotes' || result.type === 'authors' || result.type === 'users') {
+      acc[result.type] += 1;
+    }
     return acc;
-  }, { quotes: 0, authors: 0, users: 0, all: 0 } as Record<string, number>);
+  }, { quotes: 0, authors: 0, users: 0, all: 0 });
 
   if (totalsByType) {
     totalsByType.all = totalsByType.quotes + totalsByType.authors + totalsByType.users;

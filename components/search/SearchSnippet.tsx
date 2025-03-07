@@ -32,10 +32,3 @@ export function SearchSnippet({
   );
 }
 
-// Add CSS to your global stylesheet or use Tailwind's `@layer base` to style the highlights
-// Example:
-// @layer base {
-//   .search-snippet mark {
-//     @apply bg-yellow-200 dark:bg-yellow-800/70 px-0.5 rounded-sm font-medium;
-//   }
-// }
