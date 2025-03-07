@@ -3,8 +3,8 @@ import { HomeLayout } from "@/components/home/HomeLayout";
 import { FeaturedQuotes } from "@/components/home/FeaturedQuotes";
 import { PopularCategories } from "@/components/home/PopularCategories";
 import { TrendingQuotes } from "@/components/home/TrendingQuotes";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DailyQuoteSidebar } from "@/components/home/DailyQuoteSidebar";
+import { RandomQuoteSidebar } from "@/components/home/RandomQuoteSidebar"; // Add this import
 
 export default function Home() {
   return (
@@ -19,22 +19,8 @@ export default function Home() {
               {/* Daily Quote - Updated to use the new component */}
               <DailyQuoteSidebar />
 
-              {/* Reading Challenge */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Your Progress</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                      Saved Quotes: 0/100
-                    </p>
-                    <div className="h-2 bg-muted rounded-full">
-                      <div className="h-full w-0 bg-primary rounded-full" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Random Quote - Replace Your Progress card */}
+              <RandomQuoteSidebar />
             </div>
           }
         >
