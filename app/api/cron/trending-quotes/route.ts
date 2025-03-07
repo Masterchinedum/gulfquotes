@@ -6,7 +6,7 @@ import { updateTrendingQuotes } from "@/lib/tasks/trending-quotes-scheduler";
 export const dynamic = "force-dynamic";
 
 // Set maximum duration for the API route
-export const maxDuration = 300; // 5 minutes max execution time
+export const maxDuration = 60; // 5 minutes max execution time
 
 export async function GET(request: Request) {
   // Validate the cron request

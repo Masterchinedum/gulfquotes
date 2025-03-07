@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 // Configure the cron job to run daily at 00:00 UTC+4
 // Note: Vercel cron jobs use UTC time, so we need to convert UTC+4 to UTC
 // UTC+4 midnight is 8:00 PM UTC (20:00 UTC)
-export const maxDuration = 300; // 5 minutes max execution time
+export const maxDuration = 60; // 5 minutes max execution time
 
 // Define the cron schedule: run every day at 8:00 PM UTC (midnight UTC+4)
 export const schedule = "0 20 * * *";
