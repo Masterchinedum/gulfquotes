@@ -1,22 +1,58 @@
 import type { Quote, User, AuthorProfile } from "@prisma/client";
 
-// Base search params
+// Enhanced search params with filtering, sorting and faceting
 export interface SearchParams {
-  q: string;
-  type?: SearchType;
-  page?: number;
-  limit?: number;
+  q: string;                      // Search query
+  type?: SearchType;              // Content type filter
+  page?: number;                  // Pagination
+  limit?: number;                 // Results per page
+  
+  // New filter options
+  filters?: {
+    categories?: string[];        // Filter by category IDs
+    authors?: string[];           // Filter by author IDs
+    dateRange?: {
+      from?: Date | string;       // Filter by creation date (from)
+      to?: Date | string;         // Filter by creation date (to)
+    };
+    featured?: boolean;           // Filter for featured content only
+    tags?: string[];              // Filter by tags
+  };
+  
+  // Sorting options
+  sort?: {
+    field: SortField;             // Field to sort by
+    direction: SortDirection;     // Sort direction
+  };
+  
+  // Request facets (aggregated counts)
+  includeFacets?: {
+    categories?: boolean;         // Include category counts
+    authors?: boolean;            // Include author counts
+    tags?: boolean;               // Include tag counts
+    dates?: boolean;              // Include date-based facets
+  };
+  
+  // Relevance settings
+  relevance?: {
+    boostExactMatches?: boolean;  // Give higher score to exact matches
+    boostTitleMatches?: boolean;  // Give higher score to title/name matches
+  };
 }
 
-// Search result types
+// Search result types (existing)
 export type SearchType = "all" | "quotes" | "authors" | "users";
 
-// Base search result interface
+// New sort fields and directions
+export type SortField = "relevance" | "date" | "alphabetical" | "popularity";
+export type SortDirection = "asc" | "desc";
+
+// Add the missing base interface for search results
 export interface SearchResultBase {
   id: string;
   type: SearchType;
-  matchedOn: string; // Field where the match was found
-  score: number; // Relevance score
+  score: number;
+  matchedOn: string;  // Indicates which field matched the search query (e.g., "content", "name", "bio")
 }
 
 // Type-specific search results
@@ -44,13 +80,27 @@ export type SearchResult =
   | AuthorSearchResult 
   | UserSearchResult;
 
-// Paginated search response
+// Add facets to search response
+export interface SearchFacets {
+  categories?: Array<{ id: string; name: string; count: number }>;
+  authors?: Array<{ id: string; name: string; count: number }>;
+  tags?: Array<{ id: string; name: string; count: number }>;
+  dates?: {
+    thisWeek: number;
+    thisMonth: number;
+    thisYear: number;
+    older: number;
+  };
+}
+
+// Update the search response to include facets
 export interface SearchResponse {
   results: SearchResult[];
   total: number;
   page: number;
   limit: number;
   hasMore: boolean;
+  facets?: SearchFacets;   // Add facets to response
 }
 
 // Search API error
