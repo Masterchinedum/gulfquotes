@@ -107,9 +107,9 @@ class RandomQuoteServiceImpl implements RandomQuoteService {
       const highQualityConditions: Prisma.QuoteWhereInput = {
         ...baseConditions,
         content: {
-          ...baseConditions.content,
-          // Content should have reasonable length (implemented by checking for spaces)
-          contains: " ",
+          // Replace spread with explicit properties
+          not: "",  // Copy the original property manually
+          contains: " ", // Add the new property for content length check
         },
         // For background image, we can't use NOT null, so we use "not equals empty string"
         backgroundImage: { 
