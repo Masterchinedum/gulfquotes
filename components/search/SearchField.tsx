@@ -24,9 +24,13 @@ export function SearchField() {
       return;
     }
 
+    // Add console log for debugging
+    console.log("SearchField handling submission for query:", query);
+
     startTransition(() => {
       const params = new URLSearchParams(searchParams.toString());
       params.set("q", query);
+      console.log("Navigating to:", `/search?${params.toString()}`);
       router.push(`/search?${params.toString()}`);
     });
   }
@@ -55,6 +59,11 @@ export function SearchField() {
             defaultValue={currentQuery}
             className="pr-20" // Extra padding for the shortcut pill
             onClick={openAutocomplete}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.currentTarget.form?.requestSubmit();
+              }
+            }}
             onFocus={openAutocomplete}
           />
           

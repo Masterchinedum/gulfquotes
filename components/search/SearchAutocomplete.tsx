@@ -93,6 +93,7 @@ export function SearchAutocomplete({
 
   // Handle selection of a suggestion
   const handleSelect = (value: string) => {
+    console.log("Search selected:", value); // Debug log
     onSubmit(value);
     onClose();
   };
@@ -103,6 +104,9 @@ export function SearchAutocomplete({
     if (query.trim()) {
       onSubmit(query);
       onClose();
+      
+      // Add a console log to confirm submission
+      console.log("Submitting search query:", query);
     }
   };
 
@@ -114,6 +118,13 @@ export function SearchAutocomplete({
           placeholder="Search quotes, authors, or users..."
           value={query}
           onValueChange={setQuery}
+          // Add this key handler
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleSubmit(e);
+            }
+          }}
         />
       </form>
       
