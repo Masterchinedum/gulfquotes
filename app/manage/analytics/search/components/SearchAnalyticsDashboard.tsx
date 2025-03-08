@@ -73,15 +73,6 @@ export function SearchAnalyticsDashboard() {
     fullQuery: item.query
   }));
 
-  // Pie chart data for content distribution
-  const contentTypesData = [
-    { name: "Quotes", value: 60 },
-    { name: "Authors", value: 30 },
-    { name: "Users", value: 10 }
-  ];
-
-  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
-
   // Loading state
   if (isLoading) {
     return (
@@ -225,7 +216,7 @@ export function SearchAnalyticsDashboard() {
                     />
                     <YAxis />
                     <Tooltip 
-                      formatter={(value, name, props) => [value, "Searches"]}
+                      formatter={(value) => [value, "Searches"]}
                       labelFormatter={(label, props) => props[0].payload.fullQuery}
                     />
                     <Bar dataKey="searches" fill="#8884d8" />
@@ -282,7 +273,7 @@ export function SearchAnalyticsDashboard() {
                     />
                     <YAxis />
                     <Tooltip 
-                      formatter={(value, name, props) => [value, "Searches"]}
+                      formatter={(value) => [value, "Searches"]}
                       labelFormatter={(label, props) => props[0].payload.fullQuery}
                     />
                     <Bar dataKey="searches" fill="#FF8042" />
