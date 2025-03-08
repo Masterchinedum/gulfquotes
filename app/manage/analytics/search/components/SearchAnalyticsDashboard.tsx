@@ -106,7 +106,7 @@ export function SearchAnalyticsDashboard() {
             <Search className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics?.totalSearches.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{analytics?.totalSearches?.toLocaleString() ?? '0'}</div>
             <p className="text-xs text-muted-foreground">
               In the last {timeRange} days
             </p>
@@ -120,7 +120,7 @@ export function SearchAnalyticsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {(analytics?.clickThroughRate * 100).toFixed(1)}%
+              {((analytics?.clickThroughRate ?? 0) * 100).toFixed(1)}%
             </div>
             <p className="text-xs text-muted-foreground">
               Searches leading to clicks
@@ -135,7 +135,7 @@ export function SearchAnalyticsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-xl font-bold truncate">
-              {analytics?.topQueries[0]?.query || "N/A"}
+              {analytics?.topQueries?.[0]?.query || "N/A"}
             </div>
             <p className="text-xs text-muted-foreground">
               Most frequent search term
@@ -150,7 +150,7 @@ export function SearchAnalyticsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-xl font-bold truncate">
-              {analytics?.topNoResultQueries[0]?.query || "N/A"}
+              {analytics?.topNoResultQueries?.[0]?.query || "N/A"}
             </div>
             <p className="text-xs text-muted-foreground">
               Top query with no results

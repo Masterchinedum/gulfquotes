@@ -43,13 +43,32 @@ export function DataTable<T extends Record<string, unknown>>({
     const aValue = a[key];
     const bValue = b[key];
     
-    if (aValue < bValue) {
-      return sortConfig.direction === 'asc' ? -1 : 1;
+    // Convert values to comparable types
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      // String comparison
+      return sortConfig.direction === 'asc' 
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
+    } 
+    else if (typeof aValue === 'number' && typeof bValue === 'number') {
+      // Number comparison
+      return sortConfig.direction === 'asc'
+        ? aValue - bValue
+        : bValue - aValue;
     }
-    if (aValue > bValue) {
-      return sortConfig.direction === 'asc' ? 1 : -1;
+    else if (aValue instanceof Date && bValue instanceof Date) {
+      // Date comparison
+      return sortConfig.direction === 'asc'
+        ? aValue.getTime() - bValue.getTime()
+        : bValue.getTime() - aValue.getTime();
     }
-    return 0;
+    
+    // Default string comparison (convert to string first)
+    const aString = String(aValue);
+    const bString = String(bValue);
+    return sortConfig.direction === 'asc'
+      ? aString.localeCompare(bString)
+      : bString.localeCompare(aString);
   });
 
   // Pagination logic
