@@ -168,29 +168,23 @@ class SearchServiceImpl {
           ? db.user.findMany({
               where: {
                 name: { contains: searchQuery, mode: "insensitive" },
-                ...(dateFilter && { 
-                  // Use a valid field that exists on the User model
-                  // Assuming the User model has updatedAt
-                  updatedAt: dateFilter 
-                })
+                // Remove date filter as requested
               },
               select: {
                 id: true,
                 name: true,
                 image: true,
-                // Remove createdAt from select if it's not part of the User model
+                // Removed emailVerified as requested
               },
-              ...(sortField === "date" && {
-                orderBy: { 
-                  // Use a valid date field that exists on User model
-                  updatedAt: sortDirection 
-                }
-              }),
+              // For users, we'll only apply alphabetical sorting when explicitly requested
               ...(sortField === "alphabetical" && {
                 orderBy: { name: sortDirection }
               }),
+              // For other sort types including "date" and "relevance", 
+              // we'll handle sorting in memory based on relevance
               take: limit,
-              skip: sortField === "relevance" ? 0 : skip,
+              // Only skip at database level for alphabetical sorting
+              skip: sortField === "alphabetical" ? skip : 0,
             })
           : [],
           
@@ -465,11 +459,7 @@ class SearchServiceImpl {
       if (type === "all" || type === "users") {
         count += await db.user.count({
           where: {
-            name: { contains: searchQuery, mode: "insensitive" },
-            ...(dateCondition && {
-              // Use a valid date field that exists on the User model
-              updatedAt: dateCondition
-            })
+            name: { contains: searchQuery, mode: "insensitive" }
           }
         });
       }
