@@ -248,13 +248,17 @@ class SearchAnalyticsServiceImpl {
     try {
       const normalizedQuery = query.toLowerCase().trim();
       
+      // Get words from the query for more flexible matching
+      const searchWords = normalizedQuery.split(' ')
+        .filter(w => w.length > 2);
+      
       // First get searches with similar words
       const relatedSearches = await db.searchEvent.findMany({
         where: {
           query: {
             not: normalizedQuery, // Exclude exact match
             mode: 'insensitive',
-            search: normalizedQuery.split(' ').filter(w => w.length > 2).join(' & ') // Use full-text search
+            contains: searchWords.length > 0 ? searchWords[0] : normalizedQuery
           },
           resultCount: {
             gt: 0 // Only include searches that had results
@@ -269,7 +273,8 @@ class SearchAnalyticsServiceImpl {
           }
         },
         orderBy: [
-          { _count: { clicks: 'desc' } }, // Order by popularity
+          // Fix the orderBy syntax to use the correct Prisma pattern
+          { clicks: { _count: 'desc' } }, // Order by number of clicks in descending order
         ],
         distinct: ['query'],
         take: limit * 2 // Get more and filter
