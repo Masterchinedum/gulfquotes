@@ -3,15 +3,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer
-} from "recharts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, TrendingUp, AlertTriangle, Loader2, MousePointerClick } from "lucide-react";
 import { DataTable } from "./DataTable";
@@ -60,19 +51,6 @@ export function SearchAnalyticsDashboard() {
     fetchAnalytics();
   }, [timeRange]);
 
-  // Prepare chart data
-  const topQueriesChartData = analytics?.topQueries.slice(0, 10).map(item => ({
-    name: item.query.length > 15 ? item.query.substring(0, 15) + "..." : item.query,
-    searches: item.count,
-    fullQuery: item.query
-  }));
-
-  const noResultsChartData = analytics?.topNoResultQueries.slice(0, 10).map(item => ({
-    name: item.query.length > 15 ? item.query.substring(0, 15) + "..." : item.query,
-    searches: item.count,
-    fullQuery: item.query
-  }));
-
   // Loading state
   if (isLoading) {
     return (
@@ -102,6 +80,7 @@ export function SearchAnalyticsDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Time range selector */}
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-medium">Search Analytics Overview</h2>
         <div className="flex items-center gap-2">
@@ -189,49 +168,6 @@ export function SearchAnalyticsDashboard() {
         <TabsContent value="popular" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Top Search Queries</CardTitle>
-              <CardDescription>
-                Most popular search terms used by users
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pl-2">
-              {topQueriesChartData && topQueriesChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={400}>
-                  <BarChart
-                    data={topQueriesChartData}
-                    margin={{
-                      top: 20,
-                      right: 30,
-                      left: 20,
-                      bottom: 60,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="name" 
-                      angle={-45} 
-                      textAnchor="end" 
-                      height={70}
-                      tick={{ fontSize: 12 }} 
-                    />
-                    <YAxis />
-                    <Tooltip 
-                      formatter={(value) => [value, "Searches"]}
-                      labelFormatter={(label, props) => props[0].payload.fullQuery}
-                    />
-                    <Bar dataKey="searches" fill="#8884d8" />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex justify-center items-center h-[400px]">
-                  <p className="text-muted-foreground">No data available</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
               <CardTitle>Popular Search Data</CardTitle>
               <CardDescription>
                 Detailed view of popular searches and their frequency
@@ -244,49 +180,6 @@ export function SearchAnalyticsDashboard() {
         </TabsContent>
         
         <TabsContent value="no-results" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Searches With No Results</CardTitle>
-              <CardDescription>
-                Queries that returned no results - potential content gaps
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pl-2">
-              {noResultsChartData && noResultsChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={400}>
-                  <BarChart
-                    data={noResultsChartData}
-                    margin={{
-                      top: 20,
-                      right: 30,
-                      left: 20,
-                      bottom: 60,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="name" 
-                      angle={-45} 
-                      textAnchor="end" 
-                      height={70}
-                      tick={{ fontSize: 12 }} 
-                    />
-                    <YAxis />
-                    <Tooltip 
-                      formatter={(value) => [value, "Searches"]}
-                      labelFormatter={(label, props) => props[0].payload.fullQuery}
-                    />
-                    <Bar dataKey="searches" fill="#FF8042" />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex justify-center items-center h-[400px]">
-                  <p className="text-muted-foreground">No data available</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          
           <Card>
             <CardHeader>
               <CardTitle>Failed Searches Data</CardTitle>
