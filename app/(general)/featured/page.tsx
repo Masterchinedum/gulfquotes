@@ -24,7 +24,7 @@ interface PageProps {
 
 // Add metadata
 export const metadata: Metadata = {
-  title: "Featured Quotes | Quoticon",
+  title: "Featured Quotes | gulfquotes",
   description: "Discover our collection of handpicked featured quotes",
 };
 

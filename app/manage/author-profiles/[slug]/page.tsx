@@ -12,7 +12,7 @@ import { Suspense } from "react";
 import { ErrorBoundary } from "./components/error/error-boundary";
 
 export const metadata = {
-  title: "Edit Author Profile - Quoticon",
+  title: "Edit Author Profile - gulfquotes",
   description: "Edit an existing author profile",
 };
 

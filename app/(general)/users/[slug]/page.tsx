@@ -38,8 +38,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     if (result.data) {
       const title = result.data.userProfile?.username || result.data.name || "User Profile";
       return {
-        title: `${title} - Quoticon`,
-        description: result.data.userProfile?.bio || `View ${title}'s profile on Quoticon`,
+        title: `${title} - gulfquotes`,
+        description: result.data.userProfile?.bio || `View ${title}'s profile on gulfquotes`,
       };
     }
   } catch (error) {
@@ -47,8 +47,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   return {
-    title: "User Profile - Quoticon",
-    description: "View user profile on Quoticon",
+    title: "User Profile - gulfquotes",
+    description: "View user profile on gulfquotes",
   };
 }
 

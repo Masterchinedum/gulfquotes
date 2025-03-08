@@ -45,7 +45,7 @@ export async function POST(req: Request): Promise<NextResponse<ApiResponse<{ sha
     }
     
     // 3. Generate the share URL based on the platform
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://quoticon.vercel.app';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gulfquotes.vercel.app';
     const quoteUrl = `${baseUrl}/quotes/${slug}`;
     const quoteText = encodeURIComponent(quote.content);
     const authorName = encodeURIComponent(quote.authorProfile?.name || "Unknown");

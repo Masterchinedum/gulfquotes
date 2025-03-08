@@ -5,7 +5,7 @@ import { EmailDashboard } from "./components/EmailDashboard";
 import { UnauthorizedMessage } from "./components/UnauthorizedMessage";
 
 export const metadata = {
-  title: "Email Notifications Dashboard | Quoticon",
+  title: "Email Notifications Dashboard | gulfquotes",
   description: "Monitor email notification activity and performance",
 };
 

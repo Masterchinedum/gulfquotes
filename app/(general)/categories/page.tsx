@@ -8,7 +8,7 @@ import { categoryService } from "@/lib/services/category/category.service";
 import { notFound } from "next/navigation";
 
 export const metadata: Metadata = {
-  title: "Browse Categories | Quoticon",
+  title: "Browse Categories | gulfquotes",
   description: "Explore our collection of quotes by category",
 };
 

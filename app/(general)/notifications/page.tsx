@@ -6,7 +6,7 @@ import { Shell } from "@/components/shells/shell";
 import { NotificationList } from "@/components/notifications/NotificationList";
 
 export const metadata: Metadata = {
-  title: "Notifications | Quoticon",
+  title: "Notifications | gulfquotes",
   description: "Your notifications and updates",
 };
 

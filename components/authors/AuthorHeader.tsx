@@ -6,10 +6,10 @@ interface AuthorHeaderProps {
 }
 
 export const metadata: Metadata = {
-  title: 'Authors | Quoticon',
+  title: 'Authors | gulfquotes',
   description: 'Discover a vast collection of authors and their timeless quotes. Browse through history\'s greatest minds and thinkers.',
   openGraph: {
-    title: 'Authors | Quoticon',
+    title: 'Authors | gulfquotes',
     description: 'Discover a vast collection of authors and their timeless quotes.',
     type: 'website',
   },

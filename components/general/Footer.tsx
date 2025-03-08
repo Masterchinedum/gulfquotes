@@ -14,7 +14,7 @@ export function Footer() {
               href="/"
               className="text-xl font-bold"
             >
-              Quoticon
+              gulfquotes
             </Link>
             <p className="text-sm text-muted-foreground">
               Your personal collection of wisdom. Discover, collect, and share meaningful quotes that inspire and transform.
@@ -82,13 +82,13 @@ export function Footer() {
           "flex flex-col md:flex-row items-center justify-between gap-4"
         )}>
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Quoticon. All rights reserved.
+            © {new Date().getFullYear()} gulfquotes. All rights reserved.
           </p>
           
           {/* Social Links */}
           <div className="flex items-center gap-4">
             <Link 
-              href="https://twitter.com/quoticon" 
+              href="https://twitter.com/gulfquotes" 
               target="_blank"
               className="text-muted-foreground hover:text-foreground transition"
             >

@@ -22,7 +22,7 @@ interface PageProps {
 }
 
 export const metadata = {
-  title: "Authors | Quoticon",
+  title: "Authors | gulfquotes",
   description: "Browse through our collection of authors and their timeless quotes.",
 }
 

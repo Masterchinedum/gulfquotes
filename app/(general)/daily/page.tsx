@@ -11,7 +11,7 @@ import { Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Quote of the Day | Quoticon",
+  title: "Quote of the Day | gulfquotes",
   description: "A new inspiring quote every day",
 };
 

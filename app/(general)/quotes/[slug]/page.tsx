@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     
     if (!quote) {
       return {
-        title: "Quote Not Found - Quoticon",
+        title: "Quote Not Found - gulfquotes",
         description: "The quote you're looking for doesn't exist or has been removed."
       };
     }
@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       : quote.content;
 
     return {
-      title: `"${shortContent}" - ${authorName} | Quoticon`,
+      title: `"${shortContent}" - ${authorName} | gulfquotes`,
       description: quote.content.substring(0, 160),
       openGraph: {
         title: `Quote by ${authorName}`,
@@ -49,8 +49,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   } catch (error) {
     console.error("[QUOTE_PAGE_METADATA]", error);
     return {
-      title: "Quote - Quoticon",
-      description: "View inspiring quotes on Quoticon"
+      title: "Quote - gulfquotes",
+      description: "View inspiring quotes on gulfquotes"
     };
   }
 }

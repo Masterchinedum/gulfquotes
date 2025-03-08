@@ -5,7 +5,7 @@ import { CreateForm } from "./components/create-form";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Create Author Profile - Quoticon",
+  title: "Create Author Profile - gulfquotes",
   description: "Create a new author profile",
 };
 

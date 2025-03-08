@@ -35,7 +35,7 @@ export async function generateMetadata({
     const category = await categoryService.getCategoryBySlug(slug);
     
     return {
-      title: `${category.name} Quotes | Quoticon`,
+      title: `${category.name} Quotes | gulfquotes`,
       description: category.description || `Browse our collection of ${category.name} quotes`,
     };
   } catch (error) {
@@ -44,7 +44,7 @@ export async function generateMetadata({
     
     // Return fallback metadata
     return {
-      title: `${slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} Quotes | Quoticon`,
+      title: `${slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} Quotes | gulfquotes`,
       description: `Browse our collection of ${slug.replace(/-/g, ' ')} quotes`,
     };
   }

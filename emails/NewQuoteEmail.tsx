@@ -33,11 +33,11 @@ interface NewQuoteEmailProps {
 export default function NewQuoteEmail({
   recipientName = 'Reader',
   quoteContent = 'Wisdom begins in wonder.',
-  quoteUrl = 'https://quoticon.vercel.app/quotes/wisdom-begins-in-wonder',
+  quoteUrl = 'https://gulfquotes.vercel.app/quotes/wisdom-begins-in-wonder',
   authorName = 'Socrates',
-  authorProfileUrl = 'https://quoticon.vercel.app/authors/socrates',
-  unsubscribeUrl = 'https://quoticon.vercel.app/users/settings/notifications',
-  preferencesUrl = 'https://quoticon.vercel.app/users/settings/notifications',
+  authorProfileUrl = 'https://gulfquotes.vercel.app/authors/socrates',
+  unsubscribeUrl = 'https://gulfquotes.vercel.app/users/settings/notifications',
+  preferencesUrl = 'https://gulfquotes.vercel.app/users/settings/notifications',
 }: NewQuoteEmailProps) {
   // Use a preview text that will display in email clients inbox
   const previewText = `New quote from ${authorName}: "${quoteContent.substring(0, 50)}${quoteContent.length > 50 ? '...' : ''}"`;
@@ -50,7 +50,7 @@ export default function NewQuoteEmail({
         <Container style={container}>
           {/* Header */}
           <Section style={header}>
-            <Heading as="h1" style={logo}>Quoticon</Heading>
+            <Heading as="h1" style={logo}>gulfquotes</Heading>
           </Section>
           
           {/* Greeting */}
@@ -59,7 +59,7 @@ export default function NewQuoteEmail({
               Hello {recipientName},
             </Text>
             <Text style={paragraph}>
-              {authorName} just shared a new quote on Quoticon.
+              {authorName} just shared a new quote on gulfquotes.
             </Text>
           </Section>
           
@@ -89,7 +89,7 @@ export default function NewQuoteEmail({
           <Hr style={hr} />
           <Section style={footer}>
             <Text style={footerText}>
-              © {new Date().getFullYear()} Quoticon. All rights reserved.
+              © {new Date().getFullYear()} gulfquotes. All rights reserved.
             </Text>
             <Text style={footerText}>
               You received this email because you&apos;re subscribed to notifications from authors you follow.

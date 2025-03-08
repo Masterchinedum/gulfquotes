@@ -4,7 +4,7 @@ import { SearchAnalyticsDashboard } from "./components/SearchAnalyticsDashboard"
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Search Analytics | Quoticon",
+  title: "Search Analytics | gulfquotes",
   description: "Search analytics dashboard for monitoring user search patterns"
 };
 

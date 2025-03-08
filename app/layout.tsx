@@ -6,20 +6,20 @@ import { Providers } from './providers';
 import { NotificationProvider } from '@/contexts/notification-context';
 
 export const metadata = {
-  title: "Quoticon - Inspiring Quotes for Every Moment",
+  title: "gulfquotes - Inspiring Quotes for Every Moment",
   description:
-    "Discover insightful, inspirational quotes on Quoticon. Your daily dose of inspiration on quotes, motivation, and more.",
-  keywords: ["quotes", "inspiration", "motivation", "quoticon"],
+    "Discover insightful, inspirational quotes on gulfquotes. Your daily dose of inspiration on quotes, motivation, and more.",
+  keywords: ["quotes", "inspiration", "motivation", "gulfquotes"],
   openGraph: {
-    title: "Quoticon",
-    description: "Discover insightful, inspirational quotes on Quoticon.",
-    url: "https://quoticon.vercel.app", // update with your URL
-    siteName: "Quoticon"
+    title: "gulfquotes",
+    description: "Discover insightful, inspirational quotes on gulfquotes.",
+    url: "https://gulfquotes.vercel.app", // update with your URL
+    siteName: "gulfquotes"
   },
   twitter: {
     card: "summary_large_image",
-    title: "Quoticon",
-    description: "Discover insightful, inspirational quotes on Quoticon."
+    title: "gulfquotes",
+    description: "Discover insightful, inspirational quotes on gulfquotes."
   }
 };
 

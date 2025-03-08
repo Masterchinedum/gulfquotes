@@ -6,7 +6,7 @@ import { Shell } from "@/components/shells/shell";
 import { NotificationSettingsForm } from "./components/notification-settings-form";
 
 export const metadata: Metadata = {
-  title: "Notification Settings | Quoticon",
+  title: "Notification Settings | gulfquotes",
   description: "Manage your notification preferences",
 };
 
@@ -23,7 +23,7 @@ export default async function NotificationSettingsPage() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold tracking-tight">Notification Settings</h1>
           <p className="mt-2 text-muted-foreground">
-            Control how and when you receive notifications from Quoticon
+            Control how and when you receive notifications from gulfquotes
           </p>
         </div>
         

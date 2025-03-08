@@ -33,12 +33,12 @@ export async function generateMetadata(
     const author = await authorProfileService.getBySlug(resolvedParams.slug);
     
     return {
-      title: `${author.name} | Author Profile | Quoticon`,
+      title: `${author.name} | Author Profile | gulfquotes`,
       description: author.bio?.substring(0, 160) || `Quotes by ${author.name}`,
     };
   } catch {
     return {
-      title: "Author | Quoticon",
+      title: "Author | gulfquotes",
       description: "View author profile and quotes",
     };
   }

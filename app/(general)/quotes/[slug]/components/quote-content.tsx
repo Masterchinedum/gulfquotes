@@ -22,7 +22,7 @@ export function QuoteContent({
   fontSize,
   textColor,
   shadowColor,
-  siteName = "Quoticon", // Default to "Quoticon" if not provided
+  siteName = "gulfquotes", // Default to "gulfquotes" if not provided
   className
 }: QuoteContentProps) {
   // Calculate padding based on container size

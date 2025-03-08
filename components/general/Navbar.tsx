@@ -31,7 +31,7 @@ export function Navbar() {
             "transition-colors"
           )}
         >
-          Quoticon
+          gulfquotes
         </Link>
 
         {/* Main Navigation */}
