@@ -11,7 +11,8 @@ import {
   PlusCircle,
   LayoutDashboard,
   Image,
-  Mail
+  Mail,
+  Search
 } from "lucide-react";
 
 // Define props interface for type safety
@@ -54,6 +55,12 @@ const navItems = [
     title: "Email Dashboard",
     href: "/manage/email-dashboard",
     icon: Mail,
+    admin: true // Only show to admin
+  },
+  {
+    title: "Search Analytics",
+    href: "/manage/analytics/search",
+    icon: Search,
     admin: true // Only show to admin
   },
   {

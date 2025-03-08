@@ -7,6 +7,7 @@ import { SearchResults } from "@/components/search/SearchResults";
 import { SearchField } from "@/components/search/SearchField";
 import { SearchTabs } from "@/components/search/SearchTabs";
 import { SearchFilters } from "@/components/search/SearchFilters";
+import { RelatedSearches } from "@/components/search/RelatedSearches"; // Add this import
 import { Button } from "@/components/ui/button";
 import { SlidersHorizontal } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -25,6 +26,7 @@ export default function SearchPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const query = searchParams.get("q") || "";
 
   useEffect(() => {
     async function performSearch() {
@@ -52,11 +54,10 @@ export default function SearchPage() {
       }
     }
 
-    const query = searchParams.get("q");
     if (query?.trim()) {
       performSearch();
     }
-  }, [searchParams]);
+  }, [searchParams, query]);
 
   // Count results by type
   const totalsByType = results?.results.reduce<ResultCounts>((acc, result) => {
@@ -76,11 +77,14 @@ export default function SearchPage() {
         <SearchField />
       </div>
       
-      {searchParams.get("q") && (
+      {query && (
         <div className="space-y-6">
+          {/* Add Related Searches component here */}
+          <RelatedSearches query={query} className="mb-4" />
+          
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">
-              Search Results for &ldquo;{searchParams.get("q")}&quot;
+              Search Results for &ldquo;{query}&quot;
             </h1>
             
             {/* Mobile Filter Button */}
