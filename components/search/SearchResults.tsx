@@ -52,7 +52,7 @@ export function SearchResults({ results, isLoading, error }: SearchResultsProps)
     return (
       <Card>
         <CardContent className="py-8 text-center text-muted-foreground">
-          No results found
+          No results founds
         </CardContent>
       </Card>
     );

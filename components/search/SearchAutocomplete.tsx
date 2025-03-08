@@ -118,7 +118,6 @@ export function SearchAutocomplete({
           placeholder="Search quotes, authors, or users..."
           value={query}
           onValueChange={setQuery}
-          // Add this key handler
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
@@ -136,8 +135,18 @@ export function SearchAutocomplete({
               <span className="text-muted-foreground">Searching...</span>
             </div>
           ) : (
-            <div className="py-6 text-center text-sm text-muted-foreground">
-              No results found
+            <div className="py-6 text-center text-sm">
+              <p className="text-muted-foreground mb-2">No matching suggestions</p>
+              <div className="flex justify-center">
+                <button 
+                  onClick={handleSubmit} 
+                  type="button"
+                  className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+                >
+                  <Search className="h-4 w-4" />
+                  <span>Search for &quot;{query}&quot;</span>
+                </button>
+              </div>
             </div>
           )}
         </CommandEmpty>
@@ -155,6 +164,22 @@ export function SearchAutocomplete({
                 <span>{suggestion.query}</span>
               </CommandItem>
             ))}
+          </CommandGroup>
+        )}
+
+        {/* If we have suggestions but not a perfect match, add an "explicit search" option */}
+        {query.trim() && suggestions.length > 0 && 
+          !suggestions.some(s => s.query.toLowerCase() === query.toLowerCase()) && (
+          <CommandGroup heading="Search">
+            <CommandItem
+              key="search-exact"
+              value={`search:${query}`}
+              onSelect={() => handleSelect(query)}
+              className="bg-muted/50"
+            >
+              <Search className="mr-2 h-4 w-4 text-primary" />
+              <span>Search for exact: &quot;{query}&quot;</span>
+            </CommandItem>
           </CommandGroup>
         )}
 
