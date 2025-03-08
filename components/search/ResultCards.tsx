@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SearchResult } from "@/types/search";
+import { SearchResult, QuoteSearchResult, AuthorSearchResult, UserSearchResult } from "@/types/search";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -16,17 +16,23 @@ interface ResultCardProps {
 export function ResultCard({ result, searchQuery }: ResultCardProps) {
   switch (result.type) {
     case "quotes":
-      return <QuoteResultCard result={result} searchQuery={searchQuery} />;
+      return <QuoteResultCard result={result as QuoteSearchResult} searchQuery={searchQuery} />;
     case "authors":
-      return <AuthorResultCard result={result} searchQuery={searchQuery} />;
+      return <AuthorResultCard result={result as AuthorSearchResult} searchQuery={searchQuery} />;
     case "users":
-      return <UserResultCard result={result} searchQuery={searchQuery} />;
+      return <UserResultCard result={result as UserSearchResult} searchQuery={searchQuery} />;
     default:
       return null;
   }
 }
 
-function QuoteResultCard({ result, searchQuery }: ResultCardProps) {
+// Update the component props to use the specific type
+interface QuoteResultCardProps {
+  result: QuoteSearchResult;
+  searchQuery: string;
+}
+
+function QuoteResultCard({ result, searchQuery }: QuoteResultCardProps) {
   const { content, slug, authorName, category } = result.data;
   
   // Truncate content if it's too long
@@ -79,7 +85,13 @@ function QuoteResultCard({ result, searchQuery }: ResultCardProps) {
   );
 }
 
-function AuthorResultCard({ result, searchQuery }: ResultCardProps) {
+// Update the component props to use the specific type
+interface AuthorResultCardProps {
+  result: AuthorSearchResult;
+  searchQuery: string;
+}
+
+function AuthorResultCard({ result, searchQuery }: AuthorResultCardProps) {
   const { name, slug, bio } = result.data;
   
   // Truncate bio if it's too long
@@ -134,7 +146,13 @@ function AuthorResultCard({ result, searchQuery }: ResultCardProps) {
   );
 }
 
-function UserResultCard({ result, searchQuery }: ResultCardProps) {
+// Update the component props to use the specific type
+interface UserResultCardProps {
+  result: UserSearchResult;
+  searchQuery: string;
+}
+
+function UserResultCard({ result, searchQuery }: UserResultCardProps) {
   const { name, image } = result.data;
 
   return (
@@ -142,13 +160,13 @@ function UserResultCard({ result, searchQuery }: ResultCardProps) {
       <Card className="overflow-hidden transition-all hover:border-primary/50 hover:shadow-md">
         <CardContent className="p-4 flex items-center gap-4">
           <Avatar className="h-12 w-12 border">
-            <AvatarImage src={image || ""} alt={name} />
+            <AvatarImage src={image || ""} alt={name || ""} />
             <AvatarFallback>{name?.charAt(0) || "?"}</AvatarFallback>
           </Avatar>
           
           <div className="space-y-1">
             <h3 className="font-medium">
-              <SearchSnippet text={name} query={searchQuery} />
+              <SearchSnippet text={name || ""} query={searchQuery} />
             </h3>
             <p className="text-xs text-muted-foreground">Community Member</p>
           </div>
