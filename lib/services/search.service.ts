@@ -6,11 +6,11 @@ import type {
   SearchResponse,
   SearchType,
   SearchFacets,
-
 } from "@/types/search";
-// import { add, sub, isSameDay, isSameMonth, isSameYear } from "date-fns";
+import { sub } from "date-fns";
 
 class SearchServiceImpl {
+  // Enhanced relevance scoring with optional boosts
   // Enhanced relevance scoring with optional boosts
   private calculateScore(
     matchType: string, 
