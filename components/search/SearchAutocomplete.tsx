@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-// Remove unused router import since we're not using it
 import { SearchSuggestion } from "@/types/search";
 import {
   CommandDialog,
@@ -12,7 +11,6 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-// Remove unused icons from import
 import { Loader2, Search, TrendingUp } from "lucide-react";
 
 interface SearchAutocompleteProps {
@@ -32,8 +30,7 @@ export function SearchAutocomplete({
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [popular, setPopular] = useState<SearchSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  // Remove unused router variable
-  const commandRef = useRef<HTMLDivElement>(null);
+  const commandRef = useRef<HTMLInputElement>(null);
 
   // When the component mounts, focus the input
   useEffect(() => {
