@@ -69,13 +69,21 @@ export function SearchResults({ results, isLoading, error }: SearchResultsProps)
 
   // Get search query from results
   const searchQuery = results.results.length > 0 
-    ? results.results[0].matchedOn === "content" 
-      ? results.results[0].data.content.split(" ").slice(0, 3).join(" ")  // Use first few words for content matches
-      : results.results[0].type === "quotes" 
-        ? results.results[0].data.content.split(" ").slice(0, 3).join(" ")
-        : results.results[0].type === "authors"
-          ? results.results[0].data.name
-          : results.results[0].data.name
+    ? (() => {
+        const firstResult = results.results[0];
+        
+        // First check the type of result
+        switch(firstResult.type) {
+          case "quotes":
+            return firstResult.data.content.split(" ").slice(0, 3).join(" ");
+          case "authors":
+            return firstResult.data.name;
+          case "users":
+            return firstResult.data.name || "";
+          default:
+            return "";
+        }
+      })()
     : "";
 
   // Type icons for headers
