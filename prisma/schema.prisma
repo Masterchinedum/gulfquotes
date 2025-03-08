@@ -13,7 +13,6 @@ enum UserRole {
   AUTHOR
 }
 
-// Add this enum for notification types
 enum NotificationType {
   NEW_QUOTE
   COMMENT
@@ -30,11 +29,8 @@ model User {
   image                 String?
   password              String?
   isTwoFactorEnabled    Boolean                @default(false)
-  
-  // Add these new fields for email preferences
   emailNotifications    Boolean                @default(false) @map("email_notifications")
   emailNotificationTypes NotificationType[]    @default([]) @map("email_notification_types")
-  
   role                  UserRole               @default(USER)
   accounts              Account[]
   TwoFactorConfirmation TwoFactorConfirmation?
@@ -47,7 +43,6 @@ model User {
   replyLikes            ReplyLike[]
   quoteBookmarks        QuoteBookmark[]
   followedAuthors       AuthorFollow[]
-
   notifications         Notification[]
   actorNotifications    Notification[]         @relation("NotificationActor")
 
@@ -67,9 +62,7 @@ model Account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
-
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@unique([provider, providerAccountId])
   @@map("accounts")
 }
@@ -119,7 +112,7 @@ model Quote {
   content          String         @db.Text
   slug             String         @unique
   backgroundImage  String? 
-  featured         Boolean        @default(false)  // Add this new field
+  featured         Boolean        @default(false) 
   downloadCount    Int            @default(0)  
   author           User           @relation("QuoteAuthor", fields: [authorId], references: [id])
   authorId         String
@@ -130,10 +123,10 @@ model Quote {
   tags             Tag[]          @relation("QuoteToTag")
   gallery          QuoteToGallery[]
   comments         Comment[]
-  userLikes        QuoteLike[]    // Rename existing relation field
-  likes            Int            @default(0)  // Add a numeric counter
-  userBookmarks    QuoteBookmark[] // Add this line
-  bookmarks        Int            @default(0)  // Add this line
+  userLikes        QuoteLike[]
+  likes            Int            @default(0)
+  userBookmarks    QuoteBookmark[]
+  bookmarks        Int            @default(0) 
   dailyQuoteHistory DailyQuote[]
   TrendingQuote    TrendingQuote[]
   notifications    Notification[]
@@ -164,14 +157,12 @@ model AuthorProfile {
   influences String?
   bio        String        @db.Text
   slug       String        @unique
-  followers  Int           @default(0)  // Add follower count
+  followers  Int           @default(0) 
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
   images     AuthorImage[]
   quotes     Quote[]
-  userFollowers AuthorFollow[] // Add this relation
-
-  // Add this relation
+  userFollowers AuthorFollow[] 
   notifications         Notification[]
 
   @@map("author_profiles")
@@ -188,7 +179,6 @@ model AuthorImage {
   @@map("author_images")
 }
 
-// Remove QuoteImage model completely (delete this block)
 
 model UserProfile {
   id          String    @id @default(cuid())
@@ -266,8 +256,8 @@ model Comment {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   replies   Reply[]
-  userLikes CommentLike[]  // RENAMED from "likes" to "userLikes"
-  likes     Int      @default(0)  // Keep the count field as "likes"
+  userLikes CommentLike[] 
+  likes     Int      @default(0) 
 
   @@index([quoteId])
   @@map("comments")
@@ -284,14 +274,12 @@ model Reply {
   commentId String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  userLikes ReplyLike[]  // RENAMED from "likes" to "userLikes"
-  likes     Int      @default(0)  // Keep the count field as "likes"
+  userLikes ReplyLike[] 
+  likes     Int      @default(0) 
 
   @@index([commentId])
   @@map("replies")
 }
-
-// Like models for tracking user interactions
 
 model QuoteLike {
   id        String   @id @default(cuid())
@@ -341,7 +329,6 @@ model QuoteBookmark {
   @@map("quote_bookmarks")
 }
 
-// Add this new model to track follow relationships
 model AuthorFollow {
   id             String       @id @default(cuid())
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -354,7 +341,6 @@ model AuthorFollow {
   @@map("author_follows")
 }
 
-// Add this new model for the Daily Quote feature
 model DailyQuote {
   id             String   @id @default(cuid())
   quote          Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
@@ -371,26 +357,19 @@ model DailyQuote {
   @@map("daily_quotes")
 }
 
-// Add this new model for notifications
 model Notification {
   id             String           @id @default(cuid())
   type           NotificationType
   title          String?
   message        String
   read           Boolean          @default(false)
-  
-  // Recipient user
   user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId         String
-  
-  // Optional relations for different notification contexts
   quote          Quote?           @relation(fields: [quoteId], references: [id], onDelete: SetNull)
   quoteId        String?
   
   authorProfile  AuthorProfile?   @relation(fields: [authorProfileId], references: [id], onDelete: SetNull)
   authorProfileId String?
-  
-  // Actor is the user who caused the notification (e.g. the author who posted)
   actor          User?            @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
   actorId        String?
   
@@ -402,7 +381,6 @@ model Notification {
   @@map("notifications")
 }
 
-// Add this new model for email logs
 model EmailLog {
   id         String   @id @default(cuid())
   type       String
@@ -415,16 +393,15 @@ model EmailLog {
   @@map("email_logs")
 }
 
-// Model for tracking trending quotes (most liked quotes in the past 24 hours)
 model TrendingQuote {
   id            String   @id @default(cuid())
   quote         Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
   quoteId       String
-  rank          Int      // Position in trending (1-6)
-  likeCount     Int      // Likes received in the trending window
-  batchId       String   // Unique ID for each trending calculation batch
-  batchDate     DateTime @default(now()) // When this trending batch was calculated
-  isActive      Boolean  @default(true)  // Whether this is the current active trending set
+  rank          Int 
+  likeCount     Int  
+  batchId       String 
+  batchDate     DateTime @default(now()) 
+  isActive      Boolean  @default(true) 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -434,13 +411,10 @@ model TrendingQuote {
   @@map("trending_quotes")
 }
 
-// Add these models to your prisma/schema.prisma file
-
-// Track search events
 model SearchEvent {
   id          String       @id @default(uuid())
   query       String
-  type        String       @default("all") // SearchType
+  type        String       @default("all") 
   userId      String?
   filters     Json?
   resultCount Int
@@ -452,13 +426,12 @@ model SearchEvent {
   @@index([userId])
 }
 
-// Track result clicks
 model SearchClick {
   id            String     @id @default(uuid())
   searchEvent   SearchEvent @relation(fields: [searchEventId], references: [id], onDelete: Cascade)
   searchEventId String     @map("search_event_id")
   resultId      String     @map("result_id")
-  resultType    String     @map("result_type") // SearchType
+  resultType    String     @map("result_type")
   position      Int
   userId        String?    @map("user_id")
   createdAt     DateTime   @default(now()) @map("created_at")
@@ -468,7 +441,6 @@ model SearchClick {
   @@index([userId])
 }
 
-// Track popular searches
 model PopularSearch {
   query        String    @id
   count        Int
@@ -478,14 +450,12 @@ model PopularSearch {
   @@index([lastSearched])
 }
 
-// Store relevance scores for quotes
 model QuoteRelevance {
   quoteId    String  @id @map("quote_id")
   score      Float   @default(0)
   clickCount Int     @default(0) @map("click_count")
 }
 
-// Store relevance scores for authors
 model AuthorRelevance {
   authorId   String  @id @map("author_id")
   score      Float   @default(0)
