@@ -242,6 +242,179 @@ class SearchAnalyticsServiceImpl {
   }
 
   /**
+   * Get related searches based on the user's input
+   */
+  async getRelatedSearches(query: string, limit: number = 5): Promise<SearchSuggestion[]> {
+    try {
+      const normalizedQuery = query.toLowerCase().trim();
+      
+      // First get searches with similar words
+      const relatedSearches = await db.searchEvent.findMany({
+        where: {
+          query: {
+            not: normalizedQuery, // Exclude exact match
+            mode: 'insensitive',
+            search: normalizedQuery.split(' ').filter(w => w.length > 2).join(' & ') // Use full-text search
+          },
+          resultCount: {
+            gt: 0 // Only include searches that had results
+          }
+        },
+        select: {
+          query: true,
+          _count: {
+            select: {
+              clicks: true
+            }
+          }
+        },
+        orderBy: [
+          { _count: { clicks: 'desc' } }, // Order by popularity
+        ],
+        distinct: ['query'],
+        take: limit * 2 // Get more and filter
+      });
+      
+      // De-duplicate and format
+      const uniqueQueries = new Map<string, SearchSuggestion>();
+      
+      for (const search of relatedSearches) {
+        if (!uniqueQueries.has(search.query)) {
+          // Score based on popularity
+          const clickScore = Math.min(search._count.clicks / 3, 1); // Max 1
+          
+          uniqueQueries.set(search.query, {
+            query: search.query,
+            score: 0.7 + (clickScore * 0.3) // Score between 0.7-1.0
+          });
+        }
+      }
+      
+      // Return top suggestions
+      return Array.from(uniqueQueries.values())
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+    } catch (error) {
+      console.error("[SearchAnalytics] Error getting related searches:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Check if there's a spelling correction for the query
+   */
+  async getSpellingCorrection(query: string): Promise<string | null> {
+    try {
+      if (!query || query.length < 3) return null;
+      
+      // This is a basic implementation - consider using a proper spell checking library
+      // or an external API for production
+      const words = query.toLowerCase().trim().split(/\s+/);
+      
+      // Get successful queries to compare against
+      const successfulQueries = await db.searchEvent.findMany({
+        where: {
+          resultCount: { gt: 3 } // Queries that had good results
+        },
+        select: { query: true },
+        distinct: ['query'],
+        orderBy: { query: 'asc' },
+        take: 1000
+      });
+      
+      // Build a map of successful query words
+      const queryWords = new Set<string>();
+      for (const item of successfulQueries) {
+        item.query.toLowerCase().split(/\s+/).forEach(w => {
+          if (w.length > 2) queryWords.add(w);
+        });
+      }
+      
+      // Check if any word might be misspelled
+      let hasCorrection = false;
+      const corrected = words.map(word => {
+        // Skip short words
+        if (word.length < 3) return word;
+        
+        // If word is already a known word, keep it
+        if (queryWords.has(word)) return word;
+        
+        // Simple Levenshtein distance function to find similar words
+        const similarWord = this.findSimilarWord(word, queryWords);
+        if (similarWord && similarWord !== word) {
+          hasCorrection = true;
+          return similarWord;
+        }
+        
+        return word;
+      });
+      
+      return hasCorrection ? corrected.join(' ') : null;
+    } catch (error) {
+      console.error("[SearchAnalytics] Error checking spelling:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Find a similar word using Levenshtein distance
+   * This is a simple implementation - consider using a dedicated library for this
+   */
+  private findSimilarWord(word: string, dictionary: Set<string>): string | null {
+    const maxDistance = Math.min(2, Math.floor(word.length / 3));
+    let bestMatch: string | null = null;
+    let bestDistance = Infinity;
+    
+    // Compare word against dictionary
+    for (const dictWord of dictionary) {
+      // Skip words with very different lengths
+      if (Math.abs(dictWord.length - word.length) > maxDistance) continue;
+      
+      const distance = this.levenshteinDistance(word, dictWord);
+      
+      if (distance < bestDistance && distance <= maxDistance) {
+        bestDistance = distance;
+        bestMatch = dictWord;
+        
+        // Exact match found
+        if (distance === 0) break;
+      }
+    }
+    
+    return bestMatch;
+  }
+
+  /**
+   * Calculate Levenshtein distance between two strings
+   */
+  private levenshteinDistance(a: string, b: string): number {
+    const matrix: number[][] = [];
+    
+    // Initialize the matrix
+    for (let i = 0; i <= a.length; i++) {
+      matrix[i] = [i];
+    }
+    
+    for (let j = 0; j <= b.length; j++) {
+      matrix[0][j] = j;
+    }
+    
+    // Fill the matrix
+    for (let i = 1; i <= a.length; i++) {
+      for (let j = 1; j <= b.length; j++) {
+        const cost = a[i-1] === b[j-1] ? 0 : 1;
+        matrix[i][j] = Math.min(
+          matrix[i-1][j] + 1,       // deletion
+          matrix[i][j-1] + 1,       // insertion
+          matrix[i-1][j-1] + cost   // substitution
+        );
+      }
+    }
+    
+    return matrix[a.length][b.length];
+  }
+
+  /**
    * Get search analytics data for admin dashboard
    */
   async getAnalytics(days: number = 30) {

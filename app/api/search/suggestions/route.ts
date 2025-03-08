@@ -7,6 +7,8 @@ interface SuggestionsResponse {
   data?: {
     suggestions: SearchSuggestion[];
     popular?: SearchSuggestion[];
+    related?: SearchSuggestion[];  // Added related searches
+    correction?: string;          // Added spelling correction
   };
   error?: {
     code: string;
@@ -32,6 +34,8 @@ export async function GET(
     const query = searchParams.get("q")?.trim() || "";
     const limit = Math.min(10, Math.max(1, Number(searchParams.get("limit")) || 5));
     const includeTrending = searchParams.get("includeTrending") !== "false";
+    const includeRelated = searchParams.get("includeRelated") === "true";
+    const includeCorrection = searchParams.get("includeCorrection") === "true";
     
     // Handle empty query - return popular searches
     if (!query && includeTrending) {
@@ -54,6 +58,32 @@ export async function GET(
     // For non-empty queries, get matching suggestions
     if (query) {
       const suggestions = await searchAnalyticsService.getSuggestions(query, limit);
+      
+      // For non-empty queries, get related suggestions and corrections
+      if (includeRelated || includeCorrection) {
+        // Get related searches
+        let related: SearchSuggestion[] = [];
+        let correction: string | null = null;
+        
+        if (includeRelated) {
+          // Get semantically similar past searches 
+          related = await searchAnalyticsService.getRelatedSearches(query, limit);
+        }
+        
+        if (includeCorrection) {
+          // Check for spelling corrections
+          correction = await searchAnalyticsService.getSpellingCorrection(query);
+        }
+        
+        // Add to the response
+        return NextResponse.json({
+          data: { 
+            suggestions: suggestions || [],
+            related,
+            ...(correction && { correction })
+          }
+        });
+      }
       
       return NextResponse.json({
         data: { suggestions }
