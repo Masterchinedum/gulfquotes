@@ -48,7 +48,7 @@ export function Navbar() {
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <BookMarked size={18} />
-            <span>Categories</span>
+            <span>Categoriesm</span>
           </Link>
           <Link 
             href="/quotes"
