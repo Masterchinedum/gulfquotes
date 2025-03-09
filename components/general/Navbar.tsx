@@ -41,7 +41,7 @@ export function Navbar() {
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <Home size={18} />
-            <span>Home page</span>
+            <span>Home pa</span>
           </Link>
           <Link 
             href="/categories"
