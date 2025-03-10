@@ -32,11 +32,20 @@ export function EditForm({ author }: EditFormProps) {
     resolver: zodResolver(updateAuthorProfileSchema),
     defaultValues: {
       name: author.name,
+      // Keep the legacy fields
       born: author.born || "",
       died: author.died || "",
+      // Add the new structured date fields
+      bornDay: author.bornDay,
+      bornMonth: author.bornMonth,
+      bornYear: author.bornYear,
+      diedDay: author.diedDay,
+      diedMonth: author.diedMonth,
+      diedYear: author.diedYear,
+      birthPlace: author.birthPlace || "",
       influences: author.influences || "",
       bio: author.bio,
-      images: author.images || [], // Add this line
+      images: author.images || [],
     },
   });
 
