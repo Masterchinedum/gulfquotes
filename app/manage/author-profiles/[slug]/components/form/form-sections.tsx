@@ -88,8 +88,14 @@ export function FormSections({ form, disabled }: FormSectionsProps) {
                   <FormLabel>Day</FormLabel>
                   <Select
                     disabled={disabled}
-                    onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
-                    value={field.value?.toString() || ""}
+                    onValueChange={(value) => {
+                      if (value === "placeholder") {
+                        field.onChange(null);
+                      } else {
+                        field.onChange(parseInt(value));
+                      }
+                    }}
+                    value={field.value?.toString() || "placeholder"}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -97,7 +103,7 @@ export function FormSections({ form, disabled }: FormSectionsProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Select a day</SelectItem>
+                      <SelectItem value="placeholder" disabled>Select a day</SelectItem>
                       {days.map((day) => (
                         <SelectItem key={`born-day-${day}`} value={day.toString()}>
                           {day}
@@ -119,8 +125,14 @@ export function FormSections({ form, disabled }: FormSectionsProps) {
                   <FormLabel>Month</FormLabel>
                   <Select
                     disabled={disabled}
-                    onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
-                    value={field.value?.toString() || ""}
+                    onValueChange={(value) => {
+                      if (value === "placeholder") {
+                        field.onChange(null);
+                      } else {
+                        field.onChange(parseInt(value));
+                      }
+                    }}
+                    value={field.value?.toString() || "placeholder"}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -150,8 +162,14 @@ export function FormSections({ form, disabled }: FormSectionsProps) {
                   <FormLabel>Year</FormLabel>
                   <Select
                     disabled={disabled}
-                    onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
-                    value={field.value?.toString() || ""}
+                    onValueChange={(value) => {
+                      if (value === "placeholder") {
+                        field.onChange(null);
+                      } else {
+                        field.onChange(parseInt(value));
+                      }
+                    }}
+                    value={field.value?.toString() || "placeholder"}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -227,8 +245,14 @@ export function FormSections({ form, disabled }: FormSectionsProps) {
                   <FormLabel>Day</FormLabel>
                   <Select
                     disabled={disabled}
-                    onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
-                    value={field.value?.toString() || ""}
+                    onValueChange={(value) => {
+                      if (value === "placeholder") {
+                        field.onChange(null);
+                      } else {
+                        field.onChange(parseInt(value));
+                      }
+                    }}
+                    value={field.value?.toString() || "placeholder"}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -236,7 +260,7 @@ export function FormSections({ form, disabled }: FormSectionsProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Select a day</SelectItem>
+                      <SelectItem value="placeholder" disabled>Select a day</SelectItem>
                       {days.map((day) => (
                         <SelectItem key={`died-day-${day}`} value={day.toString()}>
                           {day}
@@ -258,8 +282,14 @@ export function FormSections({ form, disabled }: FormSectionsProps) {
                   <FormLabel>Month</FormLabel>
                   <Select
                     disabled={disabled}
-                    onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
-                    value={field.value?.toString() || ""}
+                    onValueChange={(value) => {
+                      if (value === "placeholder") {
+                        field.onChange(null);
+                      } else {
+                        field.onChange(parseInt(value));
+                      }
+                    }}
+                    value={field.value?.toString() || "placeholder"}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -289,8 +319,14 @@ export function FormSections({ form, disabled }: FormSectionsProps) {
                   <FormLabel>Year</FormLabel>
                   <Select
                     disabled={disabled}
-                    onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
-                    value={field.value?.toString() || ""}
+                    onValueChange={(value) => {
+                      if (value === "placeholder") {
+                        field.onChange(null);
+                      } else {
+                        field.onChange(parseInt(value));
+                      }
+                    }}
+                    value={field.value?.toString() || "placeholder"}
                   >
                     <FormControl>
                       <SelectTrigger>
