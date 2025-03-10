@@ -22,8 +22,17 @@ export function CreateForm() {
     defaultValues: {
       name: "",
       slug: "",
+      // Keep legacy fields
       born: "",
       died: "",
+      // Add new structured date fields
+      bornDay: null,
+      bornMonth: null,
+      bornYear: null,
+      diedDay: null,
+      diedMonth: null,
+      diedYear: null,
+      birthPlace: "",
       influences: "",
       bio: "",
       images: [], 

@@ -3,7 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { UseFormReturn } from "react-hook-form";
 import { CreateAuthorProfileInput } from "@/schemas/author-profile";
-import { CreateImageUpload } from "./image-upload"; // Update import
+import { CreateImageUpload } from "./image-upload"; 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface FormSectionsProps {
   form: UseFormReturn<CreateAuthorProfileInput>;
@@ -11,6 +12,25 @@ interface FormSectionsProps {
 }
 
 export function FormSections({ form, disabled }: FormSectionsProps) {
+  // Generate arrays for days, months, and years for the select fields
+  const days = Array.from({ length: 31 }, (_, i) => i + 1);
+  const months = [
+    { value: 1, label: "January" },
+    { value: 2, label: "February" },
+    { value: 3, label: "March" },
+    { value: 4, label: "April" },
+    { value: 5, label: "May" },
+    { value: 6, label: "June" },
+    { value: 7, label: "July" },
+    { value: 8, label: "August" },
+    { value: 9, label: "September" },
+    { value: 10, label: "October" },
+    { value: 11, label: "November" },
+    { value: 12, label: "December" },
+  ];
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: currentYear - 1500 + 1 }, (_, i) => currentYear - i);
+
   return (
     <div className="space-y-6">
       {/* Basic Info Section */}
@@ -48,12 +68,14 @@ export function FormSections({ form, disabled }: FormSectionsProps) {
       {/* Life Details Section */}
       <div className="space-y-4">
         <div className="text-lg font-semibold">Life Details</div>
+        
+        {/* Keep existing string field for backward compatibility */}
         <FormField
           control={form.control}
           name="born"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Born</FormLabel>
+              <FormLabel>Birth Information (Legacy Format)</FormLabel>
               <FormControl>
                 <Input 
                   disabled={disabled} 
@@ -67,12 +89,132 @@ export function FormSections({ form, disabled }: FormSectionsProps) {
           )}
         />
 
+        {/* New structured birth fields */}
+        <div className="space-y-2">
+          <div className="text-sm font-medium">Birth Date (New Format)</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Birth Day */}
+            <FormField
+              control={form.control}
+              name="bornDay"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Day</FormLabel>
+                  <Select
+                    disabled={disabled}
+                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    value={field.value?.toString() || ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Day" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">Select a day</SelectItem>
+                      {days.map((day) => (
+                        <SelectItem key={`born-day-${day}`} value={day.toString()}>
+                          {day}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* Birth Month */}
+            <FormField
+              control={form.control}
+              name="bornMonth"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Month</FormLabel>
+                  <Select
+                    disabled={disabled}
+                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    value={field.value?.toString() || ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Month" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">Select a month</SelectItem>
+                      {months.map((month) => (
+                        <SelectItem key={`born-month-${month.value}`} value={month.value.toString()}>
+                          {month.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* Birth Year */}
+            <FormField
+              control={form.control}
+              name="bornYear"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Year</FormLabel>
+                  <Select
+                    disabled={disabled}
+                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    value={field.value?.toString() || ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Year" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="max-h-60 overflow-auto">
+                      <SelectItem value="">Select a year</SelectItem>
+                      {years.map((year) => (
+                        <SelectItem key={`born-year-${year}`} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        {/* Birth Place */}
+        <FormField
+          control={form.control}
+          name="birthPlace"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Birth Place</FormLabel>
+              <FormControl>
+                <Input 
+                  disabled={disabled} 
+                  placeholder="e.g., Dublin, Ireland" 
+                  {...field}
+                  value={field.value ?? ''} // Convert null to empty string
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Keep existing string field for backward compatibility */}
         <FormField
           control={form.control}
           name="died"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Died</FormLabel>
+              <FormLabel>Death Information (Legacy Format)</FormLabel>
               <FormControl>
                 <Input 
                   disabled={disabled} 
@@ -85,6 +227,105 @@ export function FormSections({ form, disabled }: FormSectionsProps) {
             </FormItem>
           )}
         />
+
+        {/* New structured death fields */}
+        <div className="space-y-2">
+          <div className="text-sm font-medium">Death Date (New Format)</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Death Day */}
+            <FormField
+              control={form.control}
+              name="diedDay"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Day</FormLabel>
+                  <Select
+                    disabled={disabled}
+                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    value={field.value?.toString() || ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Day" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">Select a day</SelectItem>
+                      {days.map((day) => (
+                        <SelectItem key={`died-day-${day}`} value={day.toString()}>
+                          {day}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* Death Month */}
+            <FormField
+              control={form.control}
+              name="diedMonth"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Month</FormLabel>
+                  <Select
+                    disabled={disabled}
+                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    value={field.value?.toString() || ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Month" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">Select a month</SelectItem>
+                      {months.map((month) => (
+                        <SelectItem key={`died-month-${month.value}`} value={month.value.toString()}>
+                          {month.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* Death Year */}
+            <FormField
+              control={form.control}
+              name="diedYear"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Year</FormLabel>
+                  <Select
+                    disabled={disabled}
+                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    value={field.value?.toString() || ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Year" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="max-h-60 overflow-auto">
+                      <SelectItem value="">Select a year</SelectItem>
+                      {years.map((year) => (
+                        <SelectItem key={`died-year-${year}`} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
 
         <FormField
           control={form.control}
@@ -129,7 +370,7 @@ export function FormSections({ form, disabled }: FormSectionsProps) {
         />
       </div>
 
-      {/* Update image upload section */}
+      {/* Image upload section */}
       <CreateImageUpload 
         form={form} 
         disabled={disabled} 
