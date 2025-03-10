@@ -214,7 +214,7 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
         const newImageUrls = data.images.map(img => img.url);
         
         // Only validate and update images if they've changed
-        if (JSON.stringify(existingImageUrls.sort()) !== JSON.stringify(newImageUrls.sort())) {
+        if (JSON.stringify(existingImageUrls.sort()) !== JSON.stringify(newImageUrls?.sort() || [])) {
           // Now we know images have changed, so validate the new count
           await this.validateImagesCount(id, 0); // Just check if we're already at max
           
