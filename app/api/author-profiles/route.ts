@@ -7,6 +7,7 @@ import { authorProfileService } from "@/lib/services/author-profile.service";
 import type { AuthorProfileResponse, AuthorProfilesResponse } from "@/types/api/author-profiles";
 import { DuplicateAuthorProfileError, MaxImagesExceededError } from "@/lib/services/errors/author-profile.errors";
 import { cloudinaryConfig, getMaxFiles } from "@/lib/cloudinary";
+import { AuthorProfileWithDates } from "@/lib/services/interfaces/author-profile-service.interface";
 
 // GET handler for listing author profiles
 export async function GET(req: Request): Promise<NextResponse<AuthorProfilesResponse>> {
@@ -176,17 +177,8 @@ export async function POST(req: Request): Promise<NextResponse<AuthorProfileResp
     // Format the response to include formatted date strings alongside structured date fields
     let formattedResponse;
     if (authorProfile) {
-      // Cast to AuthorProfileWithDates to access the date fields
-      const profileWithDates = authorProfile as unknown as {
-        id: string;
-        bornDay: number | null;
-        bornMonth: number | null;
-        bornYear: number | null;
-        diedDay: number | null;
-        diedMonth: number | null;
-        diedYear: number | null;
-        birthPlace: string | null;
-      };
+      // Cast the entire authorProfile object to AuthorProfileWithDates since it has all the required fields
+      const profileWithDates = authorProfile as unknown as AuthorProfileWithDates;
       
       // Get formatted dates using the service method
       const formattedDates = authorProfileService.formatDateFields?.(profileWithDates);

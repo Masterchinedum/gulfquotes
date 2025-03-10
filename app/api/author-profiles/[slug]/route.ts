@@ -10,6 +10,7 @@ import {
 } from "@/lib/services/errors/author-profile.errors";
 import { cloudinaryConfig, getMaxFiles } from "@/lib/cloudinary";
 import type { AuthorProfileResponse } from "@/types/api/author-profiles";
+import { AuthorProfileWithDates } from "@/lib/services/interfaces/author-profile-service.interface";
 
 export async function GET(req: Request) {
   try {
