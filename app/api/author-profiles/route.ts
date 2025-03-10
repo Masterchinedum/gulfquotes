@@ -115,10 +115,95 @@ export async function POST(req: Request): Promise<NextResponse<AuthorProfileResp
       }
     }
 
-    // Create author profile with images
+    // Handle date field validation - additional custom validations beyond the schema
+    if (validatedData.data.bornDay || validatedData.data.bornMonth || validatedData.data.bornYear) {
+      // Check that if any birth date component is provided, all necessary ones are provided
+      if (validatedData.data.bornMonth && !validatedData.data.bornYear) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "VALIDATION_ERROR",
+              message: "Birth year must be provided when month is specified"
+            }
+          },
+          { status: 400 }
+        );
+      }
+      
+      if (validatedData.data.bornDay && !validatedData.data.bornMonth) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "VALIDATION_ERROR",
+              message: "Birth month must be provided when day is specified"
+            }
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Similar validation for death date fields
+    if (validatedData.data.diedDay || validatedData.data.diedMonth || validatedData.data.diedYear) {
+      if (validatedData.data.diedMonth && !validatedData.data.diedYear) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "VALIDATION_ERROR",
+              message: "Death year must be provided when month is specified"
+            }
+          },
+          { status: 400 }
+        );
+      }
+      
+      if (validatedData.data.diedDay && !validatedData.data.diedMonth) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "VALIDATION_ERROR",
+              message: "Death month must be provided when day is specified"
+            }
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Create author profile with images and new date fields
     const authorProfile = await authorProfileService.create(validatedData.data);
 
-    return NextResponse.json({ data: authorProfile });
+    // Format the response to include formatted date strings alongside structured date fields
+    let formattedResponse;
+    if (authorProfile) {
+      // Cast to AuthorProfileWithDates to access the date fields
+      const profileWithDates = authorProfile as unknown as {
+        id: string;
+        bornDay: number | null;
+        bornMonth: number | null;
+        bornYear: number | null;
+        diedDay: number | null;
+        diedMonth: number | null;
+        diedYear: number | null;
+        birthPlace: string | null;
+      };
+      
+      // Get formatted dates using the service method
+      const formattedDates = authorProfileService.formatDateFields?.(profileWithDates);
+      
+      // Include formatted dates in response if available
+      if (formattedDates) {
+        formattedResponse = {
+          ...authorProfile,
+          formattedBirthDate: formattedDates.birthDate,
+          formattedDeathDate: formattedDates.deathDate
+        };
+      } else {
+        formattedResponse = authorProfile;
+      }
+    }
+
+    return NextResponse.json({ data: formattedResponse || authorProfile });
 
   } catch (error: unknown) {
     console.error("[AUTHOR_PROFILES_POST]", error);
