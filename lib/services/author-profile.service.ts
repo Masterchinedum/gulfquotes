@@ -1,14 +1,15 @@
 import { AuthorProfile, Prisma } from "@prisma/client";
-import { 
-  AuthorProfileService, 
-  AuthorProfileListParams, 
+import {
+  AuthorProfileService,
+  AuthorProfileListParams,
   AuthorProfileListResponse,
-  AuthorProfileWithDates
+  AuthorProfileWithDates,
+  AuthorProfileBirthdayParams
 } from "./interfaces/author-profile-service.interface";
 import { CreateAuthorProfileInput, UpdateAuthorProfileInput } from "@/schemas/author-profile";
-import { slugify } from "@/lib/utils";
+import { slugify, getMonthName } from "@/lib/utils";
 import db from "@/lib/prisma";
-import { 
+import {
   AuthorProfileNotFoundError,
   DuplicateAuthorProfileError,
   ImageDeleteError,
@@ -109,13 +110,9 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
     // Format the date parts
     const dateParts: string[] = [];
     
-    // Add month
+    // Add month - Use the imported getMonthName instead of hardcoding
     if (month) {
-      const monthNames = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-      ];
-      dateParts.push(monthNames[month - 1]); 
+      dateParts.push(getMonthName(month, true)); // true for capitalized month name
     }
     
     // Add day
@@ -397,6 +394,56 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+      }),
+      db.authorProfile.count({
+        where: whereCondition
+      })
+    ]);
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      hasMore: (page * limit) < total
+    };
+  }
+
+  async getAuthorsByBirthday(params: AuthorProfileBirthdayParams): Promise<AuthorProfileListResponse> {
+    const { day, month, page = 1, limit = 10 } = params;
+    const skip = (page - 1) * limit;
+
+    // Query condition to match authors with the specified birth day and month
+    const whereCondition: Prisma.AuthorProfileWhereInput = {
+      bornDay: day,
+      bornMonth: month,
+    };
+
+    // Fetch authors and count in parallel
+    const [items, total] = await Promise.all([
+      db.authorProfile.findMany({
+        where: whereCondition,
+        include: {
+          images: {
+            select: {
+              id: true,
+              url: true
+            }
+          },
+          _count: {
+            select: {
+              quotes: true
+            }
+          }
+        },
+        orderBy: [
+          // Sort by birth year (ascending, oldest first)
+          { bornYear: 'asc' },
+          // Secondary sort by name for authors with the same year
+          { name: 'asc' }
+        ],
+        skip,
+        take: limit,
       }),
       db.authorProfile.count({
         where: whereCondition

@@ -7,6 +7,14 @@ export interface AuthorProfileListParams {
   search?: string;
 }
 
+// New interface for birthday query parameters
+export interface AuthorProfileBirthdayParams {
+  day: number;
+  month: number;
+  page?: number;
+  limit?: number;
+}
+
 export interface AuthorProfileListResponse {
   items: (AuthorProfile & {
     images?: {
@@ -53,6 +61,9 @@ export interface AuthorProfileService {
     _count: { quotes: number }
   }>;
   list(params: AuthorProfileListParams): Promise<AuthorProfileListResponse>;
+  
+  // New method for retrieving authors by birth day and month
+  getAuthorsByBirthday(params: AuthorProfileBirthdayParams): Promise<AuthorProfileListResponse>;
   
   // Optional helper method for date fields
   formatDateFields?(authorProfile: AuthorProfileWithDates): {
