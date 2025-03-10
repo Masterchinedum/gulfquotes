@@ -36,9 +36,7 @@ jobs:
           APP_NAME: gulfquotes #should match the name of the server block
           PORT: 3000
           #if multiple deploys are needed from different branches
-          #TARGET_DIR: ${{ github.ref == 'refs/heads/deploytest' && '/var/www/folder_name' || github.ref == 'refs/heads/deployprod' && '/var/www/another-location' }}
-          #APP_NAME: ${{ github.ref == 'refs/heads/deploytest' && 'folder_name' || github.ref == 'refs/heads/deployprod' && 'folder_name_2' }}
-          #PORT: ${{ github.ref == 'refs/heads/deploytest' && '3000' || github.ref == 'refs/heads/deployprod' && '3001' }}
+          # TARGET_DIR: 
         run: |
           ssh -o StrictHostKeyChecking=no $USERNAME@$HOST << EOF
             export PATH=/root/.nvm/versions/node/v22.14.0/bin:$PATH #'which pm2' command on terminal will give the right path
