@@ -2,7 +2,8 @@ import { AuthorProfile, Prisma } from "@prisma/client";
 import { 
   AuthorProfileService, 
   AuthorProfileListParams, 
-  AuthorProfileListResponse 
+  AuthorProfileListResponse,
+  AuthorProfileWithDates
 } from "./interfaces/author-profile-service.interface";
 import { CreateAuthorProfileInput, UpdateAuthorProfileInput } from "@/schemas/author-profile";
 import { slugify } from "@/lib/utils";
@@ -64,6 +65,80 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
     }
   }
 
+  /**
+   * Format date fields into readable strings
+   */
+  formatDateFields(authorProfile: AuthorProfileWithDates): {
+    birthDate: string | null;
+    deathDate: string | null;
+  } {
+    const birthDate = this.formatDate(
+      authorProfile.bornDay,
+      authorProfile.bornMonth,
+      authorProfile.bornYear,
+      authorProfile.birthPlace
+    );
+    
+    const deathDate = this.formatDate(
+      authorProfile.diedDay,
+      authorProfile.diedMonth,
+      authorProfile.diedYear
+    );
+    
+    return { birthDate, deathDate };
+  }
+
+  /**
+   * Helper to format individual date components into a string
+   */
+  private formatDate(
+    day: number | null,
+    month: number | null,
+    year: number | null,
+    location?: string | null
+  ): string | null {
+    if (!month && !day && !year) return null;
+    
+    const parts: string[] = [];
+
+    // Add location if provided
+    if (location) {
+      parts.push(`Born in ${location}`);
+    }
+    
+    // Format the date parts
+    const dateParts: string[] = [];
+    
+    // Add month
+    if (month) {
+      const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      dateParts.push(monthNames[month - 1]); 
+    }
+    
+    // Add day
+    if (day) {
+      dateParts.push(`${day}`);
+    }
+    
+    // Add year
+    if (year) {
+      dateParts.push(`${year}`);
+    }
+    
+    if (dateParts.length > 0) {
+      // If we already have location, add a separator
+      if (parts.length > 0) {
+        parts.push('-');
+      }
+      parts.push(dateParts.join(' '));
+    }
+    
+    return parts.length > 0 ? parts.join(' ') : null;
+  }
+
   async create(data: CreateAuthorProfileInput): Promise<AuthorProfile> {
     try {
       const slug = data.slug || slugify(data.name);
@@ -75,12 +150,21 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
       }
 
       return await db.$transaction(async (tx) => {
-        // Create author profile
+        // Create author profile with new date fields
         const profile = await tx.authorProfile.create({
           data: {
             name: data.name,
+            // Keep the original string fields for backward compatibility
             born: data.born,
             died: data.died,
+            // Add new structured date fields
+            bornDay: data.bornDay,
+            bornMonth: data.bornMonth,
+            bornYear: data.bornYear,
+            diedDay: data.diedDay,
+            diedMonth: data.diedMonth,
+            diedYear: data.diedYear,
+            birthPlace: data.birthPlace,
             influences: data.influences,
             bio: data.bio,
             slug,
@@ -129,13 +213,22 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
       }
 
       return await db.$transaction(async (tx) => {
-        // Update basic profile data
+        // Update basic profile data including new date fields
         const profile = await tx.authorProfile.update({
           where: { id },
           data: {
             name: data.name,
+            // Keep the original string fields for backward compatibility
             born: data.born,
             died: data.died,
+            // Update structured date fields
+            bornDay: data.bornDay,
+            bornMonth: data.bornMonth,
+            bornYear: data.bornYear,
+            diedDay: data.diedDay,
+            diedMonth: data.diedMonth,
+            diedYear: data.diedYear,
+            birthPlace: data.birthPlace,
             influences: data.influences,
             bio: data.bio,
             slug: data.slug,
@@ -206,7 +299,7 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
     }
   }
 
-  async getById(id: string): Promise<AuthorProfile | null> {
+  async getById(id: string): Promise<AuthorProfileWithDates | null> {
     return db.authorProfile.findUnique({
       where: { id },
       include: {
@@ -217,10 +310,10 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
           }
         }
       }
-    });
+    }) as Promise<AuthorProfileWithDates | null>;
   }
 
-  async getBySlug(slug: string): Promise<AuthorProfile & { 
+  async getBySlug(slug: string): Promise<AuthorProfileWithDates & { 
     images: { id: string; url: string; }[],
     _count: { quotes: number }
   }> {
@@ -247,7 +340,10 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
       throw new AuthorProfileNotFoundError();
     }
 
-    return authorProfile;
+    return authorProfile as AuthorProfileWithDates & { 
+      images: { id: string; url: string; }[],
+      _count: { quotes: number }
+    };
   }
 
   async list(params: AuthorProfileListParams): Promise<AuthorProfileListResponse> {
