@@ -5,14 +5,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// lib/utils.ts
-interface GenerateUserSlugParams {
-  username?: string | null;
-  firstName?: string | null;
-  lastName?: string | null;
-  userId: string;  // This must be required and non-null
-}
-
 export function slugify(str: string): string {
   return str
     .toLowerCase()
@@ -28,6 +20,14 @@ export function formatDate(date: Date) {
     day: "numeric",
     year: "numeric"
   }).format(new Date(date));
+}
+
+// Interface for user slug generation
+interface GenerateUserSlugParams {
+  username?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  userId: string;  // This must be required and non-null
 }
 
 export function generateUserSlug(params: GenerateUserSlugParams): string {
@@ -48,6 +48,9 @@ export function generateUserSlug(params: GenerateUserSlugParams): string {
   // Priority 3: Fallback to userId
   return userId;
 }
+
+// Re-export date utils for backward compatibility
+export * from './date-utils';
 
 // Add these new utility functions to the existing utils.ts file
 
