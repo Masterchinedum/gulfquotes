@@ -207,53 +207,76 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
         data.slug = newSlug;
       }
 
-      // Handle image updates if provided
+      // Handle image updates if provided - FIX HERE
       if (data.images) {
-        await this.validateImagesCount(id, data.images.length);
-      }
-
-      return await db.$transaction(async (tx) => {
-        // Update basic profile data including new date fields
-        const profile = await tx.authorProfile.update({
-          where: { id },
-          data: {
-            name: data.name,
-            // Keep the original string fields for backward compatibility
-            born: data.born,
-            died: data.died,
-            // Update structured date fields
-            bornDay: data.bornDay,
-            bornMonth: data.bornMonth,
-            bornYear: data.bornYear,
-            diedDay: data.diedDay,
-            diedMonth: data.diedMonth,
-            diedYear: data.diedYear,
-            birthPlace: data.birthPlace,
-            influences: data.influences,
-            bio: data.bio,
-            slug: data.slug,
-          },
-        });
-
-        // Update images if provided
-        if (data.images) {
-          // Delete existing images
-          await tx.authorImage.deleteMany({
-            where: { authorProfileId: id }
-          });
-
-          // Create new images
-          if (data.images.length > 0) {
-            await tx.authorImage.createMany({
-              data: data.images.map((image) => ({
-                url: image.url,
-                authorProfileId: id,
-              })),
+        // Check if the images have actually changed by comparing URLs
+        const existingImageUrls = existing.images?.map(img => img.url) || [];
+        const newImageUrls = data.images.map(img => img.url);
+        
+        // Only validate and update images if they've changed
+        if (JSON.stringify(existingImageUrls.sort()) !== JSON.stringify(newImageUrls.sort())) {
+          // Now we know images have changed, so validate the new count
+          await this.validateImagesCount(id, 0); // Just check if we're already at max
+          
+          return await db.$transaction(async (tx) => {
+            // Update basic profile data
+            const profile = await tx.authorProfile.update({
+              where: { id },
+              data: {
+                name: data.name,
+                born: data.born,
+                died: data.died,
+                bornDay: data.bornDay,
+                bornMonth: data.bornMonth,
+                bornYear: data.bornYear,
+                diedDay: data.diedDay,
+                diedMonth: data.diedMonth,
+                diedYear: data.diedYear,
+                birthPlace: data.birthPlace,
+                influences: data.influences,
+                bio: data.bio,
+                slug: data.slug,
+              },
             });
-          }
-        }
 
-        return profile;
+            // Delete existing images
+            await tx.authorImage.deleteMany({
+              where: { authorProfileId: id }
+            });
+
+            // Create new images
+            if (data.images && data.images.length > 0) {
+              await tx.authorImage.createMany({
+                data: data.images.map((image) => ({
+                  url: image.url,
+                  authorProfileId: id,
+                })),
+              });
+            }
+
+            return profile;
+          });
+        }
+      }
+      
+      // If no image changes, just update the profile data
+      return await db.authorProfile.update({
+        where: { id },
+        data: {
+          name: data.name,
+          born: data.born,
+          died: data.died,
+          bornDay: data.bornDay,
+          bornMonth: data.bornMonth,
+          bornYear: data.bornYear,
+          diedDay: data.diedDay,
+          diedMonth: data.diedMonth,
+          diedYear: data.diedYear,
+          birthPlace: data.birthPlace,
+          influences: data.influences,
+          bio: data.bio,
+          slug: data.slug,
+        },
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {

@@ -140,7 +140,7 @@ export function FormSections({ form, disabled }: FormSectionsProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Select a month</SelectItem>
+                      <SelectItem value="placeholder">Select a month</SelectItem>
                       {months.map((month) => (
                         <SelectItem key={`born-month-${month.value}`} value={month.value.toString()}>
                           {month.label}
@@ -177,7 +177,7 @@ export function FormSections({ form, disabled }: FormSectionsProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="max-h-60 overflow-auto">
-                      <SelectItem value="">Select a year</SelectItem>
+                      <SelectItem value="placeholder">Select a year</SelectItem>
                       {years.map((year) => (
                         <SelectItem key={`born-year-${year}`} value={year.toString()}>
                           {year}
@@ -297,7 +297,7 @@ export function FormSections({ form, disabled }: FormSectionsProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Select a month</SelectItem>
+                      <SelectItem value="placeholder">Select a month</SelectItem>
                       {months.map((month) => (
                         <SelectItem key={`died-month-${month.value}`} value={month.value.toString()}>
                           {month.label}
@@ -334,7 +334,7 @@ export function FormSections({ form, disabled }: FormSectionsProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="max-h-60 overflow-auto">
-                      <SelectItem value="">Select a year</SelectItem>
+                      <SelectItem value="placeholder">Select a year</SelectItem>
                       {years.map((year) => (
                         <SelectItem key={`died-year-${year}`} value={year.toString()}>
                           {year}
