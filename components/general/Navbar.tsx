@@ -41,14 +41,14 @@ export function Navbar() {
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <Home size={18} />
-            <span>Home pa</span>
+            <span>Home</span>
           </Link>
           <Link 
             href="/categories"
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <BookMarked size={18} />
-            <span>Categoriesm</span>
+            <span>Categories</span>
           </Link>
           <Link 
             href="/quotes"
