@@ -68,11 +68,19 @@ export default async function EditQuotePage({
           slug: true,
           born: true,
           died: true,
+          // Add new structured date fields
+          bornDay: true,
+          bornMonth: true,
+          bornYear: true,
+          diedDay: true,
+          diedMonth: true,
+          diedYear: true,
+          birthPlace: true,
           influences: true,
           bio: true,
           createdAt: true,
           updatedAt: true,
-          followers: true, // Add this line to select the followers field
+          followers: true,
         },
         orderBy: {
           name: 'asc'
