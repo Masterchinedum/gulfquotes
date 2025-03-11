@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import type { UserData } from "@/types/api/users";
+import { UserQuoteList } from "./user-quote-list"; // Import our new component
 
 interface ProfileContentProps {
   user: UserData;
@@ -155,9 +156,8 @@ export function ProfileContent({ user }: ProfileContentProps) {
                   </div>
                 </div>
 
-                {/* Recent activity timeline would go here */}
+                {/* Recent activity timeline */}
                 <div className="mt-6">
-                  {/* This would be expanded with actual activity data in the future */}
                   {(followedAuthors.length > 0 || likes.length > 0) ? (
                     <div className="space-y-4">
                       {followedAuthors.length > 0 && (
@@ -185,104 +185,36 @@ export function ProfileContent({ user }: ProfileContentProps) {
             </Card>
           </TabsContent>
 
-          {/* Likes Tab */}
+          {/* Likes Tab - Using our new UserQuoteList component */}
           <TabsContent value="likes" className="py-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">
-                  {likes.length > 0 
-                    ? `${likes.length} Liked Quotes`
-                    : "No Liked Quotes"}
-                </CardTitle>
-              </CardHeader>
-              {likes.length > 0 ? (
-                <CardContent className="grid gap-4">
-                  {likes.map((quote) => (
-                    <div key={quote.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                      <Link href={`/quotes/${quote.slug}`} className="block">
-                        <p className="font-medium line-clamp-2 mb-2">{quote.content}</p>
-                        <div className="flex items-center justify-between text-sm text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <span>by</span>
-                            <Link href={`/authors/${quote.authorProfile.slug}`} className="hover:underline">
-                              {quote.authorProfile.name}
-                            </Link>
-                          </div>
-                          <Link href={`/categories/${quote.category.slug}`} className="hover:underline">
-                            {quote.category.name}
-                          </Link>
-                        </div>
-                      </Link>
-                    </div>
-                  ))}
-                  
-                  {likes.length > 5 && (
-                    <div className="text-center pt-2">
-                      <Link href={`/users/${user.userProfile?.slug || user.id}/likes`}>
-                        <Button variant="outline" size="sm">View All Liked Quotes</Button>
-                      </Link>
-                    </div>
-                  )}
-                </CardContent>
-              ) : (
-                <CardContent className="text-center py-8 text-muted-foreground">
-                  No quotes have been liked yet.
-                </CardContent>
-              )}
-            </Card>
+            <UserQuoteList
+              quotes={likes}
+              title="Liked Quotes"
+              emptyMessage="No quotes have been liked yet."
+              viewAllLink={likes.length > 5 ? `/users/${user.userProfile?.slug || user.id}/likes` : undefined}
+              viewAllText="View All Liked Quotes"
+            />
           </TabsContent>
 
-          {/* Bookmarks Tab - Only visible to the profile owner */}
+          {/* Bookmarks Tab - Only visible to profile owner, also using UserQuoteList */}
           {isCurrentUser && (
             <TabsContent value="bookmarks" className="py-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">
-                    {bookmarks.length > 0 
-                      ? `${bookmarks.length} Bookmarked Quotes`
-                      : "No Bookmarked Quotes"}
-                  </CardTitle>
-                </CardHeader>
-                {bookmarks.length > 0 ? (
-                  <CardContent className="grid gap-4">
-                    {bookmarks.map((quote) => (
-                      <div key={quote.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                        <Link href={`/quotes/${quote.slug}`} className="block">
-                          <p className="font-medium line-clamp-2 mb-2">{quote.content}</p>
-                          <div className="flex items-center justify-between text-sm text-muted-foreground">
-                            <div className="flex items-center gap-2">
-                              <span>by</span>
-                              <Link href={`/authors/${quote.authorProfile.slug}`} className="hover:underline">
-                                {quote.authorProfile.name}
-                              </Link>
-                            </div>
-                            <Link href={`/categories/${quote.category.slug}`} className="hover:underline">
-                              {quote.category.name}
-                            </Link>
-                          </div>
-                        </Link>
-                      </div>
-                    ))}
-                    
-                    {bookmarks.length > 5 && (
-                      <div className="text-center pt-2">
-                        <Link href={`/users/${user.userProfile?.slug || user.id}/bookmarks`}>
-                          <Button variant="outline" size="sm">View All Bookmarks</Button>
-                        </Link>
-                      </div>
-                    )}
-                  </CardContent>
-                ) : (
-                  <CardContent className="text-center py-8 text-muted-foreground">
+              <UserQuoteList
+                quotes={bookmarks}
+                title="Bookmarked Quotes"
+                emptyMessage={
+                  <>
                     No quotes have been bookmarked yet.
                     <div className="mt-4">
                       <Link href="/quotes">
                         <Button variant="outline" size="sm">Browse Quotes</Button>
                       </Link>
                     </div>
-                  </CardContent>
-                )}
-              </Card>
+                  </>
+                }
+                viewAllLink={bookmarks.length > 5 ? `/users/${user.userProfile?.slug || user.id}/bookmarks` : undefined}
+                viewAllText="View All Bookmarks"
+              />
             </TabsContent>
           )}
 
