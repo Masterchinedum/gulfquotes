@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, X, Download } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface AuthorImage {
   id: string;
@@ -79,8 +80,8 @@ export function ImageLightbox({ isOpen, onClose, images, initialIndex, authorNam
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] p-0 bg-background/95 backdrop-blur-sm">
-        <DialogHeader className="p-4 flex-row items-center justify-between">
+      <DialogContent className="max-w-5xl h-[90vh] p-0 bg-background/95 backdrop-blur-sm flex flex-col">
+        <DialogHeader className="p-4 flex-row items-center justify-between shrink-0">
           <DialogTitle className="text-lg">
             {authorName} - Photo {currentIndex + 1} of {images.length}
           </DialogTitle>
@@ -94,7 +95,8 @@ export function ImageLightbox({ isOpen, onClose, images, initialIndex, authorNam
           </div>
         </DialogHeader>
         
-        <div className="relative flex items-center justify-center h-[70vh] w-full">
+        {/* Main content area with image */}
+        <div className="relative flex-grow flex items-center justify-center w-full">
           {/* Left arrow navigation */}
           <Button 
             size="icon" 
@@ -128,27 +130,31 @@ export function ImageLightbox({ isOpen, onClose, images, initialIndex, authorNam
           </Button>
         </div>
         
-        {/* Thumbnail navigation for multiple images */}
+        {/* Thumbnail navigation - fixed height and properly contained */}
         {images.length > 1 && (
-          <div className="flex p-4 space-x-2 overflow-x-auto">
-            {images.map((image, index) => (
-              <div 
-                key={image.id}
-                className={`
-                  w-16 h-16 relative rounded-md overflow-hidden cursor-pointer
-                  ${currentIndex === index ? "ring-2 ring-primary" : ""}
-                `}
-                onClick={() => setCurrentIndex(index)}
-              >
-                <Image
-                  src={image.url}
-                  alt={`${authorName} - Thumbnail ${index + 1}`}
-                  fill
-                  sizes="64px"
-                  className="object-cover"
-                />
-              </div>
-            ))}
+          <div className="shrink-0 border-t py-3 px-4 bg-muted/30">
+            <div className="flex justify-center gap-2 overflow-x-auto max-w-full pb-2 scrollbar-thin">
+              {images.map((image, index) => (
+                <div 
+                  key={image.id}
+                  className={cn(
+                    "w-14 h-14 relative rounded-md overflow-hidden cursor-pointer transition-all flex-shrink-0",
+                    currentIndex === index 
+                      ? "ring-2 ring-primary scale-105" 
+                      : "opacity-70 hover:opacity-100"
+                  )}
+                  onClick={() => setCurrentIndex(index)}
+                >
+                  <Image
+                    src={image.url}
+                    alt={`${authorName} - Thumbnail ${index + 1}`}
+                    fill
+                    sizes="56px"
+                    className="object-cover"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </DialogContent>
