@@ -15,7 +15,6 @@ import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import Link from "next/link";
 import { MessageSquare, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
-// import { cn } from "@/lib/utils";
 import { ProfileComment } from "@/types/api/users";
 
 interface UserCommentsProps {
