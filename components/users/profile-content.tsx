@@ -9,7 +9,8 @@ import {
   HeartIcon, 
   UsersIcon, 
   ClockIcon, 
-  CalendarIcon 
+  CalendarIcon,
+  MessageSquare
 } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -18,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import type { UserData } from "@/types/api/users";
 import { UserQuoteList } from "./user-quote-list"; // Import our new component
+import { UserComments } from "./user-comments";
 
 interface ProfileContentProps {
   user: UserData;
@@ -32,7 +34,8 @@ export function ProfileContent({ user }: ProfileContentProps) {
     likes = [],
     bookmarks = [],
     followedAuthors = [],
-    activityStats
+    activityStats,
+    comments = []
   } = user.userProfile || {};
   
   // Format membership date
@@ -117,6 +120,22 @@ export function ProfileContent({ user }: ProfileContentProps) {
                 <span>Following</span>
                 <Badge variant="secondary" className="ml-1">
                   {activityStats?.followingCount || 0}
+                </Badge>
+              </div>
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="comments"
+              className={cn(
+                "rounded-none border-b-2 border-transparent",
+                "data-[state=active]:border-primary"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                <span>Comments</span>
+                <Badge variant="secondary" className="ml-1">
+                  {activityStats?.commentCount || 0}
                 </Badge>
               </div>
             </TabsTrigger>
@@ -266,6 +285,28 @@ export function ProfileContent({ user }: ProfileContentProps) {
                 </CardContent>
               )}
             </Card>
+          </TabsContent>
+
+          {/* Comments Tab */}
+          <TabsContent value="comments" className="py-4">
+            <UserComments
+              comments={comments}
+              isCurrentUser={isCurrentUser}
+              emptyMessage={
+                isCurrentUser ? (
+                  <>
+                    You haven&apos;t commented on any quotes yet.
+                    <div className="mt-4">
+                      <Link href="/quotes">
+                        <Button variant="outline" size="sm">Browse Quotes</Button>
+                      </Link>
+                    </div>
+                  </>
+                ) : (
+                  "This user hasn't commented on any quotes yet."
+                )
+              }
+            />
           </TabsContent>
         </Tabs>
       </CardContent>
