@@ -1,12 +1,27 @@
 "use client";
 
 import { MONTH_NAMES_CAPITALIZED } from "@/lib/date-utils";
-import { AuthorProfileWithDates } from "@/lib/services/interfaces/author-profile-service.interface";
+// Remove the direct import of Author type
+// import { Author } from "@/types/author";
+
+// Define a more flexible type that matches what we receive from the API
+interface BirthdayAuthor {
+  id: string;
+  name: string;
+  slug: string;
+  bio?: string | null;
+  born?: string | null;
+  died?: string | null;
+  image?: string | null;
+  // These fields are optional since they may not be present in API response
+  quoteCount?: number;
+  followers?: number;
+}
 
 interface BirthdayStructuredDataProps {
   day: number;
   month: number;
-  authors: Array<AuthorProfileWithDates>;
+  authors: Array<BirthdayAuthor>; // Use the more flexible type
   totalAuthors: number;
 }
 
@@ -26,12 +41,11 @@ export function BirthdayStructuredData({ day, month, authors, totalAuthors }: Bi
         "item": {
           "@type": "Person",
           "name": author.name,
-          "description": author.bio,
-          "birthDate": author.bornYear ? `${author.bornYear}-${author.bornMonth?.toString().padStart(2, '0')}-${author.bornDay?.toString().padStart(2, '0')}` : undefined,
-          "deathDate": author.diedYear ? `${author.diedYear}-${author.diedMonth?.toString().padStart(2, '0')}-${author.diedDay?.toString().padStart(2, '0')}` : undefined,
-          "birthPlace": author.birthPlace,
+          "description": author.bio || undefined,
+          "birthDate": author.born || undefined,
+          "deathDate": author.died || undefined,
           "url": `https://gulfquotes.com/authors/${author.slug}`,
-          "image": author.images && author.images.length > 0 ? author.images[0].url : undefined
+          "image": author.image || undefined
         }
       })),
       "numberOfItems": totalAuthors
