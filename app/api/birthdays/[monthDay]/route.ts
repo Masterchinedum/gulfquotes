@@ -37,7 +37,7 @@ export async function GET(req: Request): Promise<NextResponse<BirthdayApiRespons
       );
     }
 
-    const [monthName, dayStr] = monthDay.split('_');
+    const [monthPart, dayStr] = monthDay.split('_');
     const day = parseInt(dayStr, 10);
 
     if (isNaN(day) || day < 1 || day > 31) {
@@ -52,10 +52,19 @@ export async function GET(req: Request): Promise<NextResponse<BirthdayApiRespons
       );
     }
 
-    // Convert month name to number
+    // Convert month name to number - MODIFIED to handle numeric months too
     let month: number;
     try {
-      month = getMonthNumber(monthName);
+      // Check if monthPart is already a number
+      if (/^\d+$/.test(monthPart)) {
+        month = parseInt(monthPart, 10);
+        if (month < 1 || month > 12) {
+          throw new Error(`Invalid month number: ${monthPart}`);
+        }
+      } else {
+        // Otherwise treat it as a name
+        month = getMonthNumber(monthPart);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error 
         ? `Invalid month name: ${err.message}`
