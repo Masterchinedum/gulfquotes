@@ -72,6 +72,7 @@ export interface ProfilePrivacySettings {
   showLikes: boolean;
   showBookmarks: boolean;
   showFollowing: boolean;
+  showActivity: boolean;
 }
 
 // Enhanced User specific types
