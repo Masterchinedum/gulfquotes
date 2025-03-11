@@ -9,7 +9,8 @@ import { cn } from "@/lib/utils";
 import { 
   MONTH_NAMES_CAPITALIZED, 
   getDaysInMonth, 
-  generateBirthdayPath
+//   generateBirthdayPath,
+  getMonthName
 } from "@/lib/date-utils";
 
 interface BirthdayCalendarProps {
@@ -86,7 +87,9 @@ export function BirthdayCalendar({
     if (onDateSelected) {
       onDateSelected(day, month);
     } else {
-      const path = generateBirthdayPath(day, month);
+      // Use month name instead of number
+      const monthName = getMonthName(month);
+      const path = `/birthdays/${monthName}_${day}`;
       router.push(path);
     }
   };
@@ -155,7 +158,7 @@ export function BirthdayCalendar({
             <span className="sr-only">Previous month</span>
           </Button>
           <div className="text-sm font-medium">
-            {MONTH_NAMES_CAPITALIZED[month - 1]} {year}
+            {MONTH_NAMES_CAPITALIZED[month - 1]} {/* Remove the year display */}
           </div>
           <Button
             variant="outline"
