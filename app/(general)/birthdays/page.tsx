@@ -1,4 +1,5 @@
 import { BirthdayCalendar } from "@/components/authors/BirthdayCalendar";
+import { ThisDayAuthors } from "@/components/authors/ThisDayAuthors";  // Add import
 import { Suspense } from "react";
 import { getTodaysDate } from "@/lib/date-utils";
 
@@ -31,8 +32,8 @@ export default function BirthdaysPage() {
         <div className="space-y-6">
           <h2 className="text-2xl font-semibold">Born Today</h2>
           <Suspense fallback={<div>Loading today&apos;s authors...</div>}>
-            {/* Component to display authors born today */}
-            {/* We'll implement this in Phase 6 */}
+            {/* Add ThisDayAuthors component */}
+            <ThisDayAuthors />
           </Suspense>
         </div>
       </div>
