@@ -9,23 +9,26 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { BirthdayStructuredData } from "@/components/authors/BirthdayStructuredData";
 
-// Define the params interface
+// Update the interface to match Next.js expectations
 interface BirthdayPageProps {
-  params: {
-    monthDay: string;
-  };
+  params: Promise<{ monthDay: string }>;
   searchParams: {
     page?: string;
     limit?: string;
   };
 }
 
-// Enhance the existing generateMetadata function
-
-export async function generateMetadata({ params }: BirthdayPageProps): Promise<Metadata> {
+// Update the function signature for generateMetadata
+export async function generateMetadata({ 
+  params 
+}: {
+  params: Promise<{ monthDay: string }>
+}): Promise<Metadata> {
   try {
-    // Parse the month_day parameter
-    const [monthName, dayStr] = params.monthDay.split('_');
+    // Await params before using
+    const resolvedParams = await params;
+    const [monthName, dayStr] = resolvedParams.monthDay.split('_');
+    
     if (!monthName || !dayStr) return {
       title: "Authors by Birthday | gulfquotes",
       description: "Explore quotes from authors born on this day of the year."
@@ -83,9 +86,10 @@ export async function generateMetadata({ params }: BirthdayPageProps): Promise<M
   }
 }
 
-export default function BirthdayPage({ params, searchParams }: BirthdayPageProps) {
-  // Parse the month_day parameter
-  const [monthName, dayStr] = params.monthDay.split('_');
+export default async function BirthdayPage({ params, searchParams }: BirthdayPageProps) {
+  // Await params before using
+  const resolvedParams = await params;
+  const [monthName, dayStr] = resolvedParams.monthDay.split('_');
   
   if (!monthName || !dayStr) {
     notFound();
