@@ -218,12 +218,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...categoryRoutes,
     ...tagRoutes,
     ...birthdayRoutes,
-  ];
+  ].filter((route): route is NonNullable<typeof route> => route !== null);
   
   // Deduplicate URLs (in case trending quotes overlap with regular quotes)
   const urlMap = new Map();
   
   allRoutes.forEach(route => {
+    // Now TypeScript knows route can't be null
     const existingRoute = urlMap.get(route.url);
     
     // If route doesn't exist or new route has higher priority, use it
