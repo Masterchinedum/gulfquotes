@@ -1,9 +1,7 @@
 import { Suspense } from "react";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
-// import { fetchUserProfile } from "@/actions/user-profile";
 import { ProfileNav } from "@/components/users/profile-nav";
-// import { Separator } from "@/components/ui/separator";
 import { notFound, redirect } from "next/navigation";
 
 interface UserLayoutProps {
@@ -19,7 +17,8 @@ export default async function UserLayout({ children, params }: UserLayoutProps) 
 
   try {
     // Fetch the basic user data just for navigation
-    const headersList = headers();
+    // Fix: await the headers() call
+    const headersList = await headers();
     const origin = process.env.NEXTAUTH_URL || "";
     const res = await fetch(`${origin}/api/users/${params.slug}`, {
       headers: {
