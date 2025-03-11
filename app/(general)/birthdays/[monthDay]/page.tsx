@@ -7,7 +7,8 @@ import { DateSelector } from "@/components/authors/DateSelector";
 import { BirthdayCalendar } from "@/components/authors/BirthdayCalendar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
-import { BirthdayStructuredData } from "@/components/authors/BirthdayStructuredData";
+import { BirthdayStructuredDataWrapper } from "./components/BirthdayStructuredDataWrapper";
+
 
 // Update the interface to match Next.js expectations
 interface BirthdayPageProps {
@@ -148,6 +149,9 @@ export default async function BirthdayPage({ params, searchParams }: BirthdayPag
         
         {/* Main content area with author list */}
         <div className="lg:col-span-3">
+          {/* Structured data is rendered at the server level */}
+          <BirthdayStructuredDataWrapper day={day} month={month} />
+          
           <Suspense fallback={
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {Array(limit).fill(0).map((_, i) => (
@@ -179,14 +183,6 @@ export default async function BirthdayPage({ params, searchParams }: BirthdayPag
               month={month}
               page={page}
               limit={limit}
-              onDataLoaded={(authors, total) => (
-                <BirthdayStructuredData 
-                  day={day} 
-                  month={month} 
-                  authors={authors} 
-                  totalAuthors={total} 
-                />
-              )}
             />
           </Suspense>
         </div>
