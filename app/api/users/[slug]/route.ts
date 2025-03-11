@@ -87,6 +87,15 @@ export async function GET(
 
     // Fetch additional relationships based on query params and privacy settings
     if (user.userProfile) {
+      // Create userProfile object if it doesn't exist yet
+      if (!userData.userProfile) {
+        userData.userProfile = {
+          username: null,
+          bio: null,
+          slug: user.id,
+        };
+      }
+
       // Activity statistics - always include these
       const [quoteLikeCount, quoteBookmarkCount, commentCount, followingCount] = await Promise.all([
         db.quoteLike.count({ where: { userId: user.id } }),
