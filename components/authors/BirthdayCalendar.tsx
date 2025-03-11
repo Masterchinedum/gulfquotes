@@ -1,15 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState} from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { 
-  MONTH_NAMES_CAPITALIZED, 
-  getDaysInMonth, 
-//   generateBirthdayPath,
+import {
+  MONTH_NAMES_CAPITALIZED,
+  getDaysInMonth,
   getMonthName
 } from "@/lib/date-utils";
 
@@ -36,31 +35,10 @@ export function BirthdayCalendar({
   const [month, setMonth] = useState<number>(initialMonth || currentMonth);
   const [year, setYear] = useState<number>(initialYear || currentYear);
   
-  // State for keeping track of days with authors (would be populated from API)
-  const [daysWithAuthors, setDaysWithAuthors] = useState<number[]>([]);
+  // Remove the daysWithAuthors state and related code since we're not using it anymore
   
   // Router for navigation
   const router = useRouter();
-
-  // Effect to fetch authors for the current month when month/year changes
-  useEffect(() => {
-    async function fetchAuthorsForMonth() {
-      try {
-        // For now, simulate days with authors (will be replaced with API call)
-        // In a real implementation, you'd fetch from your API which days have authors
-        // Example API endpoint: /api/birthdays/month-summary/january
-        const days = Array.from({ length: getDaysInMonth(month, year).length }, (_, i) => i + 1)
-          .filter(() => Math.random() > 0.7); // Randomly mark some days as having authors
-        
-        setDaysWithAuthors(days);
-      } catch (error) {
-        console.error("Failed to fetch authors for month", error);
-        setDaysWithAuthors([]);
-      }
-    }
-
-    fetchAuthorsForMonth();
-  }, [month, year]);
 
   // Navigate to previous month
   const handlePreviousMonth = () => {
@@ -116,16 +94,14 @@ export function BirthdayCalendar({
     // Add days of the month
     for (let day = 1; day <= daysInMonth.length; day++) {
       const isToday = day === currentDay && month === currentMonth && year === currentYear;
-      const hasAuthors = daysWithAuthors.includes(day);
       
       cells.push(
         <Button
           key={`day-${day}`}
-          variant={hasAuthors ? "default" : "outline"}
+          variant="outline"
           className={cn(
             "h-10 w-10 p-0 font-normal",
-            isToday && "border-primary font-semibold",
-            hasAuthors && "bg-primary text-primary-foreground hover:bg-primary/90"
+            isToday && "border-primary font-semibold"
           )}
           onClick={() => handleDayClick(day)}
         >
@@ -158,7 +134,7 @@ export function BirthdayCalendar({
             <span className="sr-only">Previous month</span>
           </Button>
           <div className="text-sm font-medium">
-            {MONTH_NAMES_CAPITALIZED[month - 1]} {/* Remove the year display */}
+            {MONTH_NAMES_CAPITALIZED[month - 1]}
           </div>
           <Button
             variant="outline"
@@ -184,12 +160,7 @@ export function BirthdayCalendar({
           {generateCalendarGrid()}
         </div>
         
-        <div className="mt-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full bg-primary"></div>
-            <span>Days with author birthdays</span>
-          </div>
-        </div>
+        {/* Remove the legend since we're no longer using the color indicator */}
       </CardContent>
     </Card>
   );
