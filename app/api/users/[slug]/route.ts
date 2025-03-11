@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import db from "@/lib/prisma";
-import type { UserResponse, UserProfileIncludeParams } from "@/types/api/users";
+import type { UserResponse, UserProfileIncludeParams, UserData } from "@/types/api/users";
 
 export async function GET(
   req: Request
@@ -83,7 +83,7 @@ export async function GET(
         slug: user.userProfile.slug,
       } : null,
       isCurrentUser: isOwner,
-    };
+    } as UserData; // Assert the complete type
 
     // Fetch additional relationships based on query params and privacy settings
     if (user.userProfile) {
