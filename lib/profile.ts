@@ -73,12 +73,19 @@ export async function updateUserProfile(userId: string, data: Partial<UserProfil
   } else {
     data.slug = generateUserSlug({ userId });
   }
+  
+  // Create a copy of data without userId and id properties
+  const updateData: Partial<Omit<UserProfile, 'userId' | 'id'>> = { ...data };
+  
+  // Delete properties instead of destructuring to avoid unused variables
+  delete updateData.userId;
+  delete updateData.id;
 
   // Update user profile using transaction
   const updatedUserProfile = await db.userProfile.upsert({
     where: { userId },
-    update: data,
-    create: { ...data, userId },
+    update: updateData, // Use the filtered data without userId
+    create: { ...updateData, userId }, // For create, we need userId
   });
 
   return updatedUserProfile;
