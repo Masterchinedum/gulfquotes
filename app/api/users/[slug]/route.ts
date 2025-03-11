@@ -119,6 +119,7 @@ export async function GET(
         showLikes: true, 
         showBookmarks: isOwner, // Only owner can see bookmarks by default
         showFollowing: true,
+        showActivity: true // Add the missing required property
       };
       
       userData.userProfile.privacySettings = privacySettings;

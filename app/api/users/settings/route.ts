@@ -4,7 +4,7 @@ import db from "@/lib/prisma"; // Fixed import
 import { profileSchema as updateProfileSchema } from "@/schemas/profile"; // Use existing schema
 import { generateUserSlug } from "@/lib/utils";
 import { deleteImage, getImagePublicId } from "@/lib/cloudinary";
-import type { SettingsResponse } from "@/types/api/users";
+import type { SettingsResponse, UserData, ProfilePrivacySettings } from "@/types/api/users";
 
 export async function PATCH(
   req: Request
