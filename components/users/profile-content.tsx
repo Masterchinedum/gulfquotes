@@ -1,6 +1,21 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+"use client";
+
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { 
+  BookmarkIcon, 
+  HeartIcon, 
+  UsersIcon, 
+  ClockIcon, 
+  CalendarIcon 
+} from "lucide-react";
+import Link from "next/link";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 import type { UserData } from "@/types/api/users";
 
 interface ProfileContentProps {
@@ -8,37 +23,53 @@ interface ProfileContentProps {
 }
 
 export function ProfileContent({ user }: ProfileContentProps) {
-  // Dummy data for quotes if userProfile.quotes is not available
-  const dummyQuotes = user.userProfile?.quotes || [
-    { id: "1", content: "This is a dummy quote." },
-    { id: "2", content: "Another dummy quote." },
-  ];
+  const [activeTab, setActiveTab] = useState("activity");
+  const isCurrentUser = user.isCurrentUser;
+  
+  // Access real data from the user object
+  const {
+    likes = [],
+    bookmarks = [],
+    followedAuthors = [],
+    activityStats
+  } = user.userProfile || {};
+  
+  // Format membership date
+  const memberSince = activityStats?.memberSince 
+    ? new Date(activityStats.memberSince)
+    : null;
 
-  // Dummy data for likes if userProfile.likes is not available
-  const dummyLikes = user.userProfile?.likes || [
-    { id: "1", content: "This is a liked quote." },
-    { id: "2", content: "Another liked quote." },
-  ];
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'MMM d, yyyy');
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Unknown date';
+    }
+  };
 
   return (
     <Card className="border-none shadow-none">
       <CardContent className="p-0">
-        <Tabs defaultValue="quotes" className="w-full">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full"
+        >
           <TabsList className="w-full justify-start border-b rounded-none h-auto p-0">
             <TabsTrigger
-              value="quotes"
+              value="activity"
               className={cn(
                 "rounded-none border-b-2 border-transparent",
                 "data-[state=active]:border-primary"
               )}
             >
               <div className="flex items-center gap-2">
-                <span>Quotes</span>
-                <span className="text-sm text-muted-foreground">
-                  {dummyQuotes.length}
-                </span>
+                <ClockIcon className="h-4 w-4" />
+                <span>Activity</span>
               </div>
             </TabsTrigger>
+
             <TabsTrigger
               value="likes"
               className={cn(
@@ -47,59 +78,259 @@ export function ProfileContent({ user }: ProfileContentProps) {
               )}
             >
               <div className="flex items-center gap-2">
+                <HeartIcon className="h-4 w-4" />
                 <span>Likes</span>
-                <span className="text-sm text-muted-foreground">
-                  {dummyLikes.length}
-                </span>
+                <Badge variant="secondary" className="ml-1">
+                  {activityStats?.likeCount || 0}
+                </Badge>
+              </div>
+            </TabsTrigger>
+
+            {isCurrentUser && (
+              <TabsTrigger
+                value="bookmarks"
+                className={cn(
+                  "rounded-none border-b-2 border-transparent",
+                  "data-[state=active]:border-primary"
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <BookmarkIcon className="h-4 w-4" />
+                  <span>Bookmarks</span>
+                  <Badge variant="secondary" className="ml-1">
+                    {activityStats?.bookmarkCount || 0}
+                  </Badge>
+                </div>
+              </TabsTrigger>
+            )}
+
+            <TabsTrigger
+              value="following"
+              className={cn(
+                "rounded-none border-b-2 border-transparent",
+                "data-[state=active]:border-primary"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <UsersIcon className="h-4 w-4" />
+                <span>Following</span>
+                <Badge variant="secondary" className="ml-1">
+                  {activityStats?.followingCount || 0}
+                </Badge>
               </div>
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="quotes" className="py-4">
+          {/* Activity Tab */}
+          <TabsContent value="activity" className="py-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Recent Activity</CardTitle>
+                {memberSince && (
+                  <CardDescription className="flex items-center gap-1">
+                    <CalendarIcon className="h-4 w-4" />
+                    Member since {formatDate(memberSince.toString())}
+                  </CardDescription>
+                )}
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Activity summary */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-muted/30 p-4 rounded-lg flex flex-col items-center">
+                    <HeartIcon className="h-6 w-6 text-muted-foreground mb-2" />
+                    <p className="font-semibold text-lg">{activityStats?.likeCount || 0}</p>
+                    <p className="text-sm text-muted-foreground">Liked Quotes</p>
+                  </div>
+                  
+                  <div className="bg-muted/30 p-4 rounded-lg flex flex-col items-center">
+                    <BookmarkIcon className="h-6 w-6 text-muted-foreground mb-2" />
+                    <p className="font-semibold text-lg">{activityStats?.bookmarkCount || 0}</p>
+                    <p className="text-sm text-muted-foreground">Bookmarked Quotes</p>
+                  </div>
+                  
+                  <div className="bg-muted/30 p-4 rounded-lg flex flex-col items-center">
+                    <UsersIcon className="h-6 w-6 text-muted-foreground mb-2" />
+                    <p className="font-semibold text-lg">{activityStats?.followingCount || 0}</p>
+                    <p className="text-sm text-muted-foreground">Following</p>
+                  </div>
+                </div>
+
+                {/* Recent activity timeline would go here */}
+                <div className="mt-6">
+                  {/* This would be expanded with actual activity data in the future */}
+                  {(followedAuthors.length > 0 || likes.length > 0) ? (
+                    <div className="space-y-4">
+                      {followedAuthors.length > 0 && (
+                        <div className="border-l-2 border-muted pl-4 py-2">
+                          <p className="text-sm text-muted-foreground">
+                            Started following {followedAuthors.length} author{followedAuthors.length !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                      )}
+                      {likes.length > 0 && (
+                        <div className="border-l-2 border-muted pl-4 py-2">
+                          <p className="text-sm text-muted-foreground">
+                            Liked {likes.length} quote{likes.length !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center text-muted-foreground py-8">
+                      No recent activity to display
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Likes Tab */}
+          <TabsContent value="likes" className="py-4">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">
-                  {dummyQuotes.length 
-                    ? `${dummyQuotes.length} Quotes`
-                    : "No quotes yet"}
+                  {likes.length > 0 
+                    ? `${likes.length} Liked Quotes`
+                    : "No Liked Quotes"}
                 </CardTitle>
               </CardHeader>
-              {dummyQuotes.length ? (
+              {likes.length > 0 ? (
                 <CardContent className="grid gap-4">
-                  {dummyQuotes.map((quote) => (
-                    <div key={quote.id} className="p-4 border rounded">
-                      {quote.content}
+                  {likes.map((quote) => (
+                    <div key={quote.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                      <Link href={`/quotes/${quote.slug}`} className="block">
+                        <p className="font-medium line-clamp-2 mb-2">{quote.content}</p>
+                        <div className="flex items-center justify-between text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <span>by</span>
+                            <Link href={`/authors/${quote.authorProfile.slug}`} className="hover:underline">
+                              {quote.authorProfile.name}
+                            </Link>
+                          </div>
+                          <Link href={`/categories/${quote.category.slug}`} className="hover:underline">
+                            {quote.category.name}
+                          </Link>
+                        </div>
+                      </Link>
                     </div>
                   ))}
+                  
+                  {likes.length > 5 && (
+                    <div className="text-center pt-2">
+                      <Link href={`/users/${user.userProfile?.slug || user.id}/likes`}>
+                        <Button variant="outline" size="sm">View All Liked Quotes</Button>
+                      </Link>
+                    </div>
+                  )}
                 </CardContent>
               ) : (
-                <CardContent className="text-muted-foreground text-center py-8">
-                  No quotes have been added yet.
+                <CardContent className="text-center py-8 text-muted-foreground">
+                  No quotes have been liked yet.
                 </CardContent>
               )}
             </Card>
           </TabsContent>
 
-          <TabsContent value="likes" className="py-4">
+          {/* Bookmarks Tab - Only visible to the profile owner */}
+          {isCurrentUser && (
+            <TabsContent value="bookmarks" className="py-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">
+                    {bookmarks.length > 0 
+                      ? `${bookmarks.length} Bookmarked Quotes`
+                      : "No Bookmarked Quotes"}
+                  </CardTitle>
+                </CardHeader>
+                {bookmarks.length > 0 ? (
+                  <CardContent className="grid gap-4">
+                    {bookmarks.map((quote) => (
+                      <div key={quote.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                        <Link href={`/quotes/${quote.slug}`} className="block">
+                          <p className="font-medium line-clamp-2 mb-2">{quote.content}</p>
+                          <div className="flex items-center justify-between text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                              <span>by</span>
+                              <Link href={`/authors/${quote.authorProfile.slug}`} className="hover:underline">
+                                {quote.authorProfile.name}
+                              </Link>
+                            </div>
+                            <Link href={`/categories/${quote.category.slug}`} className="hover:underline">
+                              {quote.category.name}
+                            </Link>
+                          </div>
+                        </Link>
+                      </div>
+                    ))}
+                    
+                    {bookmarks.length > 5 && (
+                      <div className="text-center pt-2">
+                        <Link href={`/users/${user.userProfile?.slug || user.id}/bookmarks`}>
+                          <Button variant="outline" size="sm">View All Bookmarks</Button>
+                        </Link>
+                      </div>
+                    )}
+                  </CardContent>
+                ) : (
+                  <CardContent className="text-center py-8 text-muted-foreground">
+                    No quotes have been bookmarked yet.
+                    <div className="mt-4">
+                      <Link href="/quotes">
+                        <Button variant="outline" size="sm">Browse Quotes</Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
+            </TabsContent>
+          )}
+
+          {/* Following Tab */}
+          <TabsContent value="following" className="py-4">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">
-                  {dummyLikes.length 
-                    ? `${dummyLikes.length} Liked Quotes`
-                    : "No likes yet"}
+                  {followedAuthors.length > 0 
+                    ? `Following ${followedAuthors.length} Authors`
+                    : "Not Following Any Authors"}
                 </CardTitle>
               </CardHeader>
-              {dummyLikes.length ? (
-                <CardContent className="grid gap-4">
-                  {dummyLikes.map((like) => (
-                    <div key={like.id} className="p-4 border rounded">
-                      {like.content}
+              {followedAuthors.length > 0 ? (
+                <CardContent className="grid gap-4 md:grid-cols-2">
+                  {followedAuthors.map((author) => (
+                    <div key={author.id} className="flex items-center gap-3 border rounded-lg p-3">
+                      <Avatar>
+                        <AvatarImage src={author.image || ""} alt={author.name} />
+                        <AvatarFallback>{author.name[0] || "A"}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <Link href={`/authors/${author.slug}`} className="block font-medium hover:underline truncate">
+                          {author.name}
+                        </Link>
+                        {author.bio && (
+                          <p className="text-sm text-muted-foreground line-clamp-1">{author.bio}</p>
+                        )}
+                      </div>
                     </div>
                   ))}
+                  
+                  {followedAuthors.length > 6 && (
+                    <div className="col-span-2 text-center pt-2">
+                      <Link href={`/users/${user.userProfile?.slug || user.id}/following`}>
+                        <Button variant="outline" size="sm">View All Following</Button>
+                      </Link>
+                    </div>
+                  )}
                 </CardContent>
               ) : (
-                <CardContent className="text-muted-foreground text-center py-8">
-                  No quotes have been liked yet.
+                <CardContent className="text-center py-8 text-muted-foreground">
+                  Not following any authors yet.
+                  <div className="mt-4">
+                    <Link href="/authors">
+                      <Button variant="outline" size="sm">Browse Authors</Button>
+                    </Link>
+                  </div>
                 </CardContent>
               )}
             </Card>
