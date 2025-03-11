@@ -7,6 +7,7 @@ import { authorProfileService } from "@/lib/services/author-profile.service";
 import type { AuthorProfileResponse, AuthorProfilesResponse } from "@/types/api/author-profiles";
 import { DuplicateAuthorProfileError, MaxImagesExceededError } from "@/lib/services/errors/author-profile.errors";
 import { cloudinaryConfig, getMaxFiles } from "@/lib/cloudinary";
+import { AuthorProfileWithDates } from "@/lib/services/interfaces/author-profile-service.interface";
 
 // GET handler for listing author profiles
 export async function GET(req: Request): Promise<NextResponse<AuthorProfilesResponse>> {
@@ -115,10 +116,86 @@ export async function POST(req: Request): Promise<NextResponse<AuthorProfileResp
       }
     }
 
-    // Create author profile with images
+    // Handle date field validation - additional custom validations beyond the schema
+    if (validatedData.data.bornDay || validatedData.data.bornMonth || validatedData.data.bornYear) {
+      // Check that if any birth date component is provided, all necessary ones are provided
+      if (validatedData.data.bornMonth && !validatedData.data.bornYear) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "VALIDATION_ERROR",
+              message: "Birth year must be provided when month is specified"
+            }
+          },
+          { status: 400 }
+        );
+      }
+      
+      if (validatedData.data.bornDay && !validatedData.data.bornMonth) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "VALIDATION_ERROR",
+              message: "Birth month must be provided when day is specified"
+            }
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Similar validation for death date fields
+    if (validatedData.data.diedDay || validatedData.data.diedMonth || validatedData.data.diedYear) {
+      if (validatedData.data.diedMonth && !validatedData.data.diedYear) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "VALIDATION_ERROR",
+              message: "Death year must be provided when month is specified"
+            }
+          },
+          { status: 400 }
+        );
+      }
+      
+      if (validatedData.data.diedDay && !validatedData.data.diedMonth) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "VALIDATION_ERROR",
+              message: "Death month must be provided when day is specified"
+            }
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Create author profile with images and new date fields
     const authorProfile = await authorProfileService.create(validatedData.data);
 
-    return NextResponse.json({ data: authorProfile });
+    // Format the response to include formatted date strings alongside structured date fields
+    let formattedResponse;
+    if (authorProfile) {
+      // Cast the entire authorProfile object to AuthorProfileWithDates since it has all the required fields
+      const profileWithDates = authorProfile as unknown as AuthorProfileWithDates;
+      
+      // Get formatted dates using the service method
+      const formattedDates = authorProfileService.formatDateFields?.(profileWithDates);
+      
+      // Include formatted dates in response if available
+      if (formattedDates) {
+        formattedResponse = {
+          ...authorProfile,
+          formattedBirthDate: formattedDates.birthDate,
+          formattedDeathDate: formattedDates.deathDate
+        };
+      } else {
+        formattedResponse = authorProfile;
+      }
+    }
+
+    return NextResponse.json({ data: formattedResponse || authorProfile });
 
   } catch (error: unknown) {
     console.error("[AUTHOR_PROFILES_POST]", error);

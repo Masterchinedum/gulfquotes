@@ -4,6 +4,7 @@ import { AuthorSearchBar } from "@/components/authors/AuthorSearchBar"
 import { AlphabetNav } from "@/components/authors/AlphabetNav"
 import { AuthorGrid } from "@/components/authors/AuthorGrid"
 import { AuthorPagination } from "@/components/authors/Pagination"
+import { DateSelector } from "@/components/authors/DateSelector" // Add import for DateSelector
 import { ErrorBoundary } from "@/components/shared/error-boundary"
 import { AuthorSkeleton } from "./loading"
 import { fetchAuthors } from "@/lib/authors"
@@ -64,6 +65,14 @@ export default async function AuthorsPage({
                 <AuthorSearchBar />
               </div>
             </div>
+            
+            {/* Add DateSelector component */}
+            <div className="flex flex-col sm:flex-row gap-4 items-center">
+              <div className="w-full md:w-auto">
+                <DateSelector className="mb-4" />
+              </div>
+            </div>
+
             <AlphabetNav />
             <Suspense fallback={<AuthorSkeleton />}>
               <AuthorGrid 
@@ -86,6 +95,8 @@ export default async function AuthorsPage({
         <AuthorHeader />
         <div className="flex flex-col gap-6">
           <AuthorSearchBar />
+          {/* Add DateSelector even on error state */}
+          <DateSelector className="mb-4" />
           <AlphabetNav />
           <div className="text-center py-12 text-muted-foreground">
             Failed to load authors. Please try again later.

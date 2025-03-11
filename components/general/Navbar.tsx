@@ -7,7 +7,7 @@ import { LoginButton } from "@/components/auth/login-button";
 import { Button } from "@/components/ui/button";
 import { UserButton } from "@/components/auth/user-button";
 import { SearchField } from "@/components/search/SearchField";
-import { BookOpen, Home, Users, BookMarked } from "lucide-react";
+import { BookOpen, Home, Users, BookMarked, Calendar } from "lucide-react";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 
 export function Navbar() {
@@ -63,6 +63,14 @@ export function Navbar() {
           >
             <Users size={18} />
             <span>Authors</span>
+          </Link>
+          {/* Add Birthdays link */}
+          <Link 
+            href="/birthdays"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Calendar size={18} />
+            <span>Birthdays</span>
           </Link>
         </div>
       </div>

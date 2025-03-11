@@ -5,6 +5,7 @@ import { PopularCategories } from "@/components/home/PopularCategories";
 import { TrendingQuotes } from "@/components/home/TrendingQuotes";
 import { DailyQuoteSidebar } from "@/components/home/DailyQuoteSidebar";
 import { RandomQuoteSidebar } from "@/components/home/RandomQuoteSidebar"; // Add this import
+import { ThisDayAuthors } from "@/components/authors/ThisDayAuthors"; // Add import
 
 export default function Home() {
   return (
@@ -21,6 +22,9 @@ export default function Home() {
 
               {/* Random Quote - Replace Your Progress card */}
               <RandomQuoteSidebar />
+
+              {/* Other sidebar widgets */}
+              <ThisDayAuthors />
             </div>
           }
         >

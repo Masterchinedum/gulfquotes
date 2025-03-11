@@ -1,13 +1,15 @@
 import { AuthorProfile, Prisma } from "@prisma/client";
-import { 
-  AuthorProfileService, 
-  AuthorProfileListParams, 
-  AuthorProfileListResponse 
+import {
+  AuthorProfileService,
+  AuthorProfileListParams,
+  AuthorProfileListResponse,
+  AuthorProfileWithDates,
+  AuthorProfileBirthdayParams
 } from "./interfaces/author-profile-service.interface";
 import { CreateAuthorProfileInput, UpdateAuthorProfileInput } from "@/schemas/author-profile";
-import { slugify } from "@/lib/utils";
+import { slugify, getMonthName } from "@/lib/utils";
 import db from "@/lib/prisma";
-import { 
+import {
   AuthorProfileNotFoundError,
   DuplicateAuthorProfileError,
   ImageDeleteError,
@@ -64,6 +66,76 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
     }
   }
 
+  /**
+   * Format date fields into readable strings
+   */
+  formatDateFields(authorProfile: AuthorProfileWithDates): {
+    birthDate: string | null;
+    deathDate: string | null;
+  } {
+    const birthDate = this.formatDate(
+      authorProfile.bornDay,
+      authorProfile.bornMonth,
+      authorProfile.bornYear,
+      authorProfile.birthPlace
+    );
+    
+    const deathDate = this.formatDate(
+      authorProfile.diedDay,
+      authorProfile.diedMonth,
+      authorProfile.diedYear
+    );
+    
+    return { birthDate, deathDate };
+  }
+
+  /**
+   * Helper to format individual date components into a string
+   */
+  private formatDate(
+    day: number | null,
+    month: number | null,
+    year: number | null,
+    location?: string | null
+  ): string | null {
+    if (!month && !day && !year) return null;
+    
+    const parts: string[] = [];
+
+    // Add location if provided
+    if (location) {
+      parts.push(`Born in ${location}`);
+    }
+    
+    // Format the date parts
+    const dateParts: string[] = [];
+    
+    // Add month - Use the imported getMonthName instead of hardcoding
+    if (month) {
+      dateParts.push(getMonthName(month, true)); // true for capitalized month name
+    }
+    
+    // Add day
+    if (day) {
+      dateParts.push(`${day}`);
+    }
+    
+    // Add year
+    if (year) {
+      dateParts.push(`${year}`);
+    }
+    
+    if (dateParts.length > 0) {
+      // If we already have location, add a separator
+      if (parts.length > 0) {
+        parts.push('-');
+      }
+      parts.push(dateParts.join(' '));
+    }
+    
+    return parts.length > 0 ? parts.join(' ') : null;
+  }
+
   async create(data: CreateAuthorProfileInput): Promise<AuthorProfile> {
     try {
       const slug = data.slug || slugify(data.name);
@@ -75,12 +147,21 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
       }
 
       return await db.$transaction(async (tx) => {
-        // Create author profile
+        // Create author profile with new date fields
         const profile = await tx.authorProfile.create({
           data: {
             name: data.name,
+            // Keep the original string fields for backward compatibility
             born: data.born,
             died: data.died,
+            // Add new structured date fields
+            bornDay: data.bornDay,
+            bornMonth: data.bornMonth,
+            bornYear: data.bornYear,
+            diedDay: data.diedDay,
+            diedMonth: data.diedMonth,
+            diedYear: data.diedYear,
+            birthPlace: data.birthPlace,
             influences: data.influences,
             bio: data.bio,
             slug,
@@ -123,44 +204,76 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
         data.slug = newSlug;
       }
 
-      // Handle image updates if provided
+      // Handle image updates if provided - FIX HERE
       if (data.images) {
-        await this.validateImagesCount(id, data.images.length);
-      }
-
-      return await db.$transaction(async (tx) => {
-        // Update basic profile data
-        const profile = await tx.authorProfile.update({
-          where: { id },
-          data: {
-            name: data.name,
-            born: data.born,
-            died: data.died,
-            influences: data.influences,
-            bio: data.bio,
-            slug: data.slug,
-          },
-        });
-
-        // Update images if provided
-        if (data.images) {
-          // Delete existing images
-          await tx.authorImage.deleteMany({
-            where: { authorProfileId: id }
-          });
-
-          // Create new images
-          if (data.images.length > 0) {
-            await tx.authorImage.createMany({
-              data: data.images.map((image) => ({
-                url: image.url,
-                authorProfileId: id,
-              })),
+        // Check if the images have actually changed by comparing URLs
+        const existingImageUrls = existing.images?.map(img => img.url) || [];
+        const newImageUrls = data.images.map(img => img.url);
+        
+        // Only validate and update images if they've changed
+        if (JSON.stringify(existingImageUrls.sort()) !== JSON.stringify(newImageUrls?.sort() || [])) {
+          // Now we know images have changed, so validate the new count
+          await this.validateImagesCount(id, 0); // Just check if we're already at max
+          
+          return await db.$transaction(async (tx) => {
+            // Update basic profile data
+            const profile = await tx.authorProfile.update({
+              where: { id },
+              data: {
+                name: data.name,
+                born: data.born,
+                died: data.died,
+                bornDay: data.bornDay,
+                bornMonth: data.bornMonth,
+                bornYear: data.bornYear,
+                diedDay: data.diedDay,
+                diedMonth: data.diedMonth,
+                diedYear: data.diedYear,
+                birthPlace: data.birthPlace,
+                influences: data.influences,
+                bio: data.bio,
+                slug: data.slug,
+              },
             });
-          }
-        }
 
-        return profile;
+            // Delete existing images
+            await tx.authorImage.deleteMany({
+              where: { authorProfileId: id }
+            });
+
+            // Create new images
+            if (data.images && data.images.length > 0) {
+              await tx.authorImage.createMany({
+                data: data.images.map((image) => ({
+                  url: image.url,
+                  authorProfileId: id,
+                })),
+              });
+            }
+
+            return profile;
+          });
+        }
+      }
+      
+      // If no image changes, just update the profile data
+      return await db.authorProfile.update({
+        where: { id },
+        data: {
+          name: data.name,
+          born: data.born,
+          died: data.died,
+          bornDay: data.bornDay,
+          bornMonth: data.bornMonth,
+          bornYear: data.bornYear,
+          diedDay: data.diedDay,
+          diedMonth: data.diedMonth,
+          diedYear: data.diedYear,
+          birthPlace: data.birthPlace,
+          influences: data.influences,
+          bio: data.bio,
+          slug: data.slug,
+        },
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -206,7 +319,7 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
     }
   }
 
-  async getById(id: string): Promise<AuthorProfile | null> {
+  async getById(id: string): Promise<AuthorProfileWithDates | null> {
     return db.authorProfile.findUnique({
       where: { id },
       include: {
@@ -217,10 +330,10 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
           }
         }
       }
-    });
+    }) as Promise<AuthorProfileWithDates | null>;
   }
 
-  async getBySlug(slug: string): Promise<AuthorProfile & { 
+  async getBySlug(slug: string): Promise<AuthorProfileWithDates & { 
     images: { id: string; url: string; }[],
     _count: { quotes: number }
   }> {
@@ -247,7 +360,10 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
       throw new AuthorProfileNotFoundError();
     }
 
-    return authorProfile;
+    return authorProfile as AuthorProfileWithDates & { 
+      images: { id: string; url: string; }[],
+      _count: { quotes: number }
+    };
   }
 
   async list(params: AuthorProfileListParams): Promise<AuthorProfileListResponse> {
@@ -278,6 +394,56 @@ class AuthorProfileServiceImpl implements AuthorProfileService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+      }),
+      db.authorProfile.count({
+        where: whereCondition
+      })
+    ]);
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      hasMore: (page * limit) < total
+    };
+  }
+
+  async getAuthorsByBirthday(params: AuthorProfileBirthdayParams): Promise<AuthorProfileListResponse> {
+    const { day, month, page = 1, limit = 10 } = params;
+    const skip = (page - 1) * limit;
+
+    // Query condition to match authors with the specified birth day and month
+    const whereCondition: Prisma.AuthorProfileWhereInput = {
+      bornDay: day,
+      bornMonth: month,
+    };
+
+    // Fetch authors and count in parallel
+    const [items, total] = await Promise.all([
+      db.authorProfile.findMany({
+        where: whereCondition,
+        include: {
+          images: {
+            select: {
+              id: true,
+              url: true
+            }
+          },
+          _count: {
+            select: {
+              quotes: true
+            }
+          }
+        },
+        orderBy: [
+          // Sort by birth year (ascending, oldest first)
+          { bornYear: 'asc' },
+          // Secondary sort by name for authors with the same year
+          { name: 'asc' }
+        ],
+        skip,
+        take: limit,
       }),
       db.authorProfile.count({
         where: whereCondition

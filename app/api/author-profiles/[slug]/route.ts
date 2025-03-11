@@ -10,6 +10,7 @@ import {
 } from "@/lib/services/errors/author-profile.errors";
 import { cloudinaryConfig, getMaxFiles } from "@/lib/cloudinary";
 import type { AuthorProfileResponse } from "@/types/api/author-profiles";
+import { AuthorProfileWithDates } from "@/lib/services/interfaces/author-profile-service.interface";
 
 export async function GET(req: Request) {
   try {
@@ -74,6 +75,49 @@ export async function PATCH(req: Request): Promise<NextResponse<AuthorProfileRes
       }, { status: 400 });
     }
 
+    // Additional date field validation - ensure valid date combinations
+    if (validatedData.data.bornDay || validatedData.data.bornMonth || validatedData.data.bornYear) {
+      // Check that if any birth date component is provided, necessary components are also provided
+      if (validatedData.data.bornMonth && !validatedData.data.bornYear) {
+        return NextResponse.json({
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Birth year must be provided when month is specified"
+          }
+        }, { status: 400 });
+      }
+      
+      if (validatedData.data.bornDay && !validatedData.data.bornMonth) {
+        return NextResponse.json({
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Birth month must be provided when day is specified"
+          }
+        }, { status: 400 });
+      }
+    }
+
+    // Similar validation for death date fields
+    if (validatedData.data.diedDay || validatedData.data.diedMonth || validatedData.data.diedYear) {
+      if (validatedData.data.diedMonth && !validatedData.data.diedYear) {
+        return NextResponse.json({
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Death year must be provided when month is specified"
+          }
+        }, { status: 400 });
+      }
+      
+      if (validatedData.data.diedDay && !validatedData.data.diedMonth) {
+        return NextResponse.json({
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Death month must be provided when day is specified"
+          }
+        }, { status: 400 });
+      }
+    }
+
     // Validate images if present
     if (validatedData.data.images?.length) {
       // Check maximum images using the helper function
@@ -123,7 +167,19 @@ export async function PATCH(req: Request): Promise<NextResponse<AuthorProfileRes
       validatedData.data
     );
 
-    return NextResponse.json({ data: updatedProfile });
+    // Format the response to include readable dates
+    const profileWithDates = updatedProfile as unknown as AuthorProfileWithDates;
+    const formattedDates = authorProfileService.formatDateFields?.(profileWithDates);
+    
+    const formattedResponse = formattedDates 
+      ? {
+          ...updatedProfile,
+          formattedBirthDate: formattedDates.birthDate,
+          formattedDeathDate: formattedDates.deathDate
+        }
+      : updatedProfile;
+
+    return NextResponse.json({ data: formattedResponse });
 
   } catch (error) {
     console.error("[AUTHOR_PROFILE_PATCH]", error);
