@@ -17,13 +17,75 @@ export interface ApiError {
   details?: Record<string, string[]>;
 }
 
-// User specific types
+// Quote-related types for user profiles
+export interface ProfileQuote {
+  id: string;
+  content: string;
+  slug: string;
+  backgroundImage?: string | null;
+  createdAt: string;
+  category: {
+    name: string;
+    slug: string;
+  };
+  authorProfile: {
+    name: string;
+    slug: string;
+    image?: string | null;
+  };
+}
+
+// Comment-related types for user profiles
+export interface ProfileComment {
+  id: string;
+  content: string;
+  createdAt: string;
+  quote: {
+    id: string;
+    content: string;
+    slug: string;
+  };
+}
+
+// Author follow type for user profiles
+export interface ProfileFollowedAuthor {
+  id: string;
+  name: string;
+  slug: string;
+  image?: string | null;
+  bio?: string | null;
+  createdAt: string;
+}
+
+// Activity stats for user profiles
+export interface ProfileActivityStats {
+  quoteCount: number;
+  likeCount: number;
+  bookmarkCount: number;
+  commentCount: number;
+  followingCount: number;
+  memberSince: string;
+}
+
+// Privacy settings for user profile
+export interface ProfilePrivacySettings {
+  showLikes: boolean;
+  showBookmarks: boolean;
+  showFollowing: boolean;
+}
+
+// Enhanced User specific types
 export interface UserProfileData {
   username: string | null;
   bio: string | null;
   slug: string;
-  quotes?: Array<{ id: string; content: string }>; // Add this line
-  likes?: Array<{ id: string; content: string }>; // Add this line
+  quotes?: ProfileQuote[];
+  likes?: ProfileQuote[];
+  bookmarks?: ProfileQuote[];
+  comments?: ProfileComment[];
+  followedAuthors?: ProfileFollowedAuthor[];
+  activityStats?: ProfileActivityStats;
+  privacySettings?: ProfilePrivacySettings;
 }
 
 export interface UserData {
@@ -31,7 +93,9 @@ export interface UserData {
   name: string | null;
   email: string | null;
   image: string | null;
+  role: string;
   userProfile?: UserProfileData | null;
+  isCurrentUser?: boolean;
 }
 
 export interface UsersListData {
@@ -54,6 +118,15 @@ export interface UserPaginationParams {
   limit?: number;
 }
 
+// Include parameters for profile fetching
+export interface UserProfileIncludeParams {
+  quotes?: boolean;
+  likes?: boolean;
+  bookmarks?: boolean;
+  comments?: boolean;
+  followedAuthors?: boolean;
+}
+
 // Combined params type
 export interface ListUsersParams {
   page?: number;
@@ -71,8 +144,8 @@ export type UserErrorCode =
   | "NOT_FOUND"
   | "BAD_REQUEST"
   | "INTERNAL_ERROR"
-  | "TRANSACTION_ERROR"  // Add this
-  | "VALIDATION_ERROR";  // Add this if needed
+  | "TRANSACTION_ERROR"
+  | "VALIDATION_ERROR";
 
 export interface UserResponse extends ApiResponse<UserData> {
   error?: {
@@ -86,8 +159,9 @@ export interface UserResponse extends ApiResponse<UserData> {
 export interface UpdateProfileInput {
   username?: string;
   bio?: string;
-  name?: string;  // Add name field
-  image?: string; // Add image field URL
+  name?: string;
+  image?: string | null;
+  privacySettings?: Partial<ProfilePrivacySettings>;
 }
 
 // Add new type for image upload result
@@ -112,6 +186,7 @@ export interface UpdateProfileData {
   username?: string;
   bio?: string;
   name?: string;
-  image?: string;
+  image?: string | null;
   slug?: string;
+  privacySettings?: Partial<ProfilePrivacySettings>;
 }
