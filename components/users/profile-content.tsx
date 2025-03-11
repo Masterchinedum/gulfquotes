@@ -221,18 +221,17 @@ export function ProfileContent({ user }: ProfileContentProps) {
               <UserQuoteList
                 quotes={bookmarks}
                 title="Bookmarked Quotes"
-                emptyMessage={
-                  <>
-                    No quotes have been bookmarked yet.
-                    <div className="mt-4">
-                      <Link href="/quotes">
-                        <Button variant="outline" size="sm">Browse Quotes</Button>
-                      </Link>
-                    </div>
-                  </>
-                }
+                emptyMessage="No quotes have been bookmarked yet." // Change to string
                 viewAllLink={bookmarks.length > 5 ? `/users/${user.userProfile?.slug || user.id}/bookmarks` : undefined}
                 viewAllText="View All Bookmarks"
+                // Add a render prop for empty state JSX content
+                renderEmptyState={() => (
+                  <div className="mt-4">
+                    <Link href="/quotes">
+                      <Button variant="outline" size="sm">Browse Quotes</Button>
+                    </Link>
+                  </div>
+                )}
               />
             </TabsContent>
           )}
@@ -291,21 +290,19 @@ export function ProfileContent({ user }: ProfileContentProps) {
           <TabsContent value="comments" className="py-4">
             <UserComments
               comments={comments}
-              isCurrentUser={isCurrentUser}
+              isCurrentUser={!!isCurrentUser} // Use double negation to ensure boolean
               emptyMessage={
-                isCurrentUser ? (
-                  <>
-                    You haven&apos;t commented on any quotes yet.
-                    <div className="mt-4">
-                      <Link href="/quotes">
-                        <Button variant="outline" size="sm">Browse Quotes</Button>
-                      </Link>
-                    </div>
-                  </>
-                ) : (
-                  "This user hasn't commented on any quotes yet."
-                )
+                isCurrentUser 
+                  ? "You haven't commented on any quotes yet."
+                  : "This user hasn't commented on any quotes yet."
               }
+              renderEmptyAction={isCurrentUser ? (
+                <div className="mt-4">
+                  <Link href="/quotes">
+                    <Button variant="outline" size="sm">Browse Quotes</Button>
+                  </Link>
+                </div>
+              ) : undefined}
             />
           </TabsContent>
         </Tabs>

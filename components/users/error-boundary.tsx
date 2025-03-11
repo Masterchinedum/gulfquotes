@@ -7,9 +7,18 @@ interface ErrorBoundaryProps {
   error: {
     code?: string;
     message: string;
-    details?: Record<string, unknown>; // Changed from any to unknown
+    details?: Record<string, unknown>; 
   };
   reset: () => void;
+}
+
+type ActionWithHref = { label: string; href: string };
+type ActionWithCallback = { label: string; action: () => void };
+type ActionConfig = ActionWithHref | ActionWithCallback;
+
+// Type guard to check if action has href property
+function hasHref(action: ActionConfig): action is ActionWithHref {
+  return 'href' in action;
 }
 
 export function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
@@ -22,32 +31,32 @@ export function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
     UNAUTHORIZED: {
       title: "Authentication Required",
       message: "Please sign in to view this profile.",
-      primaryAction: { label: "Sign In", href: "/auth/login" },
-      secondaryAction: { label: "Go Home", href: "/" }
+      primaryAction: { label: "Sign In", href: "/auth/login" } as ActionConfig,
+      secondaryAction: { label: "Go Home", href: "/" } as ActionConfig
     },
     NOT_FOUND: {
       title: "Profile Not Found",
       message: "The requested profile could not be found. It may have been removed or you may have followed an incorrect link.",
-      primaryAction: { label: "Browse Users", href: "/users" },
-      secondaryAction: { label: "Go Home", href: "/" }
+      primaryAction: { label: "Browse Users", href: "/users" } as ActionConfig,
+      secondaryAction: { label: "Go Home", href: "/" } as ActionConfig
     },
     FORBIDDEN: {
       title: "Access Denied",
       message: "You don't have permission to view this profile.",
-      primaryAction: { label: "Go Back", action: () => window.history.back() },
-      secondaryAction: { label: "Go Home", href: "/" }
+      primaryAction: { label: "Go Back", action: () => window.history.back() } as ActionConfig,
+      secondaryAction: { label: "Go Home", href: "/" } as ActionConfig
     },
     BAD_REQUEST: {
       title: "Invalid Request",
       message: "There was a problem with your request to view this profile.",
-      primaryAction: { label: "Try Again", action: reset },
-      secondaryAction: { label: "Go Home", href: "/" }
+      primaryAction: { label: "Try Again", action: reset } as ActionConfig,
+      secondaryAction: { label: "Go Home", href: "/" } as ActionConfig
     },
     default: {
       title: "Something Went Wrong",
       message: "An unexpected error occurred while loading the profile.",
-      primaryAction: { label: "Try Again", action: reset },
-      secondaryAction: { label: "Go Home", href: "/" }
+      primaryAction: { label: "Try Again", action: reset } as ActionConfig,
+      secondaryAction: { label: "Go Home", href: "/" } as ActionConfig
     }
   };
 
@@ -72,7 +81,7 @@ export function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
       </p>
       
       <div className="flex flex-col sm:flex-row gap-3">
-        {config.primaryAction.href ? (
+        {hasHref(config.primaryAction) ? (
           <Button asChild>
             <Link href={config.primaryAction.href}>
               {config.primaryAction.label === "Go Back" ? (
@@ -92,7 +101,7 @@ export function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
           </Button>
         )}
         
-        {config.secondaryAction.href ? (
+        {hasHref(config.secondaryAction) ? (
           <Button variant="outline" asChild>
             <Link href={config.secondaryAction.href}>
               {config.secondaryAction.label === "Go Home" && (

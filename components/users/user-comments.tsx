@@ -25,6 +25,7 @@ interface UserCommentsProps {
   className?: string;
   isCurrentUser: boolean;
   limit?: number;
+  renderEmptyAction?: React.ReactNode;
 }
 
 type SortOption = "recent" | "oldest";
@@ -35,7 +36,8 @@ export function UserComments({
   emptyMessage = "No comments yet.",
   className,
   isCurrentUser,
-  limit = 10
+  limit = 10,
+  renderEmptyAction
 }: UserCommentsProps) {
   const [sortOption, setSortOption] = useState<SortOption>("recent");
   const [expanded, setExpanded] = useState(false);
@@ -127,6 +129,7 @@ export function UserComments({
             ) : (
               emptyMessage
             )}
+            {renderEmptyAction}
           </div>
         ) : (
           <>

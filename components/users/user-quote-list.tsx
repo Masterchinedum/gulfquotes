@@ -19,6 +19,7 @@ interface UserQuoteListProps {
   displayMode?: "compact" | "expanded";
   limit?: number;
   actionButtons?: boolean;
+  renderEmptyState?: () => React.ReactNode;
 }
 
 export function UserQuoteList({
@@ -29,7 +30,8 @@ export function UserQuoteList({
   viewAllText = "View All",
   displayMode = "compact",
   limit = 5,
-  actionButtons = false
+  actionButtons = false,
+  renderEmptyState
 }: UserQuoteListProps) {
   const [visibleQuotes, setVisibleQuotes] = useState(limit);
   const hasMoreToShow = quotes.length > visibleQuotes;
@@ -161,7 +163,7 @@ export function UserQuoteList({
         </CardContent>
       ) : (
         <CardContent className="text-center py-8 text-muted-foreground">
-          {emptyMessage}
+          {renderEmptyState ? renderEmptyState() : emptyMessage}
         </CardContent>
       )}
     </Card>
