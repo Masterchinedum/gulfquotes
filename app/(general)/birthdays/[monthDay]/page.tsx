@@ -7,6 +7,7 @@ import { DateSelector } from "@/components/authors/DateSelector";
 import { BirthdayCalendar } from "@/components/authors/BirthdayCalendar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
+import { BirthdayStructuredData } from "@/components/authors/BirthdayStructuredData";
 
 // Define the params interface
 interface BirthdayPageProps {
@@ -19,7 +20,8 @@ interface BirthdayPageProps {
   };
 }
 
-// Generate dynamic metadata for SEO
+// Enhance the existing generateMetadata function
+
 export async function generateMetadata({ params }: BirthdayPageProps): Promise<Metadata> {
   try {
     // Parse the month_day parameter
@@ -33,15 +35,43 @@ export async function generateMetadata({ params }: BirthdayPageProps): Promise<M
     const month = getMonthNumber(monthName);
     
     const formattedDate = `${getMonthName(month, true)} ${day}`;
+    const canonicalPath = `/birthdays/${getMonthName(month).toLowerCase()}_${day}`;
+    const currentYear = new Date().getFullYear();
     
     return {
       title: `Authors Born on ${formattedDate} | gulfquotes`,
       description: `Explore quotes from authors born on ${formattedDate}. Discover the wisdom of writers, philosophers, and notable figures who share this birthday.`,
+      keywords: [
+        `authors born on ${formattedDate}`, 
+        `${formattedDate} birthdays`, 
+        "famous authors birthdays", 
+        "literary figures birthdays",
+        "historical figures birth dates"
+      ],
+      alternates: {
+        canonical: canonicalPath,
+      },
       openGraph: {
         title: `Authors Born on ${formattedDate}`,
         description: `Explore quotes and wisdom from famous authors, philosophers, and personalities born on ${formattedDate}.`,
         type: 'website',
-        url: `https://gulfquotes.com/birthdays/${monthName}_${day}`,
+        url: `https://gulfquotes.com${canonicalPath}`,
+        images: [
+          {
+            url: `https://gulfquotes.com/api/og?title=Authors+Born+on+${encodeURIComponent(formattedDate)}&date=${currentYear}`,
+            width: 1200,
+            height: 630,
+            alt: `Authors born on ${formattedDate}`,
+          }
+        ],
+        locale: 'en_US',
+        siteName: 'gulfquotes',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: `Authors Born on ${formattedDate} | gulfquotes`,
+        description: `Discover quotes from authors born on ${formattedDate}.`,
+        images: [`https://gulfquotes.com/api/og?title=Authors+Born+on+${encodeURIComponent(formattedDate)}&date=${currentYear}`],
       },
     };
   } catch (error) {
@@ -142,6 +172,14 @@ export default function BirthdayPage({ params, searchParams }: BirthdayPageProps
               month={month}
               page={page}
               limit={limit}
+              onDataLoaded={(authors, total) => (
+                <BirthdayStructuredData 
+                  day={day} 
+                  month={month} 
+                  authors={authors} 
+                  totalAuthors={total} 
+                />
+              )}
             />
           </Suspense>
         </div>

@@ -31,6 +31,7 @@ interface BirthdayAuthorListProps {
   month: number;
   page?: number;
   limit?: number;
+  onDataLoaded?: (authors: Author[], totalAuthors: number) => React.ReactNode;
 }
 
 interface ApiResponse {
@@ -57,7 +58,8 @@ export function BirthdayAuthorList({
   day, 
   month, 
   page = 1, 
-  limit = 12 
+  limit = 12,
+  onDataLoaded
 }: BirthdayAuthorListProps) {
   const [authors, setAuthors] = useState<Author[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,6 +85,11 @@ export function BirthdayAuthorList({
           setAuthors(data.data.authors.items);
           setTotalPages(Math.ceil(data.data.authors.total / limit));
           setFormattedDate(data.data.formattedDate);
+          
+          // Call onDataLoaded if provided
+          if (onDataLoaded) {
+            onDataLoaded(data.data.authors.items, data.data.authors.total);
+          }
         }
       } catch (err) {
         console.error("Error fetching authors:", err);  
@@ -94,7 +101,7 @@ export function BirthdayAuthorList({
     }
     
     fetchAuthorsByBirthday();
-  }, [day, month, currentPage, limit]);
+  }, [day, month, currentPage, limit, onDataLoaded]);
   
   // Handle page change
   const handlePageChange = (page: number) => {
