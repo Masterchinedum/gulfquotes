@@ -120,7 +120,24 @@ export async function PATCH(
         return updated;
       });
 
-      return NextResponse.json({ data: updatedUser });
+      // Transform the updated user to match UserData type
+      const transformedUser: UserData = {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        image: updatedUser.image,
+        role: updatedUser.role,
+        userProfile: updatedUser.userProfile ? {
+          username: updatedUser.userProfile.username,
+          bio: updatedUser.userProfile.bio,
+          slug: updatedUser.userProfile.slug,
+          // Transform privacySettings from JsonValue to ProfilePrivacySettings
+          privacySettings: updatedUser.userProfile.privacySettings as unknown as ProfilePrivacySettings,
+        } : null,
+        isCurrentUser: true,
+      };
+
+      return NextResponse.json({ data: transformedUser });
 
     } catch (error) {
       console.error("[TRANSACTION_ERROR]", error);

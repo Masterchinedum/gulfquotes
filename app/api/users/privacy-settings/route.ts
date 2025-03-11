@@ -80,7 +80,7 @@ export async function PATCH(
         await db.userProfile.create({
           data: {
             userId: session.user.id,
-            privacySettings: privacySettings as unknown as Prisma.JsonValue,
+            privacySettings: privacySettings as unknown as Prisma.InputJsonValue,
             slug: session.user.id, // Default slug
           },
         });
@@ -89,7 +89,7 @@ export async function PATCH(
         await db.userProfile.update({
           where: { userId: session.user.id },
           data: {
-            privacySettings: privacySettings as unknown as Prisma.JsonValue,
+            privacySettings: privacySettings as unknown as Prisma.InputJsonValue,
           },
         });
       }
