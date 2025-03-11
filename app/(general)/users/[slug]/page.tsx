@@ -1,8 +1,8 @@
 import React, { Suspense } from "react";
-import { auth } from "@/auth";
-import { redirect, notFound } from "next/navigation";
+// import { auth } from "@/auth";
+import { notFound } from "next/navigation";
 import { headers } from "next/headers";
-import { Shell } from "@/components/shells/shell";
+// import { Shell } from "@/components/shells/shell";
 import { ProfileHeader } from "./profile-header";
 import { ProfileContent } from "@/components/users/profile-content";
 import { ErrorBoundary } from "@/components/users/error-boundary";
@@ -61,18 +61,11 @@ function isErrorWithMessage(error: unknown): error is { code?: string; message: 
   );
 }
 
-export default async function UserProfilePage({ params }: PageProps) {
-  // Check for an authenticated session
-  const session = await auth();
-  if (!session?.user) {
-    redirect("/login");
-  }
-
+export default async function UserProfilePage({ params }: { params: { slug: string } }) {
   try {
     const headersList = await headers();
-    const resolvedParams = await params;
     const origin = process.env.NEXTAUTH_URL || "";
-    const res = await fetch(`${origin}/api/users/${resolvedParams.slug}`, {
+    const res = await fetch(`${origin}/api/users/${params.slug}`, {
       headers: {
         cookie: headersList.get("cookie") || "",
       },
@@ -93,21 +86,16 @@ export default async function UserProfilePage({ params }: PageProps) {
     }
 
     return (
-      <Shell>
-        <div className="flex flex-col gap-8 p-8">
-          <div className="mx-auto w-full max-w-3xl space-y-8">
-            <Suspense fallback={<LoadingSkeleton />}>
-              <ProfileHeader user={result.data} />
-            </Suspense>
-            
-            <Suspense fallback={<LoadingIndicator />}>
-              <ProfileContent user={result.data} />
-            </Suspense>
-          </div>
-        </div>
-      </Shell>
+      <div className="space-y-8">
+        <Suspense fallback={<LoadingSkeleton />}>
+          <ProfileHeader user={result.data} />
+        </Suspense>
+        
+        <Suspense fallback={<LoadingIndicator />}>
+          <ProfileContent user={result.data} />
+        </Suspense>
+      </div>
     );
-
   } catch (error) {
     console.error("[USER_PROFILE_PAGE]", error);
     return (
