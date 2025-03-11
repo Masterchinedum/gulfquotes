@@ -12,10 +12,10 @@ import { BirthdayStructuredData } from "@/components/authors/BirthdayStructuredD
 // Update the interface to match Next.js expectations
 interface BirthdayPageProps {
   params: Promise<{ monthDay: string }>;
-  searchParams: {
+  searchParams: Promise<{
     page?: string;
     limit?: string;
-  };
+  }>;
 }
 
 // Update the function signature for generateMetadata
@@ -89,6 +89,9 @@ export async function generateMetadata({
 export default async function BirthdayPage({ params, searchParams }: BirthdayPageProps) {
   // Await params before using
   const resolvedParams = await params;
+  // Await searchParams before using
+  const resolvedSearchParams = await searchParams;
+  
   const [monthName, dayStr] = resolvedParams.monthDay.split('_');
   
   if (!monthName || !dayStr) {
@@ -109,8 +112,8 @@ export default async function BirthdayPage({ params, searchParams }: BirthdayPag
   }
   
   // Parse pagination parameters
-  const page = parseInt(searchParams.page || "1", 10);
-  const limit = Math.min(50, parseInt(searchParams.limit || "12", 10));
+  const page = parseInt(resolvedSearchParams.page || "1", 10);
+  const limit = Math.min(50, parseInt(resolvedSearchParams.limit || "12", 10));
   
   // Format the date for display
   const formattedDate = `${getMonthName(month, true)} ${day}`;

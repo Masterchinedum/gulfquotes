@@ -17,13 +17,13 @@ export interface BirthdayApiResponse {
   };
 }
 
-export async function GET(
-  req: Request,
-  { params }: { params: { monthDay: string } }
-): Promise<NextResponse<BirthdayApiResponse>> {
+/**
+ * GET endpoint to fetch authors by birth date
+ */
+export async function GET(req: Request): Promise<NextResponse<BirthdayApiResponse>> {
   try {
-    // Parse the monthDay parameter (format: "january_5")
-    const { monthDay } = params;
+    // Extract monthDay from URL path like other routes do
+    const monthDay = req.url.split('/birthdays/')[1]?.split('/')[0];
     
     if (!monthDay || !monthDay.includes('_')) {
       return NextResponse.json(
