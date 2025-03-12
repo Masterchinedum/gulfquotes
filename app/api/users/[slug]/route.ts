@@ -19,8 +19,8 @@ export async function GET(
 
     // CORRECT WAY: First await the entire params object
     const resolvedParams = await params;
-    // Then access the slug property
-    const slug = resolvedParams.slug;
+    // Use a type assertion to tell TypeScript this is definitely a string
+    const slug = resolvedParams.slug as string;
     
     if (!slug) {
       return NextResponse.json(
@@ -38,11 +38,11 @@ export async function GET(
       followedAuthors: url.searchParams.get("includeFollowedAuthors") === "true",
     };
 
-    // Find user by different identifiers in order of priority
+    // Find user by different identifiers in order of priority - use the resolved slug variable
     const user = await db.user.findFirst({
       where: {
         OR: [
-          { userProfile: { slug: slug } },
+          { userProfile: { slug } },
           { userProfile: { username: slug } },
           { id: slug }
         ]
