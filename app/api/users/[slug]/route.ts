@@ -4,7 +4,8 @@ import db from "@/lib/prisma";
 import type { UserResponse, UserProfileIncludeParams, UserData } from "@/types/api/users";
 
 export async function GET(
-  req: Request
+  req: Request,
+  { params }: { params: { slug: string | Promise<string> } }
 ): Promise<NextResponse<UserResponse>> {
   try {
     // Check authentication
@@ -16,8 +17,9 @@ export async function GET(
       );
     }
 
-    // Extract slug from URL
-    const slug = req.url.split('/users/')[1]?.split('/')[0];
+    // Extract slug from route params - FIXED: handle both string and Promise<string>
+    const slug = typeof params.slug === 'string' ? params.slug : await params.slug;
+    
     if (!slug) {
       return NextResponse.json(
         { error: { code: "BAD_REQUEST", message: "Invalid user slug" } },

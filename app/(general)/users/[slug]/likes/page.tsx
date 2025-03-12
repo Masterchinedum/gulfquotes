@@ -102,13 +102,9 @@ export default async function LikesPage({
             }
             displayMode="expanded"
             actionButtons={false}
-            renderEmptyState={() => (
-              <div className="mt-4">
-                <Link href="/quotes">
-                  <Button variant="outline" size="sm">Browse Quotes</Button>
-                </Link>
-              </div>
-            )}
+            showEmptyAction={true}
+            emptyActionLink="/quotes"
+            emptyActionText="Browse Quotes"
           />
         </div>
       </Shell>
