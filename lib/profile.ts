@@ -73,12 +73,28 @@ export async function updateUserProfile(userId: string, data: Partial<UserProfil
   } else {
     data.slug = generateUserSlug({ userId });
   }
-
+  
+  // Create a filtered copy with only the properties we want to update
+  const safeUpdateData: Record<string, unknown> = {};
+  
+  // Only copy properties that are safe to update
+  const updateableProps = [
+    'username', 'bio', 'slug', 'website', 'location',
+    'twitter', 'github', 'linkedin', 'privacySettings'
+  ];
+  
+  // Copy only the properties that are safe to update
+  for (const prop of updateableProps) {
+    if (prop in data) {
+      safeUpdateData[prop] = data[prop as keyof typeof data];
+    }
+  }
+  
   // Update user profile using transaction
   const updatedUserProfile = await db.userProfile.upsert({
     where: { userId },
-    update: data,
-    create: { ...data, userId },
+    update: safeUpdateData, // TypeScript now knows this doesn't have userId/id
+    create: { ...safeUpdateData, userId }, // For create, we need userId
   });
 
   return updatedUserProfile;

@@ -2,21 +2,49 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-// import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Author } from "@/types/author";
 import { AuthorFollowButton } from "@/app/(general)/authors/components/author-follow-button";
-import { Book, Users } from "lucide-react";
-import { formatLifespan } from "@/lib/utils/author-profile";
+import { Book, Users, Calendar } from "lucide-react";
+import Link from "next/link";
+import { getMonthName } from "@/lib/date-utils";
 
 interface AuthorPageHeaderProps {
   author: Author & {
     totalQuotes: number;
+    // Add the structured birth date fields
+    bornDay?: number | null;
+    bornMonth?: number | null;
+    bornYear?: number | null;
+    diedDay?: number | null;
+    diedMonth?: number | null;
+    diedYear?: number | null;
+    birthPlace?: string | null;
   };
   className?: string;
 }
 
 export function AuthorPageHeader({ author, className }: AuthorPageHeaderProps) {
+  // Format the birth date parts
+  const hasBirthDate = author.bornMonth && author.bornDay;
+  const birthMonth = author.bornMonth ? getMonthName(author.bornMonth, true) : null;
+  const birthDay = author.bornDay || null;
+  const birthYear = author.bornYear || null;
+  
+  // Create the birthday link path
+  const birthdayPath = hasBirthDate 
+    ? `/birthdays/${getMonthName(author.bornMonth!).toLowerCase()}_${author.bornDay}`
+    : null;
+  
+  // Format the death date if available
+  const hasDied = author.diedYear || author.died;
+  const deathInfo = author.diedYear 
+    ? `Died: ${getMonthName(author.diedMonth || 1, true)} ${author.diedDay || ''}, ${author.diedYear}` 
+    : (author.died ? `Died: ${author.died}` : null);
+  
+  // Format the birth place if available
+  const birthPlaceInfo = author.birthPlace ? `in ${author.birthPlace}` : '';
+  
   return (
     <Card className={className}>
       <CardContent className="p-6">
@@ -32,11 +60,31 @@ export function AuthorPageHeader({ author, className }: AuthorPageHeaderProps) {
             <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-4">
               <div className="text-center md:text-left">
                 <h1 className="text-3xl font-bold">{author.name}</h1>
-                {(author.born || author.died) && (
-                  <p className="text-muted-foreground">
-                    {formatLifespan(author.born, author.died)}
-                  </p>
-                )}
+                
+                {/* New formatted birth/death information with link */}
+                <div className="text-muted-foreground space-y-1">
+                  {hasBirthDate && (
+                    <p className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      <span>Born: {' '} 
+                        {birthdayPath ? (
+                          <Link href={birthdayPath} className="text-primary hover:underline">
+                            {birthMonth} {birthDay}
+                          </Link>
+                        ) : (
+                          <>{birthMonth} {birthDay}</>
+                        )}
+                        {birthYear ? `, ${birthYear}` : ''}
+                        {' '}
+                        {birthPlaceInfo}
+                      </span>
+                    </p>
+                  )}
+                  
+                  {hasDied && (
+                    <p>{deathInfo}</p>
+                  )}
+                </div>
               </div>
               
               <AuthorFollowButton

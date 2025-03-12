@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { Pencil } from "lucide-react";
+import { Pencil, Bookmark, Heart, Users, MessageSquare } from "lucide-react";
 import type { UserData } from "@/types/api/users";
 
 interface ProfileHeaderProps {
@@ -16,6 +16,15 @@ interface ProfileHeaderProps {
 export function ProfileHeader({ user }: ProfileHeaderProps) {
   const { data: session } = useSession();
   const isOwnProfile = session?.user?.id === user.id;
+  
+  // Get stats from user data
+  const stats = user.userProfile?.activityStats || {
+    likeCount: 0,
+    bookmarkCount: 0,
+    commentCount: 0,
+    followingCount: 0,
+    memberSince: ""
+  };
 
   return (
     <Card className="border-none shadow-none">
@@ -69,14 +78,33 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
 
         {/* Stats */}
         <div className="flex gap-4 pt-4 border-t">
-          <div className="flex items-center gap-1">
-            <span className="font-semibold">0</span>
+          <Link href={`/users/${user.userProfile?.slug || user.id}/following`} className="flex items-center gap-1 hover:text-primary transition-colors">
+            <Users className="h-4 w-4" />
+            <span className="font-semibold">{stats.followingCount}</span>
             <span className="text-muted-foreground">Following</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="font-semibold">0</span>
-            <span className="text-muted-foreground">Followers</span>
-          </div>
+          </Link>
+          
+          {isOwnProfile && (
+            <>
+              <Link href={`/users/${user.userProfile?.slug || user.id}/likes`} className="flex items-center gap-1 hover:text-primary transition-colors">
+                <Heart className="h-4 w-4" />
+                <span className="font-semibold">{stats.likeCount}</span>
+                <span className="text-muted-foreground">Likes</span>
+              </Link>
+              
+              <Link href={`/users/${user.userProfile?.slug || user.id}/bookmarks`} className="flex items-center gap-1 hover:text-primary transition-colors">
+                <Bookmark className="h-4 w-4" />
+                <span className="font-semibold">{stats.bookmarkCount}</span>
+                <span className="text-muted-foreground">Bookmarks</span>
+              </Link>
+              
+              <Link href={`/users/${user.userProfile?.slug || user.id}/comments`} className="flex items-center gap-1 hover:text-primary transition-colors">
+                <MessageSquare className="h-4 w-4" />
+                <span className="font-semibold">{stats.commentCount}</span>
+                <span className="text-muted-foreground">Comments</span>
+              </Link>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

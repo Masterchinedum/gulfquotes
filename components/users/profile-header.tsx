@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Pencil } from "lucide-react";
 import type { UserData } from "@/types/api/users";
+import { ProfileActions } from "@/components/users/profile-actions";
 
 interface ProfileHeaderProps {
   user: UserData;
@@ -55,6 +56,9 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                 Edit profile
               </Link>
             </Button>
+          )}
+          {!isOwnProfile && (
+            <ProfileActions user={user} />
           )}
         </div>
 

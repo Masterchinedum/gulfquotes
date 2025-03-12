@@ -198,6 +198,7 @@ model UserProfile {
   twitter     String?
   github      String?
   linkedin    String?
+  privacySettings Json?     // Add this field
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -1,34 +1,40 @@
 import React, { Suspense } from "react";
-import { auth } from "@/auth";
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { headers } from "next/headers";
-import { Shell } from "@/components/shells/shell";
 import { ProfileHeader } from "./profile-header";
 import { ProfileContent } from "@/components/users/profile-content";
 import { ErrorBoundary } from "@/components/users/error-boundary";
 import { LoadingSkeleton, LoadingIndicator } from "@/components/users/loading";
 import type { Metadata } from "next";
 import type { UserResponse } from "@/types/api/users";
+import { Shell } from "@/components/shells/shell";
 
-interface PageProps {
-  params: Promise<{ slug: string }>;
+// Update interface to match Next.js 15 requirements - params as Promise
+interface UserProfilePageProps {
+  params: Promise<{
+    slug: string;
+  }>;
+  searchParams?: Promise<Record<string, string | string[]>>;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+// Update type signature to match Next.js expectations
+export async function generateMetadata({ 
+  params: paramsPromise 
+}: UserProfilePageProps): Promise<Metadata> {
   try {
+    // Resolve params promise first
+    const params = await paramsPromise;
+    
     const headersList = await headers();
-    const resolvedParams = await params;
     const origin = process.env.NEXTAUTH_URL || "";
     
-    // Include auth cookies in the metadata request
-    const res = await fetch(`${origin}/api/users/${resolvedParams.slug}`, {
+    const res = await fetch(`${origin}/api/users/${params.slug}`, {
       headers: {
         cookie: headersList.get("cookie") || "",
       },
       cache: "no-store",
     });
 
-    // Check if response is ok before trying to parse JSON
     if (!res.ok) {
       throw new Error(`Failed to fetch user data: ${res.status}`);
     }
@@ -61,18 +67,17 @@ function isErrorWithMessage(error: unknown): error is { code?: string; message: 
   );
 }
 
-export default async function UserProfilePage({ params }: PageProps) {
-  // Check for an authenticated session
-  const session = await auth();
-  if (!session?.user) {
-    redirect("/login");
-  }
-
+// Update the function signature to match the quote page pattern
+export default async function UserProfilePage({
+  params: paramsPromise,
+}: UserProfilePageProps) {
   try {
+    // Resolve params promise first
+    const params = await paramsPromise;
+    
     const headersList = await headers();
-    const resolvedParams = await params;
     const origin = process.env.NEXTAUTH_URL || "";
-    const res = await fetch(`${origin}/api/users/${resolvedParams.slug}`, {
+    const res = await fetch(`${origin}/api/users/${params.slug}`, {
       headers: {
         cookie: headersList.get("cookie") || "",
       },
@@ -95,26 +100,33 @@ export default async function UserProfilePage({ params }: PageProps) {
     return (
       <Shell>
         <div className="flex flex-col gap-8 p-8">
-          <div className="mx-auto w-full max-w-3xl space-y-8">
-            <Suspense fallback={<LoadingSkeleton />}>
-              <ProfileHeader user={result.data} />
-            </Suspense>
-            
-            <Suspense fallback={<LoadingIndicator />}>
-              <ProfileContent user={result.data} />
-            </Suspense>
+          <div className="mx-auto w-full max-w-6xl">
+            <div className="space-y-8">
+              <Suspense fallback={<LoadingSkeleton />}>
+                <ProfileHeader user={result.data} />
+              </Suspense>
+              
+              <Suspense fallback={<LoadingIndicator />}>
+                <ProfileContent user={result.data} />
+              </Suspense>
+            </div>
           </div>
         </div>
       </Shell>
     );
-
   } catch (error) {
     console.error("[USER_PROFILE_PAGE]", error);
     return (
-      <ErrorBoundary
-        error={isErrorWithMessage(error) ? error : { message: "An unknown error occurred" }}
-        reset={() => window.location.reload()}
-      />
+      <Shell>
+        <div className="flex flex-col gap-8 p-8">
+          <div className="mx-auto w-full max-w-6xl">
+            <ErrorBoundary
+              error={isErrorWithMessage(error) ? error : { message: "An unknown error occurred" }}
+              reset={() => window.location.reload()}
+            />
+          </div>
+        </div>
+      </Shell>
     );
   }
 }
