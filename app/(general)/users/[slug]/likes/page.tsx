@@ -13,7 +13,7 @@ export const metadata = {
   title: "Liked Quotes",
   description: "View quotes liked by this user"
 };
-const money = 100;
+
 interface LikesPageProps {
   params: Promise<{ slug: string }>;
 }
