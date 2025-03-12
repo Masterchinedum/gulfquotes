@@ -1,7 +1,10 @@
+"use client"; // Make sure this is a client component
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, RefreshCw, Home, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+// import { useRouter } from "next/navigation";
 
 interface ErrorBoundaryProps {
   error: {
@@ -22,6 +25,17 @@ function hasHref(action: ActionConfig): action is ActionWithHref {
 }
 
 export function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
+  // const router = useRouter();
+  
+  // Handle client-side actions
+  const handleGoBack = () => {
+    window.history.back();
+  };
+  
+  const handleTryAgain = () => {
+    reset();
+  };
+
   React.useEffect(() => {
     console.error("Profile Error:", error);
   }, [error]);
@@ -93,7 +107,13 @@ export function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
             </Link>
           </Button>
         ) : (
-          <Button onClick={config.primaryAction.action}>
+          <Button 
+            onClick={
+              config.primaryAction.label === "Go Back" 
+                ? handleGoBack 
+                : handleTryAgain
+            }
+          >
             {config.primaryAction.label === "Try Again" && (
               <RefreshCw className="mr-2 h-4 w-4" />
             )}

@@ -9,7 +9,10 @@ interface UserLayoutProps {
   params: { slug: string };
 }
 
-export default async function UserLayout({ children, params }: UserLayoutProps) {
+export default async function UserLayout({ children, params: paramsPromise }: UserLayoutProps) {
+  // Resolve params promise
+  const params = await paramsPromise;
+  
   const session = await auth();
   if (!session?.user) {
     redirect("/login");
@@ -17,7 +20,6 @@ export default async function UserLayout({ children, params }: UserLayoutProps) 
 
   try {
     // Fetch the basic user data just for navigation
-    // Fix: await the headers() call
     const headersList = await headers();
     const origin = process.env.NEXTAUTH_URL || "";
     const res = await fetch(`${origin}/api/users/${params.slug}`, {
