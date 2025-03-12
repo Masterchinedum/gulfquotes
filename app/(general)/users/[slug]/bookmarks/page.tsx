@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import db from "@/lib/prisma";
+import { ReloadButton } from "@/components/reload-button";
 
 export const metadata = {
   title: "Bookmarked Quotes",
@@ -183,9 +184,7 @@ export default async function BookmarksPage({
           <p className="text-sm text-muted-foreground">
             Failed to load bookmarked quotes. Please try again later.
           </p>
-          <Button variant="outline" onClick={() => window.location.reload()} className="mt-4">
-            Try again
-          </Button>
+          <ReloadButton />
         </div>
       </Shell>
     );

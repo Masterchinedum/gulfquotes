@@ -7,6 +7,7 @@ import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import type { UserResponse } from "@/types/api/users";
+import { ReloadButton } from "@/components/reload-button";
 // import type { Metadata } from "next";
 
 export const metadata = {
@@ -116,11 +117,9 @@ export default async function LikesPage({
         <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
           <h3 className="font-semibold">Something went wrong</h3>
           <p className="text-sm text-muted-foreground">
-            Failed to load likes. Please try again later.
+            Failed to load bookmarks. Please try again later.
           </p>
-          <Button variant="outline" onClick={() => window.location.reload()} className="mt-4">
-            Try again
-          </Button>
+          <ReloadButton />
         </div>
       </Shell>
     );

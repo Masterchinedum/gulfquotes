@@ -17,8 +17,10 @@ export async function GET(
       );
     }
 
-    // Extract slug from route params - FIXED: handle both string and Promise<string>
-    const slug = typeof params.slug === 'string' ? params.slug : await params.slug;
+    // CORRECT WAY: First await the entire params object
+    const resolvedParams = await params;
+    // Then access the slug property
+    const slug = resolvedParams.slug;
     
     if (!slug) {
       return NextResponse.json(
