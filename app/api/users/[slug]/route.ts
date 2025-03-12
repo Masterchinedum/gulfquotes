@@ -3,10 +3,7 @@ import { auth } from "@/auth";
 import db from "@/lib/prisma";
 import type { UserResponse, UserProfileIncludeParams, UserData } from "@/types/api/users";
 
-export async function GET(
-  req: Request,
-  { params }: { params: { slug: string | Promise<string> } }
-): Promise<NextResponse<UserResponse>> {
+export async function GET(req: Request): Promise<NextResponse<UserResponse>> {
   try {
     // Check authentication
     const session = await auth();
@@ -17,10 +14,8 @@ export async function GET(
       );
     }
 
-    // CORRECT WAY: First await the entire params object
-    const resolvedParams = await params;
-    // Use a type assertion to tell TypeScript this is definitely a string
-    const slug = resolvedParams.slug as string;
+    // Extract slug from URL directly
+    const slug = req.url.split('/users/')[1]?.split('/')[0];
     
     if (!slug) {
       return NextResponse.json(

@@ -1,60 +1,51 @@
+//app/(general)/users/[slug]/likes/page.tsx
+
 import React from "react";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { Shell } from "@/components/shells/shell";
-import { UserQuoteList } from "@/components/users/user-quote-list";
+import { QuoteGrid } from "@/components/quotes/quote-grid";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import type { UserResponse } from "@/types/api/users";
+import type { QuotePaginatedResponse } from "@/types/api/quotes";
 import { ReloadButton } from "@/components/reload-button";
-// import type { Metadata } from "next";
-
-export const metadata = {
-  title: "Liked Quotes",
-  description: "View quotes liked by this user"
-};
 
 interface LikesPageProps {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
+  searchParams?: { page?: string };
 }
 
 export default async function LikesPage({
-  params: paramsPromise,
+  params,
+  searchParams
 }: LikesPageProps) {
   try {
-    const params = await paramsPromise;
-    const headersList = await headers();
+    const page = Number(searchParams?.page) || 1;
+    const headersList = headers();
     const origin = process.env.NEXTAUTH_URL || "";
     
-    // Add includeLikes=true to fetch the liked quotes
-    const res = await fetch(`${origin}/api/users/${params.slug}?includeLikes=true`, {
-      headers: {
-        cookie: headersList.get("cookie") || "",
-      },
-      cache: "no-store",
-    });
+    // Fetch likes using the new API route
+    const res = await fetch(
+      `${origin}/api/users/${params.slug}/likes?page=${page}`,
+      {
+        headers: {
+          cookie: headersList.get("cookie") || "",
+        },
+        cache: "no-store",
+      }
+    );
 
     if (!res.ok) {
       if (res.status === 404) {
         notFound();
       }
-      throw new Error(`Failed to fetch user data: ${res.status}`);
+      throw new Error(`Failed to fetch likes: ${res.status}`);
     }
 
-    const result: UserResponse = await res.json();
+    const result: QuotePaginatedResponse = await res.json();
     
-    if (!result.data) {
-      notFound();
-    }
-
-    // Get privacy settings and check if likes are visible
-    const privacySettings = result.data.userProfile?.privacySettings;
-    const showLikes = privacySettings?.showLikes !== false;
-    const isCurrentUser = result.data.isCurrentUser;
-
-    // If likes are not visible and not the current user, redirect or show a message
-    if (!showLikes && !isCurrentUser) {
+    if (result.error?.code === "FORBIDDEN") {
       return (
         <Shell>
           <div className="max-w-5xl mx-auto px-4 py-12">
@@ -74,7 +65,7 @@ export default async function LikesPage({
       );
     }
 
-    const likes = result.data.userProfile?.likes || [];
+    const { items: quotes, hasMore } = result.data;
 
     return (
       <Shell>
@@ -85,28 +76,40 @@ export default async function LikesPage({
                 <Heart className="h-6 w-6 text-rose-500" />
                 Liked Quotes
               </h1>
-              <p className="text-muted-foreground mt-1">
-                {isCurrentUser
-                  ? "Quotes you've liked"
-                  : `Quotes ${result.data.name || "this user"} has liked`}
-              </p>
             </div>
           </div>
 
-          <UserQuoteList
-            quotes={likes}
-            title="Liked Quotes"
-            emptyMessage={
-              isCurrentUser
-                ? "You haven't liked any quotes yet."
-                : "This user hasn't liked any quotes yet."
-            }
-            displayMode="expanded"
-            actionButtons={false}
-            showEmptyAction={true}
-            emptyActionLink="/quotes"
-            emptyActionText="Browse Quotes"
-          />
+          {quotes.length > 0 ? (
+            <div className="space-y-8">
+              <QuoteGrid quotes={quotes} />
+              
+              {(hasMore || page > 1) && (
+                <div className="flex justify-center gap-2 pt-4">
+                  {page > 1 && (
+                    <Button variant="outline" asChild>
+                      <Link href={`/users/${params.slug}/likes?page=${page - 1}`}>
+                        Previous
+                      </Link>
+                    </Button>
+                  )}
+                  {hasMore && (
+                    <Button variant="outline" asChild>
+                      <Link href={`/users/${params.slug}/likes?page=${page + 1}`}>
+                        Next
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No liked quotes found.</p>
+              <Button asChild variant="outline" className="mt-4">
+                <Link href="/quotes">Browse Quotes</Link>
+              </Button>
+            </div>
+          )}
         </div>
       </Shell>
     );
@@ -117,7 +120,7 @@ export default async function LikesPage({
         <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
           <h3 className="font-semibold">Something went wrong</h3>
           <p className="text-sm text-muted-foreground">
-            Failed to load bookmarks. Please try again later.
+            Failed to load liked quotes. Please try again later.
           </p>
           <ReloadButton />
         </div>
