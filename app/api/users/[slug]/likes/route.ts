@@ -117,13 +117,18 @@ export async function GET(
       })
     ]);
 
-    // Transform the data to include the first image URL as the author's image
+    // Transform the data to match ProfileQuote type
     const items = likes.map(like => ({
-      ...like.quote,
-      isLiked: true, // Since these are liked quotes
-      commentCount: like.quote._count.comments,
-      bookmarkCount: like.quote._count.userBookmarks,
-      author: {
+      id: like.quote.id,
+      content: like.quote.content,
+      slug: like.quote.slug,
+      backgroundImage: like.quote.backgroundImage,
+      createdAt: like.quote.createdAt.toISOString(), // Convert Date to string
+      category: {
+        name: like.quote.category.name,
+        slug: like.quote.category.slug
+      },
+      authorProfile: {
         name: like.quote.authorProfile.name,
         slug: like.quote.authorProfile.slug,
         image: like.quote.authorProfile.images[0]?.url || null

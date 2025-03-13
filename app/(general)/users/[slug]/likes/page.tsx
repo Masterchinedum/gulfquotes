@@ -94,7 +94,23 @@ export default async function LikesPage({
 
           {quotes.length > 0 ? (
             <div className="space-y-8">
-              <QuoteGrid quotes={quotes} />
+              <QuoteGrid 
+                quotes={quotes.map(quote => ({
+                  id: quote.id,
+                  slug: quote.slug,
+                  content: quote.content,
+                  backgroundImage: quote.backgroundImage ?? null, // Add null coalescing
+                  author: {
+                    name: quote.authorProfile.name,
+                    image: quote.authorProfile.image ?? null, // Also fix the image type
+                    slug: quote.authorProfile.slug
+                  },
+                  category: {
+                    name: quote.category.name,
+                    slug: quote.category.slug
+                  }
+                }))}
+              />
               
               {(hasMore || page > 1) && (
                 <div className="flex justify-center gap-2 pt-4">
@@ -107,7 +123,7 @@ export default async function LikesPage({
                   )}
                   {hasMore && (
                     <Button variant="outline" asChild>
-                      <Link href={`/users/${params.slug}/likes?page=${page + 1}`}>
+                      <Link href={`/users/${params.slug}/likes?page={page + 1}`}>
                         Next
                       </Link>
                     </Button>
