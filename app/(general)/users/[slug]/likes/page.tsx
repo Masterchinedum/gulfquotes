@@ -73,6 +73,11 @@ export default async function LikesPage({
       );
     }
 
+    // Add null check for result.data
+    if (!result.data) {
+      throw new Error("No data returned from API");
+    }
+
     const { items: quotes, hasMore } = result.data;
 
     return (
