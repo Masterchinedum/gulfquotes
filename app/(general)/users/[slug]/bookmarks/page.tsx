@@ -1,177 +1,143 @@
-import { auth } from "@/auth";
-import { redirect, notFound } from "next/navigation";
+import React from "react";
+import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { Shell } from "@/components/shells/shell";
-import { BookmarkIcon } from "lucide-react";
-import { quoteBookmarkService } from "@/lib/services/bookmark";
 import { QuoteGrid } from "@/app/(general)/quotes/components/quote-grid";
-import { Suspense } from "react";
+import { Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import db from "@/lib/prisma";
+import type { QuotePaginatedResponse } from "@/types/api/quotes";
 import { ReloadButton } from "@/components/reload-button";
 
-export const metadata = {
-  title: "Bookmarked Quotes",
-  description: "View quotes bookmarked by this user"
-};
-
-interface BookmarkPageProps {
+interface BookmarksPageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{
+  searchParams?: Promise<{ 
     page?: string;
-    sort?: string;
+    [key: string]: string | string[] | undefined;
   }>;
 }
 
 export default async function BookmarksPage({
-  params,
-  searchParams
-}: BookmarkPageProps) {
-  const session = await auth();
-  const resolvedParams = await params;
-  const resolvedSearchParams = await searchParams;
-  
-  // Check if user is logged in first
-  if (!session?.user) {
-    return (
-      <Shell>
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-10">
-          <div className="flex flex-col items-center justify-center text-center py-12 space-y-6">
-            <div className="rounded-full bg-muted p-6">
-              <BookmarkIcon className="h-12 w-12 text-muted-foreground" />
-            </div>
-            <div className="space-y-2 max-w-md">
-              <h3 className="text-2xl font-semibold">Sign in to view your collection</h3>
-              <p className="text-muted-foreground">
-                Create an account or sign in to save your favorite quotes and access your personal collection.
+  params: paramsPromise,
+  searchParams: searchParamsPromise = Promise.resolve({ page: "1" })
+}: BookmarksPageProps) {
+  try {
+    // Resolve both promises
+    const [params, searchParams] = await Promise.all([
+      paramsPromise,
+      searchParamsPromise
+    ]);
+    
+    const page = Number(searchParams?.page) || 1;
+    const limit = 9; // Limit to 9 quotes per page
+    const headersList = await headers();
+    const origin = process.env.NEXTAUTH_URL || "";
+    
+    const res = await fetch(
+      `${origin}/api/users/${params.slug}/bookmarks?page=${page}&limit=${limit}`,
+      {
+        headers: {
+          cookie: headersList.get("cookie") || "",
+        },
+        cache: "no-store",
+      }
+    );
+
+    if (!res.ok) {
+      if (res.status === 404) {
+        notFound();
+      }
+      throw new Error(`Failed to fetch bookmarks: ${res.status}`);
+    }
+
+    const result: QuotePaginatedResponse = await res.json();
+    
+    if (result.error?.code === "FORBIDDEN") {
+      return (
+        <Shell>
+          <div className="max-w-5xl mx-auto px-4 py-12">
+            <div className="text-center py-12">
+              <h1 className="text-3xl font-bold mb-4">Private Collection</h1>
+              <p className="text-muted-foreground mb-6">
+                Bookmarked quotes are private and can only be viewed by their owner.
               </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Link href="/auth/login">
-                <Button>Sign In</Button>
-              </Link>
-              <Link href="/auth/register">
-                <Button variant="outline">Create Account</Button>
-              </Link>
+              <Button asChild variant="outline">
+                <Link href={`/users/${params.slug}`}>
+                  Return to Profile
+                </Link>
+              </Button>
             </div>
           </div>
-        </div>
-      </Shell>
-    );
-  }
-  
-  // Get user info from slug
-  const userProfile = await db.user.findUnique({
-    where: { id: resolvedParams.slug },
-    select: { 
-      id: true,
-      name: true,
-      image: true
+        </Shell>
+      );
     }
-  });
 
-  if (!userProfile) {
-    notFound();
-  }
-  
-  // Check permissions - only allow users to see their own bookmarks
-  const isOwnProfile = session?.user?.id === userProfile.id;
-  if (!isOwnProfile) {
-    redirect(`/users/${resolvedParams.slug}`);
-  }
+    if (!result.data) {
+      throw new Error("No data returned from API");
+    }
 
-  const page = Number(resolvedSearchParams?.page) || 1;
-  const slug = resolvedParams.slug;
-
-  try {
-    // Get bookmarked quotes
-    const result = await quoteBookmarkService.getBookmarkedQuotes(
-      userProfile.id,
-      page,
-      12
-    );
+    const { items: quotes, total } = result.data;
+    const totalPages = Math.ceil(total / limit);
 
     return (
       <Shell>
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                <BookmarkIcon className="h-6 w-6" />
+        <div className="max-w-5xl mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold flex items-center gap-2">
+                <Bookmark className="h-6 w-6 text-primary" />
                 Bookmarked Quotes
               </h1>
-              <p className="text-muted-foreground">
-                Quotes you&apos;ve saved to revisit later
-              </p>
             </div>
-            <Link href="/quotes">
-              <Button variant="outline">Browse More Quotes</Button>
-            </Link>
           </div>
-          
-          <Separator />
-          
-          {/* Content */}
-          <Suspense fallback={<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
-            {Array(6).fill(0).map((_, i) => (
-              <div key={i} className="h-64 rounded-lg bg-muted"></div>
-            ))}
-          </div>}>
-            {result.items.length > 0 ? (
-              <div className="space-y-8">
-                <QuoteGrid
-                  quotes={result.items.map((quote) => ({
-                    id: quote.id,
-                    slug: quote.slug,
-                    content: quote.content,
-                    backgroundImage: quote.backgroundImage,
-                    author: {
-                      name: quote.authorProfile.name,
-                      image: quote.authorProfile?.image,
-                      slug: quote.authorProfile.slug,
-                    },
-                    category: {
-                      name: quote.category.name,
-                      slug: quote.category.slug,
-                    },
-                  }))}
-                />
-                
-                {/* Pagination */}
-                {(result.hasMore || page > 1) && (
-                  <div className="flex justify-center gap-2 pt-4">
-                    {page > 1 && (
-                      <Link href={`/users/${slug}/bookmarks?page=${page - 1}`}>
-                        <Button variant="outline">Previous</Button>
+
+          {quotes.length > 0 ? (
+            <div className="space-y-8">
+              <QuoteGrid 
+                quotes={quotes.map(quote => ({
+                  id: quote.id,
+                  slug: quote.slug,
+                  content: quote.content,
+                  backgroundImage: quote.backgroundImage ?? null,
+                  author: {
+                    name: quote.authorProfile.name,
+                    image: quote.authorProfile.image ?? null,
+                    slug: quote.authorProfile.slug
+                  },
+                  category: {
+                    name: quote.category.name,
+                    slug: quote.category.slug
+                  }
+                }))}
+              />
+              
+              {totalPages > 1 && (
+                <div className="flex justify-center gap-2 pt-4">
+                  {page > 1 && (
+                    <Button variant="outline" asChild>
+                      <Link href={`/users/${params.slug}/bookmarks?page=${page - 1}`}>
+                        Previous
                       </Link>
-                    )}
-                    {result.hasMore && (
-                      <Link href={`/users/${slug}/bookmarks?page=${page + 1}`}>
-                        <Button variant="outline">Next</Button>
+                    </Button>
+                  )}
+                  {page < totalPages && (
+                    <Button variant="outline" asChild>
+                      <Link href={`/users/${params.slug}/bookmarks?page=${page + 1}`}>
+                        Next
                       </Link>
-                    )}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center text-center py-12 space-y-4">
-                <div className="rounded-full bg-muted p-6">
-                  <BookmarkIcon className="h-12 w-12 text-muted-foreground" />
+                    </Button>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-semibold">No bookmarked quotes yet</h3>
-                  <p className="text-muted-foreground max-w-md">
-                    When you find quotes you want to revisit later, save them to your bookmarks.
-                  </p>
-                </div>
-                <Link href="/quotes">
-                  <Button>Browse Quotes</Button>
-                </Link>
-              </div>
-            )}
-          </Suspense>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No bookmarked quotes found.</p>
+              <Button asChild variant="outline" className="mt-4">
+                <Link href="/quotes">Browse Quotes</Link>
+              </Button>
+            </div>
+          )}
         </div>
       </Shell>
     );
