@@ -20,17 +20,18 @@ interface LikesPageProps {
 
 export default async function LikesPage({
   params: paramsPromise,
-  searchParams: searchParamsPromise
+  searchParams: searchParamsPromise = Promise.resolve({ page: "1" }) // Provide default value
 }: LikesPageProps) {
   try {
     // Resolve both promises
     const [params, searchParams] = await Promise.all([
       paramsPromise,
-      searchParamsPromise || Promise.resolve({})
+      searchParamsPromise
     ]);
     
     const page = Number(searchParams?.page) || 1;
-    const headersList = headers();
+    // Add await here to resolve the headers promise
+    const headersList = await headers();
     const origin = process.env.NEXTAUTH_URL || "";
     
     const res = await fetch(
