@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import type { QuotePaginatedResponse } from "@/types/api/quotes";
 import { ReloadButton } from "@/components/reload-button";
+import { UserLikesPagination } from "@/components/pagination/user-likes-pagination";
+
 
 // Update interface to match Next.js 15 requirements
 interface LikesPageProps {
@@ -30,12 +32,12 @@ export default async function LikesPage({
     ]);
     
     const page = Number(searchParams?.page) || 1;
-    // Add await here to resolve the headers promise
+    const limit = 9; // Limit to 9 quotes per page
     const headersList = await headers();
     const origin = process.env.NEXTAUTH_URL || "";
     
     const res = await fetch(
-      `${origin}/api/users/${params.slug}/likes?page=${page}`,
+      `${origin}/api/users/${params.slug}/likes?page=${page}&limit=${limit}`,
       {
         headers: {
           cookie: headersList.get("cookie") || "",
@@ -78,7 +80,8 @@ export default async function LikesPage({
       throw new Error("No data returned from API");
     }
 
-    const { items: quotes, hasMore } = result.data;
+    const { items: quotes, total } = result.data;
+    const totalPages = Math.ceil(total / limit);
 
     return (
       <Shell>
@@ -112,23 +115,12 @@ export default async function LikesPage({
                 }))}
               />
               
-              {(hasMore || page > 1) && (
-                <div className="flex justify-center gap-2 pt-4">
-                  {page > 1 && (
-                    <Button variant="outline" asChild>
-                      <Link href={`/users/${params.slug}/likes?page=${page - 1}`}>
-                        Previous
-                      </Link>
-                    </Button>
-                  )}
-                  {hasMore && (
-                    <Button variant="outline" asChild>
-                      <Link href={`/users/${params.slug}/likes?page={page + 1}`}>
-                        Next
-                      </Link>
-                    </Button>
-                  )}
-                </div>
+              {totalPages > 1 && (
+                <UserLikesPagination 
+                  page={page} 
+                  totalPages={totalPages} 
+                  userSlug={params.slug} 
+                />
               )}
             </div>
           ) : (

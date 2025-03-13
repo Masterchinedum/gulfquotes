@@ -6,13 +6,14 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { AlertCircle } from "lucide-react";
 import Link from "next/link";
 import type { UserErrorCode } from "@/types/api/users";
+import { ReloadButton } from "@/components/reload-button";
 
 interface ErrorProps {
   error: Error & { digest?: string; code?: UserErrorCode };
   reset: () => void;
 }
 
-export default function Error({ error, reset }: ErrorProps) {
+export default function Error({ error}: ErrorProps) {
   useEffect(() => {
     // Log the error to an error reporting service
     console.error('Profile Error:', error);
@@ -41,11 +42,7 @@ export default function Error({ error, reset }: ErrorProps) {
         >
           <Link href="/users">Back to Users</Link>
         </Button>
-        {error.code !== "NOT_FOUND" && (
-          <Button onClick={reset}>
-            Try Again
-          </Button>
-        )}
+        {error.code !== "NOT_FOUND" && <ReloadButton />}
       </CardFooter>
     </Card>
   );
