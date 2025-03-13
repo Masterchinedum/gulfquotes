@@ -4,8 +4,7 @@ import db from "@/lib/prisma";
 import type { QuotePaginatedResponse } from "@/types/api/quotes";
 
 export async function GET(
-  req: Request,
-  { params }: { params: { slug: string } }
+  req: Request
 ): Promise<NextResponse<QuotePaginatedResponse>> {
   try {
     // Authentication check
@@ -14,6 +13,16 @@ export async function GET(
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
         { status: 401 }
+      );
+    }
+
+    // Extract slug from URL directly
+    const slug = req.url.split('/users/')[1]?.split('/')[0];
+    
+    if (!slug) {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "Invalid user slug" } },
+        { status: 400 }
       );
     }
 
@@ -27,9 +36,9 @@ export async function GET(
     const user = await db.user.findFirst({
       where: {
         OR: [
-          { userProfile: { slug: params.slug } },
-          { userProfile: { username: params.slug } },
-          { id: params.slug }
+          { userProfile: { slug } },
+          { userProfile: { username: slug } },
+          { id: slug }
         ]
       },
       include: {

@@ -1,31 +1,38 @@
-//app/(general)/users/[slug]/likes/page.tsx
-
 import React from "react";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { Shell } from "@/components/shells/shell";
-import { QuoteGrid } from "@/components/quotes/quote-grid";
+import { QuoteGrid } from "@/app/(general)/quotes/components/quote-grid";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import type { QuotePaginatedResponse } from "@/types/api/quotes";
 import { ReloadButton } from "@/components/reload-button";
 
+// Update interface to match Next.js 15 requirements
 interface LikesPageProps {
-  params: { slug: string };
-  searchParams?: { page?: string };
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ 
+    page?: string;
+    [key: string]: string | string[] | undefined;
+  }>;
 }
 
 export default async function LikesPage({
-  params,
-  searchParams
+  params: paramsPromise,
+  searchParams: searchParamsPromise
 }: LikesPageProps) {
   try {
+    // Resolve both promises
+    const [params, searchParams] = await Promise.all([
+      paramsPromise,
+      searchParamsPromise || Promise.resolve({})
+    ]);
+    
     const page = Number(searchParams?.page) || 1;
     const headersList = headers();
     const origin = process.env.NEXTAUTH_URL || "";
     
-    // Fetch likes using the new API route
     const res = await fetch(
       `${origin}/api/users/${params.slug}/likes?page=${page}`,
       {
