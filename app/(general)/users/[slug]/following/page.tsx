@@ -1,3 +1,5 @@
+//app(general)/users/[slug]/following/page.tsx
+
 import React from "react";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
