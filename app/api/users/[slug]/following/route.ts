@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import db from "@/lib/prisma";
-import type { AuthorPaginatedResponse } from "@/types/api/authors";
+import type { ApiResponse, PaginatedResponse } from "@/types/api/author-profiles";
+import type { ProfileFollowedAuthor } from "@/types/api/users";
+
+// Create a type alias for the response type we need
+type AuthorPaginatedResponse = ApiResponse<PaginatedResponse<ProfileFollowedAuthor>>;
 
 export async function GET(
   req: Request
@@ -76,7 +80,7 @@ export async function GET(
         take: limit,
         orderBy: { createdAt: "desc" },
         include: {
-          author: {
+          authorProfile: {  // Changed from author to authorProfile
             include: {
               images: {
                 take: 1,
@@ -95,11 +99,11 @@ export async function GET(
 
     // Transform the data to match ProfileFollowedAuthor type
     const items = following.map(follow => ({
-      id: follow.author.id,
-      name: follow.author.name,
-      slug: follow.author.slug,
-      image: follow.author.images[0]?.url || null,
-      bio: follow.author.bio || null,
+      id: follow.authorProfile.id,         // Changed from author to authorProfile
+      name: follow.authorProfile.name,     // Changed from author to authorProfile
+      slug: follow.authorProfile.slug,     // Changed from author to authorProfile
+      image: follow.authorProfile.images[0]?.url || null,
+      bio: follow.authorProfile.bio || null,
       createdAt: follow.createdAt.toISOString()
     }));
 

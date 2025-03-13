@@ -6,8 +6,12 @@ import { FollowedAuthors } from "@/components/users/followed-authors";
 import { Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import type { AuthorPaginatedResponse } from "@/types/api/authors";
+import type { ApiResponse, PaginatedResponse } from "@/types/api/author-profiles";
+import type { ProfileFollowedAuthor } from "@/types/api/users";
 import { ReloadButton } from "@/components/reload-button";
+
+// Create a type alias for the response type we need
+type AuthorPaginatedResponse = ApiResponse<PaginatedResponse<ProfileFollowedAuthor>>;
 
 interface FollowingPageProps {
   params: Promise<{ slug: string }>;
