@@ -221,17 +221,12 @@ export function ProfileContent({ user }: ProfileContentProps) {
               <UserQuoteList
                 quotes={bookmarks}
                 title="Bookmarked Quotes"
-                emptyMessage="No quotes have been bookmarked yet." // Change to string
+                emptyMessage="No quotes have been bookmarked yet."
                 viewAllLink={bookmarks.length > 5 ? `/users/${user.userProfile?.slug || user.id}/bookmarks` : undefined}
                 viewAllText="View All Bookmarks"
-                // Add a render prop for empty state JSX content
-                renderEmptyState={() => (
-                  <div className="mt-4">
-                    <Link href="/quotes">
-                      <Button variant="outline" size="sm">Browse Quotes</Button>
-                    </Link>
-                  </div>
-                )}
+                showEmptyAction={true}
+                emptyActionLink="/quotes"
+                emptyActionText="Browse Quotes"
               />
             </TabsContent>
           )}

@@ -1,5 +1,6 @@
 import type { Quote, Category, AuthorProfile } from "@prisma/client";
 import type { QuoteImageData, SortOption } from "@/lib/services/quote/types";
+import type { ProfileQuote } from "@/types/api/users"; // Add this import
 
 // Response Types
 export interface ApiResponse<T> {
@@ -38,6 +39,20 @@ export interface QuotesResponseData {
 }
 
 export type QuotesResponse = ApiResponse<QuotesResponseData>;
+
+// Add the paginated response type for quotes
+export interface QuotePaginatedResponse extends ApiResponse<{
+  items: ProfileQuote[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+}> {
+  error?: {
+    code: QuoteErrorCode;
+    message: string;
+  };
+}
 
 // Request Parameter Types
 export interface QuoteFilterParams {

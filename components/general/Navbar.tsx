@@ -55,7 +55,7 @@ export function Navbar() {
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <BookOpen size={18} />
-            <span>My Quotes</span>
+            <span>Quotes</span>
           </Link>
           <Link 
             href="/authors"

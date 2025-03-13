@@ -6,53 +6,57 @@ import { FollowedAuthors } from "@/components/users/followed-authors";
 import { Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import type { UserResponse } from "@/types/api/users";
-// import type { Metadata } from "next";
+import type { ApiResponse, PaginatedResponse } from "@/types/api/author-profiles";
+import type { ProfileFollowedAuthor } from "@/types/api/users";
+import { ReloadButton } from "@/components/reload-button";
 
-export const metadata = {
-  title: "Following",
-  description: "View authors this user is following"
-};
+// Create a type alias for the response type we need
+type AuthorPaginatedResponse = ApiResponse<PaginatedResponse<ProfileFollowedAuthor>>;
 
 interface FollowingPageProps {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ 
+    page?: string;
+    [key: string]: string | string[] | undefined;
+  }>;
 }
 
 export default async function FollowingPage({
   params: paramsPromise,
+  searchParams: searchParamsPromise = Promise.resolve({ page: "1" })
 }: FollowingPageProps) {
   try {
-    const params = await paramsPromise;
+    // Resolve both promises
+    const [params, searchParams] = await Promise.all([
+      paramsPromise,
+      searchParamsPromise
+    ]);
+    
+    const page = Number(searchParams?.page) || 1;
+    const limit = 12; // Show 12 authors per page
     const headersList = await headers();
     const origin = process.env.NEXTAUTH_URL || "";
     
-    const res = await fetch(`${origin}/api/users/${params.slug}?includeFollowedAuthors=true`, {
-      headers: {
-        cookie: headersList.get("cookie") || "",
-      },
-      cache: "no-store",
-    });
+    const res = await fetch(
+      `${origin}/api/users/${params.slug}/following?page=${page}&limit=${limit}`,
+      {
+        headers: {
+          cookie: headersList.get("cookie") || "",
+        },
+        cache: "no-store",
+      }
+    );
 
     if (!res.ok) {
       if (res.status === 404) {
         notFound();
       }
-      throw new Error(`Failed to fetch user data: ${res.status}`);
+      throw new Error(`Failed to fetch following: ${res.status}`);
     }
 
-    const result: UserResponse = await res.json();
+    const result: AuthorPaginatedResponse = await res.json();
     
-    if (!result.data) {
-      notFound();
-    }
-
-    // Get privacy settings and check if following list is visible
-    const privacySettings = result.data.userProfile?.privacySettings;
-    const showFollowing = privacySettings?.showFollowing !== false;
-    const isCurrentUser = result.data.isCurrentUser;
-
-    // If following list is not visible and not the current user, show a message
-    if (!showFollowing && !isCurrentUser) {
+    if (result.error?.code === "FORBIDDEN") {
       return (
         <Shell>
           <div className="max-w-5xl mx-auto px-4 py-12">
@@ -72,7 +76,12 @@ export default async function FollowingPage({
       );
     }
 
-    const followedAuthors = result.data.userProfile?.followedAuthors || [];
+    if (!result.data) {
+      throw new Error("No data returned from API");
+    }
+
+    const { items: authors, total } = result.data;
+    const totalPages = Math.ceil(total / limit);
 
     return (
       <Shell>
@@ -83,25 +92,45 @@ export default async function FollowingPage({
                 <Users className="h-6 w-6 text-primary" />
                 Following
               </h1>
-              <p className="text-muted-foreground mt-1">
-                {isCurrentUser
-                  ? "Authors you're following"
-                  : `Authors ${result.data.name || "this user"} is following`}
-              </p>
             </div>
           </div>
 
-          <FollowedAuthors
-            authors={followedAuthors}
-            isCurrentUser={!!isCurrentUser}
-            emptyMessage={
-              isCurrentUser
-                ? "You're not following any authors yet."
-                : "This user isn't following any authors yet."
-            }
-            layout="list"
-            showFollowButton={true}
-          />
+          {authors.length > 0 ? (
+            <div className="space-y-8">
+              <FollowedAuthors 
+                authors={authors}
+                isCurrentUser={true}
+                layout="list"
+                showFollowButton={true}
+              />
+              
+              {totalPages > 1 && (
+                <div className="flex justify-center gap-2 pt-4">
+                  {page > 1 && (
+                    <Button variant="outline" asChild>
+                      <Link href={`/users/${params.slug}/following?page=${page - 1}`}>
+                        Previous
+                      </Link>
+                    </Button>
+                  )}
+                  {page < totalPages && (
+                    <Button variant="outline" asChild>
+                      <Link href={`/users/${params.slug}/following?page=${page + 1}`}>
+                        Next
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Not following any authors yet.</p>
+              <Button asChild variant="outline" className="mt-4">
+                <Link href="/authors">Browse Authors</Link>
+              </Button>
+            </div>
+          )}
         </div>
       </Shell>
     );
@@ -114,9 +143,7 @@ export default async function FollowingPage({
           <p className="text-sm text-muted-foreground">
             Failed to load following list. Please try again later.
           </p>
-          <Button variant="outline" onClick={() => window.location.reload()} className="mt-4">
-            Try again
-          </Button>
+          <ReloadButton />
         </div>
       </Shell>
     );

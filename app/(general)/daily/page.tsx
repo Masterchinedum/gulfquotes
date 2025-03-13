@@ -3,12 +3,13 @@ import { getDailyQuote } from "@/actions/daily-quote";
 import { Suspense } from "react";
 import { QuotePageClient } from "../quotes/[slug]/components/quote-page-client";
 import { LoadingQuote } from "../quotes/[slug]/components/quote-loading";
-import { ErrorQuote } from "../quotes/[slug]/components/quote-error";
+// import { ErrorQuote } from "../quotes/[slug]/components/quote-error";
 import { Shell } from "@/components/shells/shell";
 import { quoteDisplayService } from "@/lib/services/public-quote/quote-display.service";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles } from "lucide-react";
 import type { Metadata } from "next";
+import { ReloadButton } from "@/components/reload-button";
 
 export const metadata: Metadata = {
   title: "Quote of the Day | gulfquotes",
@@ -68,11 +69,15 @@ export default async function DailyQuotePage() {
   } catch (error) {
     console.error("[DAILY_QUOTE_PAGE]", error);
     return (
-      <ErrorQuote 
-        error="Failed to load the daily quote" 
-        showRetryButton 
-        onRetry={() => window.location.reload()}
-      />
+      <Shell>
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+          <h3 className="font-semibold">Something went wrong</h3>
+          <p className="text-sm text-muted-foreground">
+            Failed to load bookmarked quotes. Please try again later.
+          </p>
+          <ReloadButton />
+        </div>
+      </Shell>
     );
   }
 }

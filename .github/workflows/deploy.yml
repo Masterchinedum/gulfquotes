@@ -41,15 +41,57 @@ jobs:
           ssh -o StrictHostKeyChecking=no $USERNAME@$HOST << EOF
             export PATH=/root/.nvm/versions/node/v22.14.0/bin:$PATH #'which pm2' command on terminal will give the right path
             cd $TARGET_DIR
+            
+            # Store current commit hash before pulling
+            CURRENT_COMMIT=\$(git rev-parse HEAD)
+            echo "Current commit: \$CURRENT_COMMIT"
+            
+            # Pull latest changes
             git pull origin ${GITHUB_REF#refs/heads/}
+            
+            # Store new commit hash
+            NEW_COMMIT=\$(git rev-parse HEAD)
+            echo "New commit: \$NEW_COMMIT"
+            
+            # Install dependencies
             npm install
-            npm run build
-            if pm2 list | grep -q $APP_NAME; then
-              echo "Restarting application: $APP_NAME"
-              pm2 restart $APP_NAME
+            
+            # Attempt to build, and rollback if it fails
+            if npm run build; then
+              echo "Build successful, deploying new version"
+              
+              if pm2 list | grep -q $APP_NAME; then
+                echo "Restarting application: $APP_NAME"
+                pm2 restart $APP_NAME
+              else
+                echo "Starting application: $APP_NAME"
+                pm2 start npm --name $APP_NAME -- start -- --port=$PORT
+              fi
+              pm2 save
+              echo "Deployment completed successfully"
             else
-              echo "Starting application: $APP_NAME"
-              pm2 start npm --name $APP_NAME -- start -- --port=$PORT
-            fi            
-            pm2 save
+              echo "Build failed, rolling back to previous commit: \$CURRENT_COMMIT"
+              
+              # Only rollback if we actually changed commits
+              if [ "\$CURRENT_COMMIT" != "\$NEW_COMMIT" ]; then
+                git reset --hard \$CURRENT_COMMIT
+                npm install
+                npm run build
+                
+                if pm2 list | grep -q $APP_NAME; then
+                  echo "Restarting application with previous version: $APP_NAME"
+                  pm2 restart $APP_NAME
+                else
+                  echo "Starting application with previous version: $APP_NAME"
+                  pm2 start npm --name $APP_NAME -- start -- --port=$PORT
+                fi
+                pm2 save
+                echo "Rollback completed, restored to previous working version"
+              else
+                echo "No changes to roll back, commit stayed the same"
+              fi
+              
+              # Exit with error status to mark GitHub Action as failed
+              exit 1
+            fi
           EOF

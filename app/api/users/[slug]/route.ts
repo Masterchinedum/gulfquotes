@@ -3,9 +3,7 @@ import { auth } from "@/auth";
 import db from "@/lib/prisma";
 import type { UserResponse, UserProfileIncludeParams, UserData } from "@/types/api/users";
 
-export async function GET(
-  req: Request
-): Promise<NextResponse<UserResponse>> {
+export async function GET(req: Request): Promise<NextResponse<UserResponse>> {
   try {
     // Check authentication
     const session = await auth();
@@ -16,8 +14,9 @@ export async function GET(
       );
     }
 
-    // Extract slug from URL
+    // Extract slug from URL directly
     const slug = req.url.split('/users/')[1]?.split('/')[0];
+    
     if (!slug) {
       return NextResponse.json(
         { error: { code: "BAD_REQUEST", message: "Invalid user slug" } },
@@ -34,11 +33,11 @@ export async function GET(
       followedAuthors: url.searchParams.get("includeFollowedAuthors") === "true",
     };
 
-    // Find user by different identifiers in order of priority
+    // Find user by different identifiers in order of priority - use the resolved slug variable
     const user = await db.user.findFirst({
       where: {
         OR: [
-          { userProfile: { slug: slug } },
+          { userProfile: { slug } },
           { userProfile: { username: slug } },
           { id: slug }
         ]
