@@ -93,7 +93,12 @@ export async function GET(
                 select: {
                   name: true,
                   slug: true,
-                  image: true
+                  images: {
+                    take: 1,
+                    select: {
+                      url: true
+                    }
+                  }
                 }
               },
               likes: true,
@@ -112,7 +117,7 @@ export async function GET(
       })
     ]);
 
-    // Transform the data
+    // Transform the data to include the first image URL as the author's image
     const items = likes.map(like => ({
       ...like.quote,
       isLiked: true, // Since these are liked quotes
@@ -121,7 +126,7 @@ export async function GET(
       author: {
         name: like.quote.authorProfile.name,
         slug: like.quote.authorProfile.slug,
-        image: like.quote.authorProfile.image
+        image: like.quote.authorProfile.images[0]?.url || null
       }
     }));
 

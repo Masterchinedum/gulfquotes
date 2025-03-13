@@ -1,5 +1,6 @@
 import type { Quote, Category, AuthorProfile } from "@prisma/client";
 import type { QuoteImageData, SortOption } from "@/lib/services/quote/types";
+import type { ProfileQuote } from "@/types/api/users"; // Add this import
 
 // Response Types
 export interface ApiResponse<T> {
