@@ -7,48 +7,67 @@ import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ReloadButton } from "@/components/reload-button";
-import type { UserResponse } from "@/types/api/users";
-// import type { Metadata } from "next";
+import type { ApiResponse } from "@/types/api/author-profiles";
+import type { ProfileComment } from "@/types/api/users";
 
-export const metadata = {
-  title: "User Comments",
-  description: "View comments made by this user"
-};
+// Create a type alias for the response type we need
+type CommentPaginatedResponse = ApiResponse<{
+  items: ProfileComment[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+}>;
 
 interface CommentsPageProps {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ 
+    page?: string;
+    [key: string]: string | string[] | undefined;
+  }>;
 }
 
 export default async function CommentsPage({
   params: paramsPromise,
+  searchParams: searchParamsPromise = Promise.resolve({ page: "1" })
 }: CommentsPageProps) {
   try {
-    const params = await paramsPromise;
+    // Resolve both promises
+    const [params, searchParams] = await Promise.all([
+      paramsPromise,
+      searchParamsPromise
+    ]);
+    
+    const page = Number(searchParams?.page) || 1;
+    const limit = 12; // Show 12 comments per page
     const headersList = await headers();
     const origin = process.env.NEXTAUTH_URL || "";
     
-    const res = await fetch(`${origin}/api/users/${params.slug}?includeComments=true`, {
-      headers: {
-        cookie: headersList.get("cookie") || "",
-      },
-      cache: "no-store",
-    });
+    const res = await fetch(
+      `${origin}/api/users/${params.slug}/comments?page=${page}&limit=${limit}`,
+      {
+        headers: {
+          cookie: headersList.get("cookie") || "",
+        },
+        cache: "no-store",
+      }
+    );
 
     if (!res.ok) {
       if (res.status === 404) {
         notFound();
       }
-      throw new Error(`Failed to fetch user data: ${res.status}`);
+      throw new Error(`Failed to fetch comments: ${res.status}`);
     }
 
-    const result: UserResponse = await res.json();
+    const result: CommentPaginatedResponse = await res.json();
     
     if (!result.data) {
-      notFound();
+      throw new Error("No data returned from API");
     }
 
-    const comments = result.data.userProfile?.comments || [];
-    const isCurrentUser = result.data.isCurrentUser;
+    const { items: comments, total } = result.data;
+    const totalPages = Math.ceil(total / limit);
 
     return (
       <Shell>
@@ -60,29 +79,45 @@ export default async function CommentsPage({
                 Comments
               </h1>
               <p className="text-muted-foreground mt-1">
-                {isCurrentUser
-                  ? "Comments you've made on quotes"
-                  : `Comments by ${result.data.name || "this user"}`}
+                Your comments on quotes
               </p>
             </div>
           </div>
 
-          <UserComments
-            comments={comments}
-            isCurrentUser={!!isCurrentUser}
-            emptyMessage={
-              isCurrentUser
-                ? "You haven't commented on any quotes yet."
-                : "This user hasn't commented on any quotes yet."
-            }
-            renderEmptyAction={isCurrentUser ? (
-              <div className="mt-4">
-                <Link href="/quotes">
-                  <Button variant="outline" size="sm">Browse Quotes</Button>
-                </Link>
-              </div>
-            ) : undefined}
-          />
+          {comments.length > 0 ? (
+            <div className="space-y-8">
+              <UserComments 
+                comments={comments}
+                isCurrentUser={true}
+              />
+              
+              {totalPages > 1 && (
+                <div className="flex justify-center gap-2 pt-4">
+                  {page > 1 && (
+                    <Button variant="outline" asChild>
+                      <Link href={`/users/${params.slug}/comments?page=${page - 1}`}>
+                        Previous
+                      </Link>
+                    </Button>
+                  )}
+                  {page < totalPages && (
+                    <Button variant="outline" asChild>
+                      <Link href={`/users/${params.slug}/comments?page=${page + 1}`}>
+                        Next
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No comments found.</p>
+              <Button asChild variant="outline" className="mt-4">
+                <Link href="/quotes">Browse Quotes</Link>
+              </Button>
+            </div>
+          )}
         </div>
       </Shell>
     );
@@ -93,7 +128,7 @@ export default async function CommentsPage({
         <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
           <h3 className="font-semibold">Something went wrong</h3>
           <p className="text-sm text-muted-foreground">
-            Failed to load bookmarks. Please try again later.
+            Failed to load comments. Please try again later.
           </p>
           <ReloadButton />
         </div>
